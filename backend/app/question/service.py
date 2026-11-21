@@ -110,6 +110,12 @@ async def next_ai(cond: Conditions) -> dict:
 
     if cond.fallback:
         return {"done": False, "fallback": True}
+    t0 = time.monotonic()
+
+    def budget() -> float:
+        """화면 기본 질문 시간(8초) 안에 대신 길까지 끝나게 에이전트에 줄 시간."""
+        return config.QUESTION_SCREEN - config.QUESTION_SCREEN_MARGIN - (time.monotonic() - t0)
+
     no, total = qa.numbering(cond)
     if no > total:
         return {"done": True}
@@ -117,7 +123,7 @@ async def next_ai(cond: Conditions) -> dict:
     agent_ok = config.question_agent_on() and config.has_ai() and bool(items)
     if no == total:
         if agent_ok:
-            r = await qa.ask_agent(cond, items, no, total, extra=True)
+            r = await qa.ask_agent(cond, items, no, total, extra=True, timeout=budget())
             if r is not None and not r.get("done"):
                 return {**r, "no": no, "total": total + 1, "extra": True}
         return {"done": True}
@@ -126,7 +132,7 @@ async def next_ai(cond: Conditions) -> dict:
         return {**q, "no": no, "total": total}
 
     if agent_ok:
-        r = await qa.ask_agent(cond, items, no, total)
+        r = await qa.ask_agent(cond, items, no, total, timeout=budget())
         if r is not None and not r.get("done"):
             return stamp(r)
         # done이어도 질문 수는 채워요 → 아래의 더 좁히는 질문으로

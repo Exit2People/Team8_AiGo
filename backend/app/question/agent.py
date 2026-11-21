@@ -43,6 +43,7 @@ SYSTEM = """너는 'AI GO'의 질문 에이전트야. 서울에 사는 어르신
 
 선택지 규칙 (코드가 확인해. 어기면 버려져)
 - 2~4개, 각각 14자 안쪽, 서로 겹치지 않게. "잘 모르겠어요"는 화면이 붙이니 넣지 마.
+- 앞에서 이미 고른 답 · 어르신이 처음 한 말을 선택지로 다시 내지 마 (코드가 빼). 앞 질문과 비슷한 질문을 되풀이하지 마.
 - 오늘 후보에 근거가 있어야 해: 찾은 곳 이름, 주제 이름, 은행 선택지, 아직 빈 기본 칸 선택지,
   또는 그 말로 찾으면 오늘 갈 곳이 나오는 짧은 말(예: "화석", "만들기 체험", "물가"). count_choices 로 미리 확인할 수 있어.
 - 어디가 아픈지, 병, 약, 몸 상태, 이름, 나이, 주소, 연락처는 묻지 마. (같이 가는 손주가 어떤 걸 좋아하는지는 물어도 돼.)"""
@@ -314,6 +315,13 @@ def check_question(cond: Conditions, items: list[dict], sub: dict) -> dict | Non
         return None
     if len({_norm(c) for c in choices}) != len(choices):
         return None
+    # 앞에서 이미 고른 답 · 처음 말의 단서를 선택지로 다시 내지 않아요, 앞 질문과 같은 선택지 묶음도 안 돼요
+    before = {_norm(x.a) for x in cond.ai if x.a} | {_norm(w) for w in cond.extra.wish}
+    choices = [c for c in choices if _norm(c) not in before]
+    if any({_norm(c) for c in choices} == {_norm(c) for c in x.choices if c != "잘 모르겠어요"} for x in cond.ai):
+        return None
+    if len(choices) < 2:
+        return None
     counts = {}
     for ch in choices:
         n = choice_count(ch, cond, items)
@@ -380,7 +388,7 @@ async def jev_ok(cond: Conditions, q: dict, deadline: float) -> bool:
 
 
 async def ask_agent(cond: Conditions, items: list[dict], no: int | None = None, total: int | None = None,
-                    extra: bool = False) -> dict | None:
+                    extra: bool = False, timeout: float | None = None) -> dict | None:
     """질문 하나. 통과하면 {done, question, choices, slot, source: agent, follows?, id?, why?}.
 
     실패 · 늦음 · 검사 탈락은 None. extra=True 는 정해진 질문이 끝난 뒤 '1개 더'(no 7) 판단이에요 —
@@ -397,14 +405,17 @@ async def ask_agent(cond: Conditions, items: list[dict], no: int | None = None, 
         if left < config.EXTRA_MIN_LEFT:
             log.info("질문 에이전트: 1개 더 안 물어요 (좁힌 곳 %s곳)", left)
             return {"done": True}
-    deadline = time.monotonic() + config.QUESTION_AGENT_TIMEOUT
+    budget = config.QUESTION_AGENT_TIMEOUT if timeout is None else min(config.QUESTION_AGENT_TIMEOUT, timeout)
+    if budget <= 0.5:
+        return None
+    deadline = time.monotonic() + budget
     tools = {"find_places": lambda word: find_places_by(items, word),
              "look_bank": lambda: look_bank(cond, items),
              "count_choices": lambda choices: count_choices(cond, items, choices),
              "submit_question": lambda **kw: {"ok": True}}
     model = config.env("AIGO_QUESTION_AGENT_MODEL") or config.model()
     res = await agent_loop.run(SYSTEM, first_message(cond, items, no, total, extra), tools, SCHEMAS,
-                               "submit_question", config.QUESTION_AGENT_ROUNDS, config.QUESTION_AGENT_TIMEOUT, model,
+                               "submit_question", config.QUESTION_AGENT_ROUNDS, budget, model,
                                1500, "low", name="질문 에이전트")
     if not res or not isinstance(res.get("submitted"), dict):
         return None

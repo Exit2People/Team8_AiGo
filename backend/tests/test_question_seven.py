@@ -210,3 +210,31 @@ def test_keyless_seven_questions_then_three_places():
     assert len(asked) == 4
     j = client.post("/recommend", json={"conditions": c.model_dump(), "visited": []}).json()
     assert j["by"] == "rule" and len(j["candidates"]) == 3
+
+
+def test_no_repeat_of_answers_or_same_choice_set():
+    c = cond(ai=[{"q": "어떤 풍경이 좋으세요?", "choices": ["물가", "꽃 · 정원"], "a": "물가"}])
+    items = flow.today_items(c)
+    # 이미 고른 답은 선택지에서 빠져요 → 하나만 남으면 버려요
+    assert qa.check_question(c, items, {"question": "물가 말고 어디가 좋으세요?", "choices": ["물가", "꽃 · 정원"]}) is None
+    r = qa.check_question(c, items, {"question": "물가에서 무엇을 보고 싶으세요?", "choices": ["물가", "꽃 · 정원", "전망"]})
+    assert r and "물가" not in r["choices"]
+    same = cond(ai=[{"q": "무엇을 보고 싶으세요?", "choices": ["공원", "그림 · 사진"], "a": "잘 모르겠어요"}])
+    assert qa.check_question(same, items, {"question": "오늘은 무엇이 보고 싶으세요?", "choices": ["그림 · 사진", "공원"]}) is None
+
+
+def test_slow_agent_keeps_screen_time(on, monkeypatch):
+    """에이전트가 늦어도 화면 기본 질문 시간 안에 발전 질문 · 은행으로 답해요."""
+    import time
+
+    class Slow(FakeChat):
+        async def ainvoke(self, messages):
+            await asyncio.sleep(30)
+
+    monkeypatch.setattr(agent_loop, "make_chat", lambda *a, **k: Slow([]))
+    monkeypatch.setattr(config, "QUESTION_SCREEN", 2.0)
+    c = cond(basic={"want": "구경하기"})
+    t0 = time.monotonic()
+    r = asyncio.run(service.next_ai(c))
+    assert time.monotonic() - t0 < 2.0
+    assert r["done"] is False and r["no"] == 4 and r.get("source") != "agent"
