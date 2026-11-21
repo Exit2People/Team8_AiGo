@@ -18,6 +18,19 @@ export default function Question({ f, kind, i = 0, edit }: Props) {
   // 등장 연출 (5.2): 질문이 가운데 크게 0.9초 → 제자리로 0.6초 → 선택지가 올라와요
   const [phase, setPhase] = useState<"in" | "top" | "base">(() => (edit || f.still || f.navDir.current === "back" ? "base" : "in"));
   const h1 = useRef<HTMLHeadingElement>(null);
+  const subRef = useRef<HTMLParagraphElement>(null);
+  const chipRef = useRef<HTMLSpanElement>(null);
+  const [measured, setMeasured] = useState({ title: 0, sub: 0, chip: 0 });
+  useLayoutEffect(() => {
+    const read = () => {
+      const next = { title: h1.current?.offsetHeight ?? 0, sub: subRef.current?.offsetHeight ?? 0, chip: chipRef.current?.offsetHeight ?? 0 };
+      setMeasured((m) => (m.title === next.title && m.sub === next.sub && m.chip === next.chip ? m : next));
+    };
+    read();
+    const ro = new ResizeObserver(read);
+    for (const el of [h1.current, subRef.current, chipRef.current]) if (el) ro.observe(el);
+    return () => ro.disconnect();
+  });
   const [fx, setFx] = useState("none");
   useLayoutEffect(() => {
     if (!ready || phase !== "in") return;
@@ -81,6 +94,15 @@ export default function Question({ f, kind, i = 0, edit }: Props) {
   const dkTile = dk && tiles.length <= 3;
   const dkButton = dk && tiles.length === 4;
   const heard = s.heard.length > 0;
+  const ai = kind === "flex" && q!.src === "ai";
+
+  // 제목이 길어 줄이 늘면(글씨 크기 · 화면 폭에 따라) 그만큼 아래 안내 · 칩 · 선택지를 내려요 — 실제 높이를 재요
+  const estTitle = lines.length * size * 1.22;
+  const titleH = Math.max(estTitle, measured.title);
+  const subTop = 140 + titleH + 10;
+  const subBottom = subTop + (measured.sub || 46);
+  const chipTop = Math.max(296, subBottom + 10);
+  const stackTop = Math.max(heard ? 404 : 424, (ai ? chipTop + (measured.chip || 32) : subBottom) + 16);
 
   return (
     <div className="content">
@@ -93,6 +115,8 @@ export default function Question({ f, kind, i = 0, edit }: Props) {
           right: 24,
           maxWidth: 219,
           textAlign: "right",
+          // 낱말 가운데서 줄을 바꾸지 않아요 (띄어쓰기에서만) — 줄이 늘면 아래 것들이 그만큼 내려가요
+          wordBreak: "keep-all",
           fontSize: size,
           transformOrigin: "100% 0",
           transform: phase === "in" ? fx : "none",
@@ -103,17 +127,17 @@ export default function Question({ f, kind, i = 0, edit }: Props) {
       >
         {lines.join("\n")}
       </h1>
-      <Sub y={140 + lines.length * size * 1.22 + 10} align="right" style={{ left: 170, opacity: phase === "in" ? 0 : 1, transition: "opacity .4s" }}>
+      <p ref={subRef} className="abs pre t-sub c-sub" style={{ top: subTop, right: 24, left: 170, textAlign: "right", opacity: phase === "in" ? 0 : 1, transition: "opacity .4s" }}>
         {"하나를\n눌러 주세요"}
-      </Sub>
-      {kind === "flex" && q!.src === "ai" && (
-        <span className="abs chip" style={{ right: 24, top: 296, opacity: phase === "base" ? 1 : 0, transition: "opacity .4s" }}>
+      </p>
+      {ai && (
+        <span ref={chipRef} className="abs chip" style={{ right: 24, top: chipTop, opacity: phase === "base" ? 1 : 0, transition: "opacity .4s" }}>
           AI가 고른 질문
         </span>
       )}
       {/* 담고 머리 · 앞발 아래로 한 줄로 쌓아요: (들은 말 상자) → 선택지 → 잘 모르겠어요 → 안내.
           들은 말이 있으면 그만큼 선택지가 자연스럽게 아래로 내려가요 */}
-      <div className={`qStack${heard && dkButton ? " tight" : ""}`} style={{ top: heard ? 404 : 424 }}>
+      <div className={`qStack${heard && dkButton ? " tight" : ""}`} style={{ top: stackTop }}>
         {heard && (
           <section className="heardBox" aria-label="이렇게 들었어요" style={{ opacity: phase === "base" ? 1 : 0, transition: "opacity .4s" }}>
             <p className="heardLabel">이렇게 들었어요 · 틀리면 눌러서 지워요</p>
