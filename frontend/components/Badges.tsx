@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-// 업적 배지 화면 (TestTon components/Badges.tsx와 같은 모양).
+// 업적 배지 화면.
 // 내 정보의 업적 카드 · 업적 모아 보기 · 배지 자세히 · 얻은 순간 축하. 판정은 lib/badges.ts.
 
 import { HIDDEN_IMG, TIERS, type BadgeDef, type BadgeState } from "@/lib/badges";

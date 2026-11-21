@@ -1,6 +1,6 @@
 "use client";
 
-// 담고 달리기: 내 정보에서 들어가는 작은 쉬어 가기 게임. (TestTon components/Game.tsx에서 그대로 옮겼어요)
+// 담고 달리기: 내 정보에서 들어가는 작은 쉬어 가기 게임.
 // 담고가 나들이 길을 달리고, 큰 버튼(또는 게임 화면 · 스페이스 · 위 화살표)을 누르면 폴짝 뛰어 장애물을 넘어요.
 // 하늘 · 먼 풍경 · 나무 색은 모두 테마 색(color)에서 만들어요. 내 정보에서 테마를 바꾸면 게임도 같이 바뀌어요.
 // 어르신도 하기 쉽게: 버튼 하나, 느리게 시작해서 천천히 빨라지고, 부딪힘 판정은 그림보다 조금 너그러워요.
@@ -331,7 +331,7 @@ type Paths = { head: Path2D; face: Path2D };
 const S = 0.33; // 게임 속 크기: 키 약 75px
 const FEET = 232;
 const BODY = { cx: 92, cy: 176, rx: 54, ry: 48 };
-const TAILS: [number, number, number][] = [[177, 92, 68], [190, 170, 46]];
+const TAILS: [number, number, number][] = [[161, 92, 68], [174, 170, 46]]; // 꼬리 원: 몸 뒤에 붙어 보이게
 const TAIL_PIVOT = [146, 204]; // 꼬리 밑동(몸 뒤 엉덩이 쪽)
 
 function drawDamgo(ctx: CanvasRenderingContext2D, paths: Paths, w: World, running: boolean) {

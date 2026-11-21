@@ -128,7 +128,7 @@ export function record(uid: string, e: BadgeEvent, hasHome: boolean): BadgeDef[]
 export const HIDDEN_IMG = "/aigo/badges/_hidden.svg";
 export const badgeImg = (b: BadgeDef, got: boolean) => (b.hidden && !got ? HIDDEN_IMG : `/aigo/badges/${b.id}.svg`);
 
-/** 화면에 보여 줄 배지 하나의 상태 (TestTon BadgeState와 같은 모양) */
+/** 화면에 보여 줄 배지 하나의 상태 */
 export type BadgeState = { def: BadgeDef; earnedAt: string | null; cur: number; target: number };
 
 /** 업적 화면 · 내 정보 카드에 보여 줄 모든 배지 상태(얻은 때 · 진행 정도) */
