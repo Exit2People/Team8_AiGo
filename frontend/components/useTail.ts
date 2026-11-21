@@ -23,7 +23,9 @@ import { useEffect, useRef, type RefObject } from "react";
  *
  * mode
  *  - "idle":  가끔 살랑이고 쉬어요
- *  - "think": 고민하는 화면(찾는 중 · 질문 고르는 중 …) — 쉬지 않고 계속 살랑여요
+ *  - "think": 고민하는 화면(찾는 중 · 질문 고르는 중 …) — 로딩 중임을 알 수 있게 멈추지 않고 계속 살랑여요.
+ *             흔들기를 끊어 이어 붙이면 커졌다 작아졌다 출렁여서, 한 번 이어진 느긋한 좌우 흔들기(한 번 약 1.5초)로
+ *             흔들고 속도 · 폭만 아주 천천히 달라지게 해요. 멈춘 게 아닌 걸 알 수 있게 폭은 이 화면만 더 커요(20도)
  *  - "off":   움직임 줄이기 · 담고가 없는 화면
  *
  * 머리도 꼬리에 맞춰 움직여요: 꼬리 뿌리가 기우는 반대쪽으로 살짝 갸웃하고(몸이 꼬리를 흔드는 느낌),
@@ -43,7 +45,7 @@ const rand = (a: number, b: number) => a + Math.random() * (b - a);
 function nextSeg(t0: number, mode: TailMode, prev?: Seg): Seg {
   const think = mode === "think";
   if (prev && prev.kind !== "rest") {
-    const r = think ? rand(0.25, 0.7) : Math.random() < 0.2 ? rand(0.8, 1.4) : rand(2.6, 5.5);
+    const r = think ? rand(1.2, 2.2) : Math.random() < 0.2 ? rand(0.8, 1.4) : rand(2.6, 5.5);
     return { t0, dur: r, kind: "rest", amp: 0, cycles: 0, dir: 1 };
   }
   const dir = Math.random() < 0.5 ? -1 : 1;
@@ -97,7 +99,6 @@ export function useTail(
     let raf = 0;
     let segs: Seg[] = [];
     let lastMode = modeRef.current;
-    let amp = lastMode === "think" ? 1 : 0; // 고민 중엔 더 크게 (부드럽게 바뀜)
     // 끝 원의 관성: 각도(도)와 각속도. 용수철(K)로 뿌리 각도 × TIP_GAIN을 따라가고, 덜 꺾인 감쇠(C)라 살짝 넘쳤다 돌아와요
     const K = 70; // 고유 진동 약 1.3Hz
     const C = 2 * 0.32 * Math.sqrt(K); // 감쇠비 0.32
@@ -106,6 +107,9 @@ export function useTail(
     let tipVel = 0;
     let open = 0; // 큰 원이 바깥으로 늘어진 정도 (0 ~ 0.05)
     let lastT = 0;
+    // 고민 화면의 이어진 살랑: 위상(0~1 반복)과 섞는 정도(쉬는 화면 ↔ 고민 화면을 부드럽게 오가요)
+    let phase = 0;
+    let mix = lastMode === "think" ? 1 : 0;
     const now = performance.now() / 1000;
     segs.push({ t0: now, dur: rand(0.3, 1.2), kind: "rest", amp: 0, cycles: 0, dir: 1 });
 
@@ -133,11 +137,16 @@ export function useTail(
       }
       segs = segs.filter((s) => s.t0 + s.dur > t - 0.2);
 
-      amp += ((m === "think" ? 1 : 0) - amp) * 0.05;
       // 숨 쉬듯 아주 작은 흔들림 + 동작
       const breath = 0.04 * Math.sin(t * 1.3) + 0.02 * Math.sin(t * 2.3 + 1.1);
-      const v = valueAt(t) + breath;
-      const deg = v * (12 + 3 * amp); // 뿌리: 쉬는 화면 최대 12도, 고민 화면 15도
+      // 이어진 살랑 (속도 1.35~1.65초 · 폭 0.8~1.0이 천천히 바뀌어요)
+      const step = lastT ? Math.min(0.05, t - lastT) : 0;
+      phase = (phase + step / (1.5 + 0.15 * Math.sin(t * 0.45))) % 1;
+      const steady = (0.9 + 0.1 * Math.sin(t * 0.7 + 0.5)) * Math.sin(2 * Math.PI * phase);
+      mix += ((m === "think" ? 1 : 0) - mix) * Math.min(1, step * 2.5);
+      const v = (1 - mix) * valueAt(t) + mix * steady + breath;
+      // 뿌리: 다른 화면 최대 12도, 로딩(고민) 화면만 20도 — 멈춘 게 아니라 일하는 중인 게 잘 보이게
+      const deg = v * (12 + 8 * mix);
 
       // 끝 원 관성 (탭이 숨었다 돌아오면 크게 튀지 않게 한 번에 최대 0.05초씩만 적분)
       let dt = lastT ? Math.min(0.05, t - lastT) : 0;
