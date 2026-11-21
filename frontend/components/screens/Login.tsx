@@ -3,7 +3,7 @@
 import type { FlowApi } from "../Flow";
 import { CheckIcon, KakaoIcon } from "../Icons";
 import { Caption, Secondary, Sheet, Sub, Title } from "../ui";
-import { KAKAO_START } from "@/lib/api";
+import { KAKAO_START, isMock } from "@/lib/api";
 
 /** 로그인 · 회원가입 (4.1 login) */
 export default function Login({ f }: { f: FlowApi }) {
@@ -32,6 +32,16 @@ export default function Login({ f }: { f: FlowApi }) {
         className="btn btn-kakao"
         style={{ left: 24, top: 586, width: 345, borderRadius: 12, justifyContent: "center", gap: 10 }}
         onClick={() => {
+          if (isMock()) {
+            // 가짜 응답: 카카오 대신 처음 가입처럼 돌아와요
+            try {
+              sessionStorage.setItem("aigo.mock.signup", "1");
+            } catch {
+              /* */
+            }
+            location.href = "/?signup=1";
+            return;
+          }
           location.href = KAKAO_START;
         }}
       >

@@ -13,6 +13,7 @@ import NotFound from "./NotFound";
 import Login from "./Login";
 import { Arrive, ChatJoin, Guestbook } from "./Social";
 import Chat from "./Chat";
+import { Addr, Agree, Elogin, Kwait, Restore, Signup, Welcome } from "./Auth";
 import { Secondary, Sub, Title } from "../ui";
 
 export default function Screen({ f, step }: { f: FlowApi; step: Step }) {
@@ -53,6 +54,20 @@ export default function Screen({ f, step }: { f: FlowApi; step: Step }) {
       return <Chat key={key} f={f} />;
     case "login":
       return <Login key={key} f={f} />;
+    case "kwait":
+      return <Kwait key={key} f={f} />;
+    case "agree":
+      return <Agree key={key} f={f} />;
+    case "addr":
+      return <Addr key={key} f={f} />;
+    case "restore":
+      return <Restore key={key} f={f} />;
+    case "elogin":
+      return <Elogin key={key} f={f} />;
+    case "signup":
+      return <Signup key={`${key}-${step.i}`} f={f} i={step.i} />;
+    case "welcome":
+      return <Welcome key={key} f={f} />;
     default:
       return (
         <div className="content">

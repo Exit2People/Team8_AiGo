@@ -600,6 +600,22 @@ function useFlow() {
     [go, later, replaceTop, set, still],
   );
 
+  /** 로그인 사본 맞추기 */
+  const setUser = useCallback(
+    (u: User | null) => {
+      save("aigo.user", u);
+      set({ user: u });
+    },
+    [set],
+  );
+
+  const refreshMe = useCallback(async (): Promise<User | null> => {
+    const m = await api.me();
+    const u = m.loggedIn ? m : null;
+    setUser(u);
+    return u;
+  }, [setUser]);
+
   /** 도착했어요 (9.1) */
   const arrive = useCallback(() => {
     const c = cand();
@@ -614,6 +630,8 @@ function useFlow() {
     s,
     sRef,
     arrive,
+    setUser,
+    refreshMe,
     set,
     go,
     replaceTop,
