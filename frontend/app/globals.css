@@ -966,3 +966,21 @@ html.ios .textbox {
 @keyframes cbPop { 0% { transform: scale(0.2) rotate(-25deg); opacity: 0; } 60% { transform: scale(1.12) rotate(6deg); opacity: 1; } 100% { transform: none; } }
 @keyframes cbSpin { to { transform: rotate(360deg); } }
 
+/* 다녀온 곳 달력: 달 옮기는 단추 · 바뀔 때 살짝 나타나기 (Mine.tsx) */
+.cal-nav {
+  width: 34px;
+  height: 34px;
+  border-radius: 17px;
+  background: var(--soft);
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 34px;
+  text-align: center;
+  color: var(--ink);
+}
+.cal-nav:disabled {
+  opacity: 0.3;
+}
+.cal-grid {
+  animation: fadeIn 0.25s ease both;
+}
