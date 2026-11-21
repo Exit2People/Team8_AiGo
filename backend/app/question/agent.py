@@ -425,8 +425,9 @@ async def ask_agent(cond: Conditions, items: list[dict], no: int | None = None, 
              "count_choices": lambda choices: count_choices(cond, items, choices),
              "submit_question": lambda **kw: {"ok": True}}
     model = config.env("AIGO_QUESTION_AGENT_MODEL") or config.model()
-    res = await agent_loop.run(SYSTEM, first_message(cond, items, no, total, extra), tools, SCHEMAS,
-                               "submit_question", config.QUESTION_AGENT_ROUNDS, budget, model,
+    first = first_message(cond, items, no, total, extra)  # 곳 찾기가 들어 있어 1초쯤 걸려요 → 남은 시간만 에이전트에
+    res = await agent_loop.run(SYSTEM, first, tools, SCHEMAS,
+                               "submit_question", config.QUESTION_AGENT_ROUNDS, deadline - time.monotonic(), model,
                                1500, "low", name="질문 에이전트")
     if not res or not isinstance(res.get("submitted"), dict):
         return None

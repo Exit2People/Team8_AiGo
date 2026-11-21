@@ -4,6 +4,7 @@
 """
 
 import asyncio
+import logging
 import re
 import time
 
@@ -13,6 +14,8 @@ from app.question import flow, variety
 from app.question.lead import lead_question
 from app.question.opening import BODY_WORDS, has_banned
 from app.schemas import Conditions, strip_for_ai, want_of
+
+log = logging.getLogger("aigo.question")
 
 AI_QUESTION_SYSTEM = f"""너는 'AI GO'의 질문 담당이야. AI GO는 서울에 사는 어르신이 오늘 대중교통으로 나들이 갈 곳 한 곳을 고르도록 돕는 서비스야.
 어르신은 화면의 큰 버튼 하나를 눌러 답해. 글을 길게 읽기 어렵고, 낯선 말이 나오면 멈춰.
@@ -98,6 +101,18 @@ def validate_single(cond: Conditions, v: dict) -> dict | None:
     return {"done": False, "question": q, "choices": choices, "slot": slot}
 
 
+async def _capped(coro, limit: float):
+    """에이전트 전체(도구 · Jev 포함)를 한도에서 끊어요. 늦으면 None → 대신 길."""
+    t = time.monotonic()
+    try:
+        return await asyncio.wait_for(coro, timeout=max(0.1, limit + 0.3))
+    except asyncio.TimeoutError:
+        log.warning("질문 에이전트: 한도 %.1f초를 넘어 끊었어요", limit)
+        return None
+    finally:
+        log.info("질문 에이전트 걸린 시간 %.2f초", time.monotonic() - t)
+
+
 async def next_ai(cond: Conditions) -> dict:
     """조건 묶음만 온 /questions/next (A안 화면이 쓰는 경로).
 
@@ -123,7 +138,7 @@ async def next_ai(cond: Conditions) -> dict:
     agent_ok = config.question_agent_on() and config.has_ai() and bool(items)
     if no == total:
         if agent_ok:
-            r = await qa.ask_agent(cond, items, no, total, extra=True, timeout=budget())
+            r = await _capped(qa.ask_agent(cond, items, no, total, extra=True, timeout=budget()), budget())
             if r is not None and not r.get("done"):
                 variety.remember(r.get("question"))
                 return {**r, "no": no, "total": total + 1, "extra": True}
@@ -134,7 +149,7 @@ async def next_ai(cond: Conditions) -> dict:
         return {**q, "no": no, "total": total}
 
     if agent_ok:
-        r = await qa.ask_agent(cond, items, no, total, timeout=budget())
+        r = await _capped(qa.ask_agent(cond, items, no, total, timeout=budget()), budget())
         if r is not None and not r.get("done"):
             return stamp(r)
         # done이어도 질문 수는 채워요 → 아래의 더 좁히는 질문으로
