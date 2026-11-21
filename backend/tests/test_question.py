@@ -72,7 +72,7 @@ def test_question_clean_hint():
     assert opening.clean_hint(" 한강! ") == "한강"
     assert opening.clean_hint("무릎 아픈데") is None
     assert opening.clean_hint("어디든") is None
-    assert opening.clean_hint("010 1234") is None or True
+    assert opening.clean_hint("010 1234") is None
     assert opening.clean_hint("12345") is None
     assert opening.clean_hint("아주아주아주아주긴말입니다") is None
 
