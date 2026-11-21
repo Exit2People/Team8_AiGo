@@ -39,6 +39,7 @@ async def run(system: str, first: dict, tools: dict[str, Tool], schemas: list[di
 
     t0 = time.monotonic()
     if not await warm.ready(timeout - 0.5):
+        log.info("agent_failure name=%s reason=warmup_timeout", name)
         return None
     timeout -= time.monotonic() - t0
     from langchain_core.messages import AnyMessage, HumanMessage, SystemMessage, ToolMessage
@@ -94,10 +95,12 @@ async def run(system: str, first: dict, tools: dict[str, Tool], schemas: list[di
         final = await asyncio.wait_for(app.ainvoke(init, config={"recursion_limit": max_rounds * 2 + 5}),
                                        timeout=timeout)
     except asyncio.TimeoutError:
-        log.warning("%s: 시간 안에 끝나지 않았어요", name)
+        log.warning("agent_failure name=%s reason=timeout", name)
         return None
     except Exception as e:
-        log.warning("%s 오류: %s", name, type(e).__name__)
+        log.warning("agent_failure name=%s reason=error error_type=%s", name, type(e).__name__)
         return None
     log.info("%s: 도구 %s번, 제출 %s", name, final["rounds"], final.get("submitted") is not None)
+    if final.get("submitted") is None:
+        log.info("agent_failure name=%s reason=no_submission", name)
     return {"submitted": final.get("submitted"), "rounds": final["rounds"]}

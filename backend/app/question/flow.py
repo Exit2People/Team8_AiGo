@@ -134,7 +134,10 @@ def bank_counts(qid: str, items: list[dict]) -> dict[str, int] | None:
     if not match:
         return None
     th = [themes_of(it["place"]) for it in items]
-    return {c: sum(1 for t in th if set(ts) & t) for c, ts in match.items()}
+    counts = {c: sum(1 for t in th if set(ts) & t) for c, ts in match.items()}
+    if qid == "fee":
+        counts["괜찮아요"] = len(items)  # 입장료가 있어도 된다는 답은 무료인 곳도 포함해요.
+    return counts
 
 
 def _splits(qid: str, items: list[dict] | None) -> bool:
@@ -147,19 +150,58 @@ def _splits(qid: str, items: list[dict] | None) -> bool:
     return len(live) >= 2 and any(n < len(items) for n in live)
 
 
+def narrowed_items(cond: Conditions, items: list[dict] | None) -> list[dict] | None:
+    """은행도 에이전트와 같은, 앞 답으로 좁힌 후보를 써요."""
+    if items is None:
+        return None
+    from app.question.agent import narrowed
+    from app.question.themes import themes_of, wish_themes
+
+    left = narrowed(cond, items)
+    # 에이전트가 만든 '북적이는 시장' 같은 선택지도 은행의 주제와 연결해요.
+    clues = [cond.extra.place, *cond.extra.wish, *(x.a for x in cond.ai if x.a)]
+    for clue in clues:
+        ts = wish_themes(clue)
+        if ts:
+            matched = [it for it in left if ts & themes_of(it["place"])]
+            if matched:
+                left = matched
+    return left
+
+
+def overlaps_asked(cond: Conditions, choices: list[str]) -> bool:
+    new = {_key(c) for c in choices if c not in ("잘 모르겠어요", "둘 다 좋아요", "상관없어요")}
+    return any(len(new & {_key(c) for c in x.choices}) >= 2 for x in cond.ai)
+
+
+def bank_available(cond: Conditions, qid: str, items: list[dict] | None) -> bool:
+    """모든 은행 진입점의 공통 검사: 반복 · 바람 · 남은 후보를 나누는지."""
+    from app.question.themes import wish_themes
+
+    selected = answer_themes(cond)
+    for clue in [cond.extra.place, *cond.extra.wish, *(x.a for x in cond.ai if x.a)]:
+        selected.update(wish_themes(clue))
+    # '시장'을 이미 골랐으면 시장/궁/전시를 다시 고르게 하지 않아요.
+    # 한 장소가 시장과 한옥 등 여러 주제에 속해도 이 결정은 유지해요.
+    repeats_topic = any(selected & set(ts) for ts in (BANK[qid]["match"] or {}).values())
+    return (qid not in asked_ids(cond) and not skipped(cond, qid)
+            and bank_fits_want(cond, qid)
+            and not repeats_topic
+            and not overlaps_asked(cond, BANK[qid]["choices"])
+            and _splits(qid, narrowed_items(cond, items)))
+
+
 def q4_id(cond: Conditions, items: list[dict] | None) -> str | None:
     pool = Q4_POOL.get(want_of(cond), Q4_POOL[None])
-    asked = asked_ids(cond)
     for qid in pool:
-        if not skipped(cond, qid) and qid not in asked and _splits(qid, items):
+        if bank_available(cond, qid, items):
             return qid
-    first = pool[0]
-    return None if skipped(cond, first) else first
+    return None
 
 
 def q5_fallback_id(cond: Conditions, items: list[dict] | None) -> str | None:
     qid = Q5_FALLBACK.get(want_of(cond), "walk")
-    if skipped(cond, qid) or qid in asked_ids(cond) or qid == q4_id(cond, items):
+    if not bank_available(cond, qid, items) or qid == q4_id(cond, items):
         return None
     return qid
 
@@ -215,12 +257,12 @@ def answer_themes(cond: Conditions) -> set[str]:
 def best_bank(cond: Conditions, items: list[dict] | None) -> str | None:
     from app.data.preferences import split_score
 
+    items = narrowed_items(cond, items)
     if not items:
         return None
-    asked = asked_ids(cond)
     best, score = None, -1.0
     for qid in BANK:
-        if qid == "budget" or qid in asked or skipped(cond, qid) or not bank_fits_want(cond, qid):
+        if qid == "budget" or not bank_available(cond, qid, items):
             continue
         counts = bank_counts(qid, items)
         if counts is None or not _splits(qid, items):
@@ -256,7 +298,7 @@ def next_step(cond: Conditions, answered: list[int]) -> dict:
             continue
         if no <= 4:
             # 3(하고 싶은 것을 이미 들었으면) · 4: 앞 말을 이어 받는 발전 질문 → 은행
-            items = today_items(cond)
+            items = narrowed_items(cond, today_items(cond))
             lead = lead_question(cond, items or [])
             if lead:
                 return stamp({"done": False, "no": no, **{k: v for k, v in lead.items() if k != "done"}})
@@ -267,7 +309,7 @@ def next_step(cond: Conditions, answered: list[int]) -> dict:
                 continue
         fb = None
         if config.question_mode() == "single":
-            items = today_items(cond)
+            items = narrowed_items(cond, today_items(cond))
             fid = q5_fallback_id(cond, items)
             fb = bank_question(fid, items, no) if fid else None
         return stamp({"done": False, "no": no, "needsAi": True, "fallback": fb})
