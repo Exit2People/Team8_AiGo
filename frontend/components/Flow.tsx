@@ -120,6 +120,7 @@ function useFlow() {
 
   const home = useCallback(() => {
     abortReq();
+    backTo.current = null; // 로그인 뒤 예전 화면으로 돌아가지 않게
     set((p) => ({
       ...initialState(),
       origin: p.origin,
@@ -498,7 +499,7 @@ function useFlow() {
 
   /* ---------- 찾기 (8.1) ---------- */
   const search = useCallback(
-    async (how: "push" | "stay", keepSeen = false) => {
+    async (how: "push" | "stay", keepSeen = false, lead = "") => {
       const p = sRef.current;
       abortReq();
       const ctrl = new AbortController();
@@ -534,8 +535,12 @@ function useFlow() {
           seen: Array.from(new Set([...(keepSeen ? q.seen : []), ...ids])),
           weather: r.weather?.weather ?? "",
         }));
+        // note()는 앞 안내를 덮어써서, 결과 보기 안내(lead)까지 한 줄로 합쳐요
+        const told: string[] = lead ? [lead] : [];
         if (r.expanded?.from?.length && r.expanded.words?.length)
-          setTimeout(() => note(`${r.expanded!.from.join(" · ")} → ${r.expanded!.words.join(" · ")}으로 넓혀 찾았어요`), 60);
+          told.push(`${r.expanded.from.join(" · ")} → ${r.expanded.words.join(" · ")}으로 넓혀 찾았어요`);
+        if (r.relaxed) told.push("가까운 곳이 없어서 조금 더 먼 곳까지 찾았어요");
+        if (told.length) setTimeout(() => note(told.join(" · ")), 60);
         window.dispatchEvent(new CustomEvent("aigo:badge", { detail: { ev: "recommend" } }));
         if (how === "push" || top().k !== "result") go({ k: "result" });
       } catch (e) {
@@ -557,12 +562,13 @@ function useFlow() {
     const filled = [...p.filled];
     const told: string[] = [];
     const patch: Partial<FlowState> = { preparing: -1, qNotice: false };
-    if (p.body == null) {
+    // undefined = 아직 안 물어봄. null(잘 모르겠어요)은 조건 없음으로 두고 덮어쓰지 않아요
+    if (p.body === undefined) {
       patch.body = "좀 무거워요";
       filled.push("body");
       told.push("몸 → 좀 무거워요");
     }
-    if (p.time == null) {
+    if (p.time === undefined) {
       patch.time = "반나절";
       filled.push("time");
       told.push("시간 → 반나절");
@@ -574,10 +580,8 @@ function useFlow() {
     patch.filled = Array.from(new Set(filled));
     patch.qs = p.qs.filter((q) => q.answered);
     set(patch);
-    search("push").then(() => {
-      if (told.length) note(`답하지 않은 건 무난하게 정했어요 · ${told.join(" · ")}`);
-    });
-  }, [abortReq, note, search, set]);
+    search("push", false, told.length ? `답하지 않은 건 무난하게 정했어요 · ${told.join(" · ")}` : "");
+  }, [abortReq, search, set]);
 
   /* ---------- 결과 · 고르기 (8.2 · 8.3) ---------- */
   const cand = (): Candidate | undefined => sRef.current.cands[sRef.current.idx];

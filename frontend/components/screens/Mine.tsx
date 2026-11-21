@@ -214,7 +214,7 @@ export function Upload({ f, stepKey }: { f: FlowApi; stepKey: string }) {
               }}
               placeholder="예) 단풍이 곱고 길이 완만했어요"
               aria-label="한 줄 남기기 · 비워도 돼요"
-              style={{ fontSize: "calc(16px * var(--fs))", paddingRight: 56 }}
+              style={{ "--in-base": "16px", paddingRight: 56 } as React.CSSProperties}
             />
             <div style={{ position: "absolute", right: 6, bottom: 10 }}>
               <Mic value={text} max={60} onText={(x) => { setText(x); pending.text = x; }} />
@@ -248,7 +248,7 @@ export function Cut({ f, stepKey }: { f: FlowApi; stepKey: string }) {
       const ok =
         !!v &&
         !!pending.photo &&
-        saveStamp({ id: v.id, name: v.name, date: v.date, photo: pending.photo, text: "", tags: [], at: Date.now() });
+        saveStamp({ id: v.id, name: v.name, date: v.date, photo: pending.photo, text: pending.text.trim().slice(0, 60), tags: [], at: Date.now() });
       if (!ok) {
         f.note("우표를 저장하지 못했어요. 사진을 다시 골라 주세요.");
         f.back();
@@ -364,7 +364,7 @@ export function Review({ f, stepKey, edit }: { f: FlowApi; stepKey: string; edit
           직접 쓰기
         </p>
         <div style={{ position: "relative", marginTop: 6 }}>
-          <textarea className="textbox" rows={2} maxLength={60} value={text} onChange={(e) => setText(e.target.value)} style={{ fontSize: "calc(17px * var(--fs))", paddingRight: 60 }} aria-label="직접 쓰기" />
+          <textarea className="textbox" rows={2} maxLength={60} value={text} onChange={(e) => setText(e.target.value)} style={{ "--in-base": "17px", paddingRight: 60 } as React.CSSProperties} aria-label="직접 쓰기" />
           <div style={{ position: "absolute", right: 6, top: 8 }}>
             <Mic value={text} max={60} onText={setText} />
           </div>
