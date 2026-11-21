@@ -54,9 +54,14 @@ export default function Login({ f }: { f: FlowApi }) {
       <Secondary y={658} onClick={() => f.go({ k: "elogin" })}>
         이메일로 시작하기
       </Secondary>
-      <Caption y={744} onClick={guest} dark>
+      {/* 손님 길이 잘 보이게 큰 테두리 버튼으로 (QA: 밑줄 글자는 어르신 눈에 잘 안 띄어요) */}
+      <button
+        className="abs t-answer"
+        style={{ top: 730, left: 24, right: 24, height: 52, borderRadius: 16, border: "2px solid var(--ink)", background: "transparent", fontWeight: 800 }}
+        onClick={guest}
+      >
         로그인 없이 쓸게요
-      </Caption>
+      </button>
       <Caption y={800} dark>
         가입하면 이용약관과 개인정보 처리방침에 동의하게 돼요
       </Caption>

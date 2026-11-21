@@ -76,7 +76,8 @@ export function Ticket({ c, i, n, closed, expected }: { c: Candidate; i: number;
       <div className="abs" style={{ left: 20, width: 273, top: 421, borderTop: "2px dashed #C9C3BA" }} />
       {[
         ["노선", linesText(legs)],
-        ["출구", last?.exit ? last.exit : "안내 없음"],
+        // 출구 자료가 없으면 '안내 없음' 대신 걸리는 시간을 보여 줘요 (없는 정보를 크게 보이지 않게)
+        last?.exit ? ["출구", last.exit] : ["걸리는 시간", `${c.route?.totalMin ?? "-"}분`],
         ["걷기", `약 ${last?.walkMin ?? 0}분`],
       ].map(([k, v], n2) => (
         <div key={k} className="abs" style={{ left: 24 + n2 * 89, top: 440, width: 86 }}>
