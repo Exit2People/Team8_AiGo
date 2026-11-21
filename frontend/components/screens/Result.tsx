@@ -149,25 +149,42 @@ export default function Result({ f }: { f: FlowApi }) {
     <div className="content">
       {/* 티켓 영역: 프린터 입구(y 684) 아래는 잘려요 */}
       <div className="abs" style={{ left: 24, top: 62, width: 345, height: 622, overflow: "hidden" }}>
-        <div
-          style={{
-            position: "absolute",
-            left: 16,
-            top: 38,
-            transform: s.tearing ? "translateY(-40px) rotate(-3deg)" : `translateY(${y}px)`,
-            opacity: s.tearing ? 0 : 1,
-            transition: phase === "up" ? "transform 3s cubic-bezier(.3,0,.2,1)" : s.tearing ? "transform .9s ease, opacity .9s ease" : "none",
-          }}
-        >
-          <Ticket c={c} i={s.idx} n={s.cands.length} closed={closed} expected={soc?.expectedToday ?? 0} />
-        </div>
+        {s.tearing ? (
+          (["top", "bottom"] as const).map((part) => (
+            <div
+              key={part}
+              className={`tear-${part}`}
+              style={{
+                position: "absolute",
+                left: 16,
+                top: 38,
+                clipPath: part === "top" ? "inset(0 0 162px 0)" : "inset(422px 0 0 0)",
+                transformOrigin: part === "top" ? "20% 422px" : "80% 422px",
+              }}
+            >
+              <Ticket c={c} i={s.idx} n={s.cands.length} closed={closed} expected={soc?.expectedToday ?? 0} />
+            </div>
+          ))
+        ) : (
+          <div
+            style={{
+              position: "absolute",
+              left: 16,
+              top: 38,
+              transform: `translateY(${y}px)`,
+              transition: phase === "up" ? "transform 3s cubic-bezier(.3,0,.2,1)" : "none",
+            }}
+          >
+            <Ticket c={c} i={s.idx} n={s.cands.length} closed={closed} expected={soc?.expectedToday ?? 0} />
+          </div>
+        )}
       </div>
       {s.tearing && (
-        <span className="abs center-x t-title" style={{ top: 330, color: "var(--ink)" }} aria-hidden="true">
+        <span className="abs center-x t-title tear-word" style={{ top: 470, color: "var(--ink)" }} aria-hidden="true">
           찌익
         </span>
       )}
-      <div className="abs" style={{ left: 24, top: 652, opacity: shown ? 0.25 : 1, transition: "opacity .6s", filter: "drop-shadow(0 14px 26px rgba(89,20,15,.45))" }}>
+      <div className="abs" style={{ left: 24, top: 652, opacity: s.tearing ? 0 : shown ? 0.25 : 1, transform: s.tearing ? "translateY(120px)" : "none", transition: "opacity .6s, transform .7s", filter: "drop-shadow(0 14px 26px rgba(89,20,15,.45))" }}>
         <Printer led={phase !== "wait"} />
       </div>
       {shown && (

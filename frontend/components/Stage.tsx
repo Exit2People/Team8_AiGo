@@ -39,11 +39,15 @@ type Props = {
   coral: string;
   still?: boolean;
   inert?: boolean;
+  blink?: boolean;
+  wag?: boolean;
+  /** 담고가 옮겨 가는 시간 (초) */
+  move?: number;
   overlay?: ReactNode;
   children: ReactNode;
 };
 
-export default function Stage({ poseKey, pose, coral, still, inert, overlay, children }: Props) {
+export default function Stage({ poseKey, pose, coral, still, inert, overlay, children, blink, wag, move = 0.6 }: Props) {
   const appRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
   const botRef = useRef<HTMLDivElement>(null);
@@ -93,8 +97,9 @@ export default function Stage({ poseKey, pose, coral, still, inert, overlay, chi
         "--bleed": `${fit.bleed}px`,
         "--canvas-h": `${fit.ch}px`,
         "--coral": coral,
+        "--t-move": `${move}s`,
       } as React.CSSProperties)
-    : ({ "--coral": coral, width: "100%", height: "100dvh" } as React.CSSProperties);
+    : ({ "--coral": coral, "--t-move": `${move}s`, width: "100%", height: "100dvh" } as React.CSSProperties);
 
   return (
     <div className="viewport">
@@ -105,7 +110,7 @@ export default function Stage({ poseKey, pose, coral, still, inert, overlay, chi
           <div className="bg bg-coral" style={{ transform: `translateY(${bg.coralY}px)` }} />
           <div className="bg bg-deep" style={{ opacity: bg.deep }} />
           <div className="bg bg-warm" style={{ opacity: bg.warm }} />
-          <DamgoBack pose={p} />
+          <DamgoBack pose={p} blink={blink} wag={wag} />
           <div className="content-wrap" inert={inert || undefined}>
             {children}
           </div>

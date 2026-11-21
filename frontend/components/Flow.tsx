@@ -17,6 +17,7 @@ import type { Candidate, QuestionResp } from "@/lib/types";
 import { THEMES } from "@/lib/theme";
 import { useChat, type ChatApi } from "./useChat";
 import Celebrate, { canCelebrate, useBadges } from "./Celebrate";
+import { WAG, useIdle } from "./useIdle";
 import { clockText } from "@/lib/format";
 
 const NICKS = ["봄나들이", "햇살마중", "솔바람", "도란도란", "꽃마중", "느림보", "새벽길", "산들바람"];
@@ -38,7 +39,11 @@ function useFlow() {
   const client = useRef("");
   const nick = useRef("");
   const backTo = useRef<Step[] | null>(null);
+  /** 마지막 이동 방향 (질문 등장 연출은 뒤로 온 경우 건너뛰어요) */
+  const navDir = useRef<"go" | "replace" | "back">("go");
   const [still, setStill] = useState(false);
+  /** 연출 중 담고 자세 덮어쓰기 (가방 · 질문 등장) */
+  const [poseOv, setPoseOv] = useState<string | null>(null);
 
   const set = useCallback((fn: Partial<FlowState> | ((p: FlowState) => Partial<FlowState>)) => {
     const prev = sRef.current;
@@ -72,6 +77,7 @@ function useFlow() {
   const go = useCallback(
     (step: Step) => {
       if (noteTimer.current) clearTimeout(noteTimer.current);
+      navDir.current = "go";
       set((p) => ({ stack: [...p.stack, step], note: null }));
       try {
         history.pushState({ aigo: sRef.current.stack.length }, "");
@@ -84,6 +90,7 @@ function useFlow() {
 
   const replaceTop = useCallback(
     (step: Step) => {
+      navDir.current = "replace";
       set((p) => ({ stack: [...p.stack.slice(0, -1), step] }));
     },
     [set],
@@ -171,6 +178,7 @@ function useFlow() {
         }
       }
       if (noteTimer.current) clearTimeout(noteTimer.current);
+      navDir.current = "back";
       set((q) => ({ stack: q.stack.slice(0, -1), note: null, preparing: -1, qNotice: false }));
     }
     window.addEventListener("popstate", onPop);
@@ -630,6 +638,9 @@ function useFlow() {
   return {
     s,
     sRef,
+    navDir,
+    poseOv,
+    setPoseOv,
     arrive,
     setUser,
     refreshMe,
@@ -674,16 +685,23 @@ export default function Flow() {
   const poseKey = useMemo(() => {
     if (busy) return busy.startsWith("가까운") ? "kwait" : busy.startsWith("조금만") ? "wait" : "find";
     if (s.busy?.startsWith("질문 0")) return "ask";
+    if (f.poseOv) return f.poseOv;
     return poseOf(step, s);
-  }, [busy, s, step]);
+  }, [busy, s, step, f.poseOv]);
 
   const badges = useBadges(s.user);
+  const idle = useIdle(poseKey, !f.still && !busy && !f.poseOv && !s.busy);
+  const shownKey = idle.key;
+  const isResult = poseKey === "s4" || poseKey === "s4p";
   const cele = badges.queue.length && canCelebrate(s) ? badges.queue[0] : null;
 
   return (
     <Stage
       poseKey={poseKey}
-      pose={getPose(poseKey)}
+      pose={getPose(shownKey)}
+      blink={idle.blink}
+      wag={WAG.has(poseKey)}
+      move={idle.key !== poseKey ? 0.45 : isResult ? 1 : 0.6}
       coral={s.coral}
       still={f.still}
       inert={!!cele}

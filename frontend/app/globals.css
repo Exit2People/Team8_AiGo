@@ -63,7 +63,8 @@
 
   /* 움직임 */
   --t-move: 0.6s;
-  --ease: cubic-bezier(0.33, 0, 0.2, 1);
+  /* 스프링(Gentle) 대신 (4-animation 속도 곡선) */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   color-scheme: only light;
 }
@@ -219,6 +220,20 @@ a {
 }
 .damgo-tail {
   background: var(--gray);
+}
+.damgo.wag .tail-1 {
+  animation: wag1 0.9s ease-in-out infinite alternate;
+}
+.damgo.wag .tail-2 {
+  animation: wag2 0.9s ease-in-out infinite alternate;
+}
+@keyframes wag1 {
+  from { translate: 0 0; scale: 1; }
+  to { translate: -10px -18px; scale: 1.08; }
+}
+@keyframes wag2 {
+  from { translate: 0 0; scale: 1; }
+  to { translate: 6px 10px; scale: 0.92; }
 }
 .damgo-paw {
   background: var(--ink);
@@ -685,6 +700,36 @@ a {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* 티켓 뜯기 (8.3, 0.9초) */
+.tear-top {
+  animation: tearTop 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.tear-bottom {
+  animation: tearBottom 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.tear-word {
+  animation: fadeIn 0.2s ease both;
+}
+@keyframes tearTop {
+  0% { transform: none; opacity: 1; }
+  60% { transform: translate(-8px, -18px) rotate(-5deg); opacity: 1; }
+  100% { transform: translate(-14px, -40px) rotate(-7deg); opacity: 0; }
+}
+@keyframes tearBottom {
+  0% { transform: none; opacity: 1; }
+  60% { transform: translate(8px, 22px) rotate(4deg); opacity: 1; }
+  100% { transform: translate(14px, 80px) rotate(6deg); opacity: 0; }
+}
+
+/* 가는 길 판이 아래에서 60px 올라와요 */
+.rise-in {
+  animation: riseIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(60px); }
+  to { opacity: 1; transform: none; }
 }
 
 /* 움직임 줄이기 */

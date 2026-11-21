@@ -63,7 +63,7 @@ export default function Route({ f }: { f: FlowApi }) {
       <Sub y={140} style={{ color: "var(--ink)" }}>
         {`이동 시간 약 ${r?.totalMin ?? 0}분 · ${arrive}쯤 도착해요${r?.estimated ? " (어림)" : ""}`}
       </Sub>
-      <div className="abs scroll" style={{ left: 24, top: 176, width: 345, height: 470, background: "var(--white)", borderRadius: 24, boxShadow: "var(--sh-row)" }}>
+      <div className="abs scroll rise-in" style={{ left: 24, top: 176, width: 345, height: 470, background: "var(--white)", borderRadius: 24, boxShadow: "var(--sh-row)" }}>
         {list.map((k, i) => (
           <div key={i} style={{ position: "relative", minHeight: 118, padding: "12px 16px 14px 80px" }}>
             {i < list.length - 1 && <div style={{ position: "absolute", left: 38.5, top: 68, bottom: -6, borderLeft: "3px dotted var(--mute)" }} />}

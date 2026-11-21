@@ -5,6 +5,8 @@ import { Caption, Primary, Progress, Title } from "../ui";
 import { buildConditions, type Step } from "@/lib/flow";
 import { rangeSentence } from "@/lib/range";
 import { SLOT_NAME } from "@/lib/questions";
+import { useState } from "react";
+import Pack from "../Pack";
 
 type Row = { name: string; value: string; fix?: Step };
 
@@ -22,9 +24,16 @@ export default function Confirm({ f }: { f: FlowApi }) {
     rows.push({ name: q.slot ? SLOT_NAME[q.slot] : q.question, value: q.a ?? "상관없어요", fix: { k: "flex", i, edit: true } });
   });
   const cond = buildConditions(s);
+  const [packing, setPacking] = useState(false);
+  const go = () => {
+    if (packing) return;
+    if (f.still) return f.search("push");
+    setPacking(true);
+  };
 
   return (
     <div className="content">
+      <div style={{ opacity: packing ? 0.15 : 1, transition: "opacity .4s" }}>
       <Progress on={4} text="확인" />
       <Title y={112}>{"이대로\n찾아볼까요?"}</Title>
       <div className="list scroll" style={{ top: 262, height: 382, gap: 6, padding: "4px 0 12px" }}>
@@ -52,12 +61,28 @@ export default function Confirm({ f }: { f: FlowApi }) {
           {rangeSentence(s.origin?.name ?? "", cond.range)}
         </p>
       </div>
-      <Primary y={662} onClick={() => f.search("push")}>
-        이대로 찾기
-      </Primary>
-      <Caption y={746} onClick={f.home}>
-        처음부터 다시
-      </Caption>
+      </div>
+      {!packing && (
+        <>
+          <Primary y={662} onClick={go}>
+            이대로 찾기
+          </Primary>
+          <Caption y={746} onClick={f.home}>
+            처음부터 다시
+          </Caption>
+        </>
+      )}
+      {packing && (
+        <Pack
+          rows={rows}
+          onPose={f.setPoseOv}
+          onDone={() => {
+            f.setPoseOv(null);
+            setPacking(false);
+            f.search("push");
+          }}
+        />
+      )}
     </div>
   );
 }

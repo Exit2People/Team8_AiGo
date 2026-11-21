@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { FlowApi } from "../Flow";
 import { TileArrow } from "../Icons";
 import { Caption, Dots, Primary, Progress, Sheet, Sub } from "../ui";
@@ -12,6 +12,37 @@ type Props = { f: FlowApi; kind: "body" | "time" | "flex"; i?: number; edit?: bo
 export default function Question({ f, kind, i = 0, edit }: Props) {
   const { s } = f;
   const q = kind === "flex" ? s.qs[i] : null;
+  const ready = kind !== "flex" || !!q;
+  const base = kind === "flex" ? (q?.src === "ai" ? "q1" : "fb") : kind;
+  // 등장 연출 (5.2): 질문이 가운데 크게 0.9초 → 제자리로 0.6초 → 선택지가 올라와요
+  const [phase, setPhase] = useState<"in" | "top" | "base">(() => (edit || f.still || f.navDir.current === "back" ? "base" : "in"));
+  const h1 = useRef<HTMLHeadingElement>(null);
+  const [fx, setFx] = useState("none");
+  useLayoutEffect(() => {
+    if (!ready || phase !== "in") return;
+    const el = h1.current;
+    if (el) {
+      const w = el.scrollWidth;
+      const k = Math.min(1.75, 345 / Math.max(1, w));
+      setFx(`translate(${196.5 - (369 - (w * k) / 2)}px, 336px) scale(${k})`);
+    }
+    f.setPoseOv(`${base}In`);
+    const ts = [
+      setTimeout(() => {
+        setPhase("top");
+        f.setPoseOv(`${base}Top`);
+      }, 900),
+      setTimeout(() => {
+        setPhase("base");
+        f.setPoseOv(null);
+      }, 900 + 600 + 80),
+    ];
+    return () => {
+      ts.forEach(clearTimeout);
+      f.setPoseOv(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
 
   useEffect(() => {
     if (kind === "flex" && !q) f.prepare(i);
@@ -52,13 +83,28 @@ export default function Question({ f, kind, i = 0, edit }: Props) {
   return (
     <div className="content">
       {progress}
-      <h1 className="abs t-title pre" style={{ top: 140, right: 24, left: 150, textAlign: "right", fontSize: size }} tabIndex={-1}>
+      <h1
+        ref={h1}
+        className="abs t-title pre"
+        style={{
+          top: 140,
+          right: 24,
+          maxWidth: 219,
+          textAlign: "right",
+          fontSize: size,
+          transformOrigin: "100% 0",
+          transform: phase === "in" ? fx : "none",
+          transition: phase === "top" ? "transform .6s cubic-bezier(.45,0,.2,1)" : "none",
+          zIndex: 2,
+        }}
+        tabIndex={-1}
+      >
         {lines.join("\n")}
       </h1>
-      <Sub y={140 + lines.length * size * 1.22 + 10} align="right" style={{ left: 170 }}>
+      <Sub y={140 + lines.length * size * 1.22 + 10} align="right" style={{ left: 170, opacity: phase === "in" ? 0 : 1, transition: "opacity .4s" }}>
         {"하나를\n눌러 주세요"}
       </Sub>
-      <div className="abs" style={{ right: 24, top: 296, left: 150, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+      <div className="abs" style={{ opacity: phase === "base" ? 1 : 0, transition: "opacity .4s", right: 24, top: 296, left: 150, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
         {kind === "flex" && q!.src === "ai" && <span className="chip">AI가 고른 질문</span>}
         {s.heard.length > 0 && (
           <>
@@ -75,7 +121,15 @@ export default function Question({ f, kind, i = 0, edit }: Props) {
           </>
         )}
       </div>
-      <div className="tiles" style={{ top: 404 }}>
+      <div
+        className="tiles"
+        style={{
+          top: 404,
+          opacity: phase === "base" ? 1 : 0,
+          transform: phase === "base" ? "none" : "translateY(60px)",
+          transition: "opacity .45s ease, transform .55s cubic-bezier(.22,1,.36,1)",
+        }}
+      >
         {tiles.map((c, n) => {
           const hint = kind === "time" ? TIME.hints[c] : undefined;
           const on = cur === c;
@@ -101,12 +155,14 @@ export default function Question({ f, kind, i = 0, edit }: Props) {
           </button>
         )}
       </div>
-      {dkButton && (
-        <Primary y={650} onClick={() => pick(null)}>
-          {DONT_KNOW}
-        </Primary>
-      )}
-      <Caption y={dkButton ? 732 : 664}>{edit ? "하나를 누르면 확인으로 돌아가요" : "하나를 누르면 다음으로 넘어가요"}</Caption>
+      <div style={{ opacity: phase === "base" ? 1 : 0, transition: "opacity .4s" }}>
+        {dkButton && (
+          <Primary y={650} onClick={() => pick(null)}>
+            {DONT_KNOW}
+          </Primary>
+        )}
+        <Caption y={dkButton ? 732 : 664}>{edit ? "하나를 누르면 확인으로 돌아가요" : "하나를 누르면 다음으로 넘어가요"}</Caption>
+      </div>
     </div>
   );
 }
