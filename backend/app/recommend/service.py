@@ -161,10 +161,16 @@ async def recommend(cond: Conditions, visited: list[str]) -> dict:
         if by == "rule" and not verified:
             verified = pick_by_rule([x for x in pool if not x.get("overEstimate")], work_cond)
 
+    def done(res: dict) -> dict:
+        # 배포 환경 응답 시간을 재려고 남겨요. 글 · 조건 · 장소는 남기지 않아요
+        log.info("recommend by=%s n=%d why=%s %.2fs", res.get("by", "-"), len(res["candidates"]),
+                 res.get("why", "-"), time.monotonic() - t0)
+        return res
+
     if not verified:
-        return {"candidates": [], "notFound": True, "why": "none"}
+        return done({"candidates": [], "notFound": True, "why": "none"})
     if time.monotonic() - t0 > total:
-        return {"candidates": [], "notFound": True, "why": "timeout"}
+        return done({"candidates": [], "notFound": True, "why": "timeout"})
 
     shown = verified[: config.MAX_CANDIDATES]
     shown = await _measure_shown(shown, work_cond, now, min(config.TRANSIT_TIMEOUT, left(1.5)))
@@ -173,17 +179,17 @@ async def recommend(cond: Conditions, visited: list[str]) -> dict:
         real = [x for x in pool if x["route"].get("source") in ("tmap", "seoul") and x["place"]["id"] not in used]
         shown += pick_by_rule(real, work_cond, config.MAX_CANDIDATES - len(shown))
     if not shown:
-        return {"candidates": [], "notFound": True, "why": "none"}
+        return done({"candidates": [], "notFound": True, "why": "none"})
 
     cands = [_candidate(v) for v in shown]
     await info.attach(cands, [v["item"] for v in shown], min(config.INFO_TIMEOUT, left(0.3)))
     for c, v in zip(cands, shown):
         _finish(c, v["item"])
-    return {
+    return done({
         "candidates": cands, "notFound": False, "by": by, "weather": w,
         "dataAsOf": places_db.fetched_at(), "expanded": expanded,
         **({"relaxed": True} if relaxed else {}),
-    }
+    })
 
 
 async def _measure_shown(shown: list[dict], cond: Conditions, now, budget: float) -> list[dict]:
