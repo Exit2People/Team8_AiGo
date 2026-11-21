@@ -40,9 +40,11 @@ type Props = {
   scene?: string;
   overlay?: ReactNode;
   children: ReactNode;
+  /** 배지 축하 화면이 떠 있는 동안: 뒤 화면의 CSS 애니메이션을 그 자리에 멈춰요(globals.css .app.paused) */
+  paused?: boolean;
 };
 
-export default function Stage({ poseKey, pose, coral, still, inert, overlay, children, blink, wag, move = 0.6, scene = "" }: Props) {
+export default function Stage({ poseKey, pose, coral, still, inert, paused, overlay, children, blink, wag, move = 0.6, scene = "" }: Props) {
   const appRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
   const botRef = useRef<HTMLDivElement>(null);
@@ -76,6 +78,27 @@ export default function Stage({ poseKey, pose, coral, still, inert, overlay, chi
       window.visualViewport?.removeEventListener("resize", measure);
     };
   }, []);
+
+  // 배지 축하 중: CSS 애니메이션은 .app.paused로 멈추지만, 자세가 바뀔 때의 전환(transition)은 CSS로 멈출 수 없어서
+  // 뒤 화면에서 돌고 있는 애니메이션 · 전환을 모두 일시정지했다가, 축하 화면을 닫으면 그 자리에서 이어서 재생해요
+  useEffect(() => {
+    const app = appRef.current;
+    if (!paused || !app || typeof app.getAnimations !== "function") return;
+    const held = app.getAnimations({ subtree: true }).filter((a) => {
+      const t = (a.effect as KeyframeEffect | null)?.target as Element | null;
+      return a.playState === "running" && !!t && !t.closest(".celebrateDim");
+    });
+    held.forEach((a) => a.pause());
+    return () => {
+      held.forEach((a) => {
+        try {
+          if (a.playState === "paused") a.play();
+        } catch {
+          /* 그 사이 끝났거나 사라진 애니메이션 */
+        }
+      });
+    };
+  }, [paused]);
 
   const bg = bgFor(poseKey);
   const p = pose ?? getPose(poseKey);
@@ -163,7 +186,7 @@ export default function Stage({ poseKey, pose, coral, still, inert, overlay, chi
       />
       <div ref={topRef} style={{ position: "fixed", top: 0, height: "env(safe-area-inset-top)", width: 1, visibility: "hidden" }} />
       <div ref={botRef} style={{ position: "fixed", bottom: 0, height: "env(safe-area-inset-bottom)", width: 1, visibility: "hidden" }} />
-      <div ref={appRef} className={`app${still ? " still" : ""}`} style={style}>
+      <div ref={appRef} className={`app${still ? " still" : ""}${paused ? " paused" : ""}`} style={style}>
         <div className="canvas">
           <div className="bg bg-coral" style={{ transform: `translateY(${bg.coralY}px)` }} />
           <div className="bg bg-deep" style={{ opacity: bg.deep }} />

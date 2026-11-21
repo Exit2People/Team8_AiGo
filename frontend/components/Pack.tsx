@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type CSSProperties } from "react";
 import { Printer } from "./Icons";
+import { later } from "@/lib/pause";
 
 /**
  * 가방 담기 → 프린터 (figma-plugin: 13-1 ~ 13-4, PACK 시간 · preview-bag-motion.png)
@@ -67,8 +68,8 @@ export default function Pack({
   const [sok, setSok] = useState(0); // "쏙" 글자
 
   useEffect(() => {
-    const ts: ReturnType<typeof setTimeout>[] = [];
-    const at = (ms: number, fn: () => void) => ts.push(setTimeout(fn, ms));
+    const ts: (() => void)[] = [];
+    const at = (ms: number, fn: () => void) => ts.push(later(ms, fn)); // 배지 축하 중에는 멈춰요
     let t = 40;
     at(t, () => {
       setPhase("fold");
@@ -105,7 +106,7 @@ export default function Pack({
     t += T.morph + T.end;
     at(t, onDone);
     return () => {
-      ts.forEach(clearTimeout);
+      ts.forEach((cancel) => cancel());
       onPose(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

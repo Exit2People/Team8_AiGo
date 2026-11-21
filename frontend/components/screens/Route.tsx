@@ -7,6 +7,7 @@ import { rideText, speakTime } from "@/lib/format";
 import { photoIll } from "@/lib/illust";
 import type { Leg } from "@/lib/types";
 import { load, save } from "@/lib/device";
+import { later } from "@/lib/pause";
 
 type Card = { tag: string; name: string; desc: string; car?: string; end?: boolean };
 
@@ -43,11 +44,11 @@ export default function Route({ f }: { f: FlowApi }) {
     if (!c) return;
     f.loadSocial(c.place.id);
     if (s.user || load<string | null>("aigo.nudged", null) === "1") return;
-    const t = setTimeout(() => {
+    const cancel = later(1400, () => {
       setNudge(true);
       save("aigo.nudged", "1");
-    }, 1400);
-    return () => clearTimeout(t);
+    });
+    return cancel;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [c?.place.id]);
   if (!c) return null;

@@ -19,8 +19,9 @@ import { Game, Rank } from "./Game";
 import { Addr, Agree, Elogin, Kwait, Restore, Signup, Welcome } from "./Auth";
 import { Secondary, Sub, Title } from "../ui";
 
-export default function Screen({ f, step }: { f: FlowApi; step: Step }) {
-  const key = `${f.s.stack.length}-${step.k}`;
+/** at: 이 화면이 맨 위였을 때의 stack 길이. 넓은 화면에서 뒤에 깔린 화면 · 창 화면이 다시 만들어지지 않게 넘겨요 */
+export default function Screen({ f, step, at }: { f: FlowApi; step: Step; at?: number }) {
+  const key = `${at ?? f.s.stack.length}-${step.k}`;
   switch (step.k) {
     case "start":
       return <Start key={key} f={f} />;
