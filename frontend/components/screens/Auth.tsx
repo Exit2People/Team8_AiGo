@@ -8,7 +8,7 @@ import Mic, { cleanNick } from "../Mic";
 import HomePicker from "./HomePicker";
 import * as api from "@/lib/api";
 import { discardDevice, restoreDevice } from "@/lib/device";
-import { isNick, randomNick } from "@/lib/nick";
+import { nickProblem, randomNick } from "@/lib/nick";
 
 /** 이메일 가입 중인 값 (화면 사이에서 이어져요, 기기에 남기지 않아요) */
 const draft = { email: "", pw: "", pw2: "", code: "", nick: "", age: "", home: "" as string, provider: "kakao" as "kakao" | "email" };
@@ -361,11 +361,16 @@ export function Signup({ f, i }: { f: FlowApi; i: number }) {
       const made = randomNick();
       store(made);
       f.note(`닉네임을 '${made}'(으)로 지어 드렸어요. 내 정보에서 바꿀 수 있어요`);
-    } else if (k === "nick" && !isNick(t)) return f.note("닉네임은 2 ~ 8자, 한글 · 영어 · 숫자만 돼요");
+    } else if (k === "nick" && nickProblem(t)) return f.note(nickProblem(t)!);
     if (k === "age" && !(/^\d+$/.test(t) && +t >= 14 && +t <= 120)) return f.note("나이를 숫자로 적어 주세요");
     setBusy(true);
     try {
       if (k === "pw") await api.emailStart(draft.email.trim(), draft.pw);
+      if (k === "nick" && t) {
+        // 욕설 · 성적 · 범죄 같은 내용은 서버가 보고 이유를 알려 줘요 (가입 마지막에 막히지 않게 여기서 미리)
+        const r = await api.nicknameCheck(t);
+        if (!r.ok) return f.note(r.message || "쓸 수 없는 닉네임이에요. 다른 이름을 지어 주세요");
+      }
       if (k === "code") {
         const r = await api.emailVerify(t);
         if (r.restorable) return f.go({ k: "restore" });

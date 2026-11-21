@@ -13,6 +13,7 @@ import { BadgeCard } from "../Badges";
 import { GameCard, loadBest } from "../DamgoRun";
 import { TextSizePicker } from "../TextSize";
 import { THEMES } from "@/lib/theme";
+import { nickProblem } from "@/lib/nick";
 
 function Group({ y, children }: { y?: number; children: ReactNode }) {
   return (
@@ -222,7 +223,7 @@ export function MyEdit({ f, field }: { f: FlowApi; field: keyof typeof FIELDS })
   const [busy, setBusy] = useState(false);
   async function saveIt() {
     const t = v.trim();
-    if (field === "nickname" && !/^[가-힣A-Za-z0-9]{2,8}$/.test(t)) return f.note("닉네임은 2 ~ 8자, 한글 · 영어 · 숫자만 돼요");
+    if (field === "nickname" && nickProblem(t)) return f.note(nickProblem(t)!);
     if (field === "age" && !(/^\d+$/.test(t) && +t >= 14 && +t <= 120)) return f.note("나이를 숫자로 적어 주세요");
     setBusy(true);
     try {
@@ -231,6 +232,7 @@ export function MyEdit({ f, field }: { f: FlowApi; field: keyof typeof FIELDS })
       if (m.loggedIn) f.setUser(m);
       f.backWith("저장했어요");
     } catch (e) {
+      // 닉네임이 안 되면 서버가 이유 문장(예: 욕설이 감지되어 …)을 돌려줘요
       f.note(api.errText(e));
       setBusy(false);
     }
@@ -265,6 +267,11 @@ export function MyEdit({ f, field }: { f: FlowApi; field: keyof typeof FIELDS })
               </div>
             )}
           </div>
+        )}
+        {field === "nickname" && v.trim() && nickProblem(v) && (
+          <p className="t-caption c-deep" role="alert" style={{ marginTop: 8 }}>
+            {nickProblem(v)}
+          </p>
         )}
         {field === "home1" && v && (
           <button className="btn btn-white" style={{ position: "relative", width: "100%", marginTop: 12 }} onClick={() => setV("")}>
