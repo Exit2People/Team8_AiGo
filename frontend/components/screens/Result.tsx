@@ -79,7 +79,8 @@ export function Ticket({ c, i, n, closed, expected }: { c: Candidate; i: number;
       ].map(([k, v], n2) => (
         <div key={k} className="abs" style={{ left: 24 + n2 * 89, top: 440, width: 86 }}>
           <span className="t-tlabel c-tgray">{k}</span>
-          <p className="t-tvalue" style={{ marginTop: 6, fontSize: v.length > 5 ? 16 : 22, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {/* 가이드: 칸 이름 y 440 · 칸 값 y 456 (22 / 줄 높이 1) */}
+          <p className="t-tvalue" style={{ position: "absolute", top: 16, left: 0, width: 86, fontSize: v.length > 5 ? 16 : 22, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {v}
           </p>
         </div>
@@ -88,8 +89,9 @@ export function Ticket({ c, i, n, closed, expected }: { c: Candidate; i: number;
         ["타는 곳", first?.station ?? "출발 동"],
         ["갈아타기", transfers ? `${transfers}번` : "없음"],
         ["운영 상황", closed ? "닫음" : c.open?.today ?? "운영 시간 확인 필요"],
+        // 가이드: 칸 값(456 ~ 478) 아래 489부터 19씩, 바코드(548) 위에서 끝나요
       ].map(([k, v], n2) => (
-        <div key={k} className="abs" style={{ left: 24, right: 24, top: 482 + n2 * 19, display: "flex", justifyContent: "space-between", gap: 8 }}>
+        <div key={k} className="abs" style={{ left: 24, right: 24, top: 489 + n2 * 19, height: 15, alignItems: "center", display: "flex", justifyContent: "space-between", gap: 8 }}>
           <span className="t-tmeta c-tgray" style={{ flex: "none" }}>
             {k}
           </span>
