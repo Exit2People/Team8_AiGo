@@ -257,8 +257,10 @@ html.ios .viewport {
   transform-origin: center;
   transition: transform 0.12s ease;
 }
+/* 깜빡일 때 흰자가 하나도 안 보이게 끝까지 감아요 (감기는 건 빠르게, 뜨는 건 위 0.12초로 천천히) */
 .damgo.blink .damgo-eye {
-  transform: scaleY(0.1);
+  transform: scaleY(0);
+  transition: transform 0.07s ease-in;
 }
 .damgo-tail,
 .damgo-paw {
@@ -963,3 +965,4 @@ html.ios .textbox {
 @keyframes cbIn { from { opacity: 0; transform: translateY(40px) scale(0.92); } to { opacity: 1; transform: none; } }
 @keyframes cbPop { 0% { transform: scale(0.2) rotate(-25deg); opacity: 0; } 60% { transform: scale(1.12) rotate(6deg); opacity: 1; } 100% { transform: none; } }
 @keyframes cbSpin { to { transform: rotate(360deg); } }
+
