@@ -7,7 +7,8 @@ import Mic from "../Mic";
 import * as api from "@/lib/api";
 import { readStamps, readVisits, removeStamp, saveStamp, today, type Stamp, type Visit } from "@/lib/device";
 import { photoIll } from "@/lib/illust";
-import { BADGES, TIERS, badgeImg, progress, recOf, type BadgeDef } from "@/lib/badges";
+import { badgeStates, type BadgeState } from "@/lib/badges";
+import { BadgeBoard, BadgeSheet } from "../Badges";
 import type { ReviewsResp } from "@/lib/types";
 
 const TAGS = ["걷기 편해요", "경치가 좋아요", "쉴 곳이 많아요", "사람이 많아요"];
@@ -213,7 +214,7 @@ export function Upload({ f, stepKey }: { f: FlowApi; stepKey: string }) {
               }}
               placeholder="예) 단풍이 곱고 길이 완만했어요"
               aria-label="한 줄 남기기 · 비워도 돼요"
-              style={{ fontSize: 16, paddingRight: 56 }}
+              style={{ fontSize: "calc(16px * var(--fs))", paddingRight: 56 }}
             />
             <div style={{ position: "absolute", right: 6, bottom: 10 }}>
               <Mic value={text} max={60} onText={(x) => { setText(x); pending.text = x; }} />
@@ -305,8 +306,8 @@ export function Stamped({ f, stepKey }: { f: FlowApi; stepKey: string }) {
             background: "rgba(255,255,255,.4)",
           }}
         >
-          <span style={{ fontSize: 15 }}>{(st?.name ?? "").slice(0, 4)}</span>
-          <span style={{ fontSize: 12, fontFamily: "var(--mono)" }}>{d.replace(/-/g, ".")}</span>
+          <span style={{ fontSize: "calc(15px * var(--fs))" }}>{(st?.name ?? "").slice(0, 4)}</span>
+          <span style={{ fontSize: "calc(12px * var(--fs))", fontFamily: "var(--mono)" }}>{d.replace(/-/g, ".")}</span>
         </span>
       </div>
       <Title y={600} align="center" size="m">{`${st?.name ?? ""} 우표를\n붙였어요`}</Title>
@@ -351,7 +352,7 @@ export function Review({ f, stepKey, edit }: { f: FlowApi; stepKey: string; edit
                 key={t}
                 className="chip"
                 aria-pressed={on}
-                style={{ height: 40, lineHeight: "40px", borderRadius: 20, fontSize: 16, padding: "0 16px", background: on ? "var(--ink)" : "var(--soft)", color: on ? "#fff" : "var(--ink)" }}
+                style={{ height: 40, lineHeight: "40px", borderRadius: 20, fontSize: "calc(16px * var(--fs))", padding: "0 16px", background: on ? "var(--ink)" : "var(--soft)", color: on ? "#fff" : "var(--ink)" }}
                 onClick={() => setTags(on ? tags.filter((x) => x !== t) : [...tags, t])}
               >
                 {t}
@@ -363,7 +364,7 @@ export function Review({ f, stepKey, edit }: { f: FlowApi; stepKey: string; edit
           직접 쓰기
         </p>
         <div style={{ position: "relative", marginTop: 6 }}>
-          <textarea className="textbox" rows={2} maxLength={60} value={text} onChange={(e) => setText(e.target.value)} style={{ fontSize: 17, paddingRight: 60 }} aria-label="직접 쓰기" />
+          <textarea className="textbox" rows={2} maxLength={60} value={text} onChange={(e) => setText(e.target.value)} style={{ fontSize: "calc(17px * var(--fs))", paddingRight: 60 }} aria-label="직접 쓰기" />
           <div style={{ position: "absolute", right: 6, top: 8 }}>
             <Mic value={text} max={60} onText={setText} />
           </div>
@@ -431,7 +432,7 @@ export function Sdetail({ f, stepKey }: { f: FlowApi; stepKey: string }) {
           )}
           {rv?.items.map((r) => (
             <div key={r.id} style={{ marginTop: 12, borderTop: "1.5px solid var(--soft)", paddingTop: 10 }}>
-              <p className="t-answer" style={{ fontSize: 16, lineHeight: 1.35 }}>
+              <p className="t-answer" style={{ fontSize: "calc(16px * var(--fs))", lineHeight: 1.35 }}>
                 {r.text}
               </p>
               <p className="t-item c-mute" style={{ marginTop: 4 }}>
@@ -465,7 +466,7 @@ export function Sdetail({ f, stepKey }: { f: FlowApi; stepKey: string }) {
 /** 업적 (4.5 badges, 11.4) */
 export function Badges({ f }: { f: FlowApi }) {
   const u = f.s.user;
-  const [open, setOpen] = useState<BadgeDef | null>(null);
+  const [open, setOpen] = useState<BadgeState | null>(null);
   if (!u) {
     return (
       <div className="content">
@@ -477,92 +478,16 @@ export function Badges({ f }: { f: FlowApi }) {
       </div>
     );
   }
-  const r = recOf(u.id);
-  const has = !!u.homeDong1;
-  const gotN = BADGES.filter((b) => r.got[b.id]).length;
+  const states = badgeStates(u.id, !!u.homeDong1);
+  const gotN = states.filter((s) => s.earnedAt).length;
   return (
     <div className="content">
       <Title y={104}>업적</Title>
-      <Sub y={150}>{`30개 중 ${gotN}개를 모았어요`}</Sub>
-      <div className="abs scroll" style={{ left: 24, right: 24, top: 196, bottom: 20, paddingBottom: 30 }}>
-        {TIERS.map((t) => {
-          const list = BADGES.filter((b) => b.tier === t.tier);
-          return (
-            <div key={t.tier} className="card" style={{ position: "relative", left: 0, width: "100%", marginBottom: 14 }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span className="t-answer">
-                  {t.name} <span className="t-caption c-mute">{t.level}</span>
-                </span>
-                <span className="t-count">
-                  {list.filter((b) => r.got[b.id]).length} / {list.length}
-                </span>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginTop: 12 }}>
-                {list.map((b) => {
-                  const got = !!r.got[b.id];
-                  const cur = Math.min(progress(b.id, r, has), b.target);
-                  return (
-                    <button key={b.id} onClick={() => setOpen(b)} style={{ textAlign: "center" }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={badgeImg(b, got)} alt="" width={72} height={72} style={{ opacity: got ? 1 : 0.35, display: "block", margin: "0 auto" }} />
-                      <span className="t-item" style={{ display: "block", marginTop: 4, lineHeight: 1.25 }}>
-                        {b.hidden && !got ? "숨은 업적" : b.name}
-                      </span>
-                      {!got && !b.hidden && b.target > 1 && (
-                        <span style={{ display: "block", height: 5, borderRadius: 3, background: "var(--soft)", marginTop: 4, overflow: "hidden" }}>
-                          <span style={{ display: "block", height: "100%", width: `${(cur / b.target) * 100}%`, background: "var(--coral)" }} />
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+      <Sub y={150}>{`${states.length}개 중 ${gotN}개를 모았어요`}</Sub>
+      <div className="abs scroll" style={{ left: 24, right: 24, top: 196, bottom: 0, paddingBottom: 30 }}>
+        <BadgeBoard states={states} onPick={setOpen} />
       </div>
-      {open && (
-        <div className="modal-bg" onClick={() => setOpen(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" style={{ textAlign: "center" }}>
-            {(() => {
-              const got = r.got[open.id];
-              const t = TIERS.find((x) => x.tier === open.tier);
-              const cur = progress(open.id, r, has);
-              return (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={badgeImg(open, !!got)} alt="" width={140} height={140} style={{ opacity: got ? 1 : 0.4 }} />
-                  <p className="t-label c-deep" style={{ marginTop: 8 }}>
-                    {t?.name} · {t?.level}
-                  </p>
-                  <p className="t-title" style={{ marginTop: 6 }}>
-                    {open.hidden && !got ? "숨은 업적" : open.name}
-                  </p>
-                  <p className="t-sub c-mute pre" style={{ marginTop: 8 }}>
-                    {open.hidden && !got ? "어떻게 얻는지는 비밀이에요.\n나들이를 하다 보면 만날 거예요" : open.condition}
-                  </p>
-                  {got ? (
-                    <p className="t-answer" style={{ marginTop: 10 }}>
-                      {new Date(got).getFullYear()}년 {new Date(got).getMonth() + 1}월 {new Date(got).getDate()}일에 얻었어요
-                    </p>
-                  ) : open.target > 1 ? (
-                    <p className="t-answer" style={{ marginTop: 10 }}>
-                      {Math.min(cur, open.target)} / {open.target}
-                    </p>
-                  ) : (
-                    <p className="t-answer" style={{ marginTop: 10 }}>
-                      아직 얻지 못했어요
-                    </p>
-                  )}
-                  <button className="btn btn-secondary" onClick={() => setOpen(null)}>
-                    닫기
-                  </button>
-                </>
-              );
-            })()}
-          </div>
-        </div>
-      )}
+      {open && <BadgeSheet state={states.find((s) => s.def.id === open.def.id) ?? open} onClose={() => setOpen(null)} />}
     </div>
   );
 }

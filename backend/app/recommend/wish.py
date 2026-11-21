@@ -73,10 +73,16 @@ def matches_place(p: dict, place: str | None) -> bool:
     return False
 
 
+# 명세(04_CONSTANTS)의 분위기는 손주 → 동물 · 넓은 곳, 혼자 → 조용한 곳이에요.
+# 스냅숏 장소 DB에는 그 분위기 값이 0곳이라, 실제로 있는 값 중 같은 뜻인 것을 더해요 (09_ACCEPTANCE 3.10).
+WHO_MOODS = {
+    "손주": {"동물", "넓은 곳", "교육/체험", "산책"},
+    "혼자": {"조용한 곳", "전시", "전시/미술", "역사"},
+}
+
+
 def matches_who(p: dict, who: str | None) -> bool:
-    mood = set(p.get("mood") or [])
-    if who == "손주":
-        return bool(mood & {"동물", "넓은 곳"})
-    if who == "혼자":
-        return "조용한 곳" in mood
-    return False
+    want = WHO_MOODS.get(who or "")
+    if not want:
+        return False
+    return bool(set(p.get("mood") or []) & want)

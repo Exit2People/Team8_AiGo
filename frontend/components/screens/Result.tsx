@@ -22,7 +22,8 @@ export function Ticket({ c, i, n, closed, expected }: { c: Candidate; i: number;
   const size = placeNameSize(name);
   const transfers = c.route?.transfers ?? 0;
   return (
-    <div style={{ position: "relative", width: 313, height: 584, filter: "drop-shadow(0 10px 16px rgba(89,20,15,.3))" }}>
+    // 티켓은 칸 위치가 정해진 인쇄물 모양이라 글씨 크기 설정과 상관없이 기준 크기로 그려요(넘치거나 겹치지 않게)
+    <div style={{ position: "relative", width: 313, height: 584, filter: "drop-shadow(0 10px 16px rgba(89,20,15,.3))", ["--fs" as string]: 1, ["--fs-t" as string]: 1 }}>
       <TicketPaper />
       <div style={{ position: "absolute", left: 12, top: 12, width: 289, height: 170, borderRadius: 12, overflow: "hidden", background: "var(--chip)" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -78,7 +79,9 @@ export function Ticket({ c, i, n, closed, expected }: { c: Candidate; i: number;
         ["걷기", `약 ${last?.walkMin ?? 0}분`],
       ].map(([k, v], n2) => (
         <div key={k} className="abs" style={{ left: 24 + n2 * 89, top: 440, width: 86 }}>
-          <span className="t-tlabel c-tgray">{k}</span>
+          <span className="t-tlabel c-tgray" style={{ display: "block" }}>
+            {k}
+          </span>
           {/* 가이드: 칸 이름 y 440 · 칸 값 y 456 (22 / 줄 높이 1) */}
           <p className="t-tvalue" style={{ position: "absolute", top: 16, left: 0, width: 86, fontSize: v.length > 5 ? 16 : 22, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {v}

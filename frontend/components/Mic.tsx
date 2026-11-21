@@ -69,6 +69,7 @@ export default function Mic({
   pause = 2000,
   max = 200,
   clean,
+  up,
 }: {
   value: string;
   onText: (v: string) => void;
@@ -76,6 +77,8 @@ export default function Mic({
   pause?: number;
   max?: number;
   clean?: (s: string) => string;
+  /** 안내 말풍선을 버튼 위에 띄워요(화면 맨 아래 입력칸용) */
+  up?: boolean;
 }) {
   const [ok, setOk] = useState(false);
   const [on, setOn] = useState(false);
@@ -224,7 +227,7 @@ export default function Mic({
           style={{
             position: "absolute",
             right: 0,
-            top: 54,
+            ...(up ? { bottom: 54 } : { top: 54 }),
             whiteSpace: "nowrap",
             background: "var(--ink)",
             color: "var(--white)",

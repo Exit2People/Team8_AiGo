@@ -120,7 +120,7 @@ export function DongScreen({ f, gu }: { f: FlowApi; gu: string }) {
       <Sub y={196}>{`${gu}에 있는\n동이에요`}</Sub>
       <div ref={ref} className="grid2" style={{ top: 266, height: 440, paddingBottom: 12 }}>
         {list.map((d) => (
-          <button key={d.id} className="pick" style={{ fontSize: d.name.length > 6 ? 15 : 18 }} onClick={() => f.setOriginDong(d)}>
+          <button key={d.id} className="pick" style={{ fontSize: `calc(${d.name.length > 6 ? 15 : 18}px * var(--fs))` }} onClick={() => f.setOriginDong(d)}>
             {d.name}
           </button>
         ))}
