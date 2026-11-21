@@ -11,6 +11,8 @@ import Result from "./Result";
 import Route from "./Route";
 import NotFound from "./NotFound";
 import Login from "./Login";
+import { Arrive, ChatJoin, Guestbook } from "./Social";
+import Chat from "./Chat";
 import { Secondary, Sub, Title } from "../ui";
 
 export default function Screen({ f, step }: { f: FlowApi; step: Step }) {
@@ -41,6 +43,14 @@ export default function Screen({ f, step }: { f: FlowApi; step: Step }) {
       return <Route key={key} f={f} />;
     case "notFound":
       return <NotFound key={key} f={f} why={step.why} />;
+    case "guestbook":
+      return <Guestbook key={key} f={f} />;
+    case "arrive":
+      return <Arrive key={key} f={f} />;
+    case "chatjoin":
+      return <ChatJoin key={key} f={f} />;
+    case "chat":
+      return <Chat key={key} f={f} />;
     case "login":
       return <Login key={key} f={f} />;
     default:

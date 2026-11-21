@@ -86,6 +86,7 @@ export type FlowState = {
   /** 질문 준비 중인 번호 (-1 = 없음) */
   preparing: number;
   qNotice: boolean;
+  arrivedAt: string;
 };
 
 export const initialState = (): FlowState => ({
@@ -115,6 +116,7 @@ export const initialState = (): FlowState => ({
   coral: "#FF5A4F",
   preparing: -1,
   qNotice: false,
+  arrivedAt: "",
 });
 
 /** 조건 묶음 만들기 (02_ARCHITECTURE 3-1) */

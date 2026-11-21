@@ -15,12 +15,14 @@ import { buildConditions, initialState, poseOf, type FlowState, type Q, type Ste
 import { getPose } from "@/lib/poses";
 import type { Candidate, QuestionResp } from "@/lib/types";
 import { THEMES } from "@/lib/theme";
+import { useChat, type ChatApi } from "./useChat";
+import { clockText } from "@/lib/format";
 
 const NICKS = ["봄나들이", "햇살마중", "솔바람", "도란도란", "꽃마중", "느림보", "새벽길", "산들바람"];
 
 type Req = { ctrl: AbortController; kind: "search" | "q" | "open" };
 
-export type FlowApi = ReturnType<typeof useFlow>;
+export type FlowApi = ReturnType<typeof useFlow> & { chat: ChatApi };
 
 function isAbort(e: unknown) {
   return e instanceof DOMException && e.name === "AbortError";
@@ -598,9 +600,20 @@ function useFlow() {
     [go, later, replaceTop, set, still],
   );
 
+  /** 도착했어요 (9.1) */
+  const arrive = useCallback(() => {
+    const c = cand();
+    if (!c) return;
+    set({ arrivedAt: clockText() });
+    window.dispatchEvent(new CustomEvent("aigo:badge", { detail: { ev: "arrive", id: c.place.id, kind: c.place.kind, gu: c.place.gu } }));
+    go({ k: "arrive" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [go, set]);
+
   return {
     s,
     sRef,
+    arrive,
     set,
     go,
     replaceTop,
@@ -633,7 +646,9 @@ function useFlow() {
 }
 
 export default function Flow() {
-  const f = useFlow();
+  const base = useFlow();
+  const chat = useChat({ s: base.s, client: base.client, nick: base.nick, note: base.note, replaceTop: base.replaceTop });
+  const f: FlowApi = { ...base, chat };
   const { s } = f;
   const step = s.stack[s.stack.length - 1];
   const busy = s.busy && !s.busy.startsWith("질문") ? s.busy : null;

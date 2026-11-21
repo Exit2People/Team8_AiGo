@@ -61,7 +61,7 @@ export default function Route({ f }: { f: FlowApi }) {
     <div className="content">
       <Title y={100}>{`${c.place.name} 가는 길`}</Title>
       <Sub y={140} style={{ color: "var(--ink)" }}>
-        {`이동 시간 약 ${r?.totalMin ?? 0}분 · ${arrive}쯤 도착해요`}
+        {`이동 시간 약 ${r?.totalMin ?? 0}분 · ${arrive}쯤 도착해요${r?.estimated ? " (어림)" : ""}`}
       </Sub>
       <div className="abs scroll" style={{ left: 24, top: 176, width: 345, height: 470, background: "var(--white)", borderRadius: 24, boxShadow: "var(--sh-row)" }}>
         {list.map((k, i) => (
@@ -108,7 +108,7 @@ export default function Route({ f }: { f: FlowApi }) {
       <a className="btn btn-white" style={{ left: 24, top: 660, width: 166, justifyContent: "center" }} href={kakao} target="_blank" rel="noopener noreferrer">
         카카오맵 보기
       </a>
-      <button className="btn btn-primary" style={{ left: 203, top: 660, width: 166, justifyContent: "center" }} onClick={() => window.dispatchEvent(new CustomEvent("aigo:arrive"))}>
+      <button className="btn btn-primary" style={{ left: 203, top: 660, width: 166, justifyContent: "center" }} onClick={f.arrive}>
         도착했어요
       </button>
       <p className="abs center-x t-caption c-sub pre" style={{ top: 736, left: 24, right: 24 }}>
