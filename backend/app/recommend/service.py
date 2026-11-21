@@ -142,14 +142,9 @@ def _relax(cond: Conditions, now, wtext, visited, shown_set: set[str],
     return items, wide
 
 
-async def _expand_by_code(cond: Conditions, items: list[dict], pool: list[dict], now, wtext,
-                          left, visited) -> tuple[list[dict], Conditions, dict | None]:
-    """바람이 목록에 그대로 없으면 AI 한 번으로 말을 넓혀 찾아요 (코드 길)."""
-    if not (ex.needs_expand(cond, items) and config.has_ai()) or left(3.0) <= 0.5:
-        return pool, cond, None
-    words, places = await ex.expand(cond, left(3.0))
-    if not (words or places):
-        return pool, cond, None
+async def _apply_expand(cond: Conditions, items: list[dict], pool: list[dict], words: list[str], places: list[str],
+                        now, wtext, left, visited) -> tuple[list[dict], Conditions, dict]:
+    """넓힌 말 · 시설 이름으로 찾은 곳을 후보에 더해요 (코드 길)."""
     work_cond = cond.model_copy(deep=True)
     work_cond.extra.expanded = words
     have = {x["place"]["id"] for x in pool}
@@ -226,6 +221,8 @@ async def recommend(cond: Conditions, visited: list[str], shown: list[str] | Non
             log.info("추천 에이전트를 못 써서 코드 길로 가요")
 
     if by != "agent":
+        # 에이전트 길에서 이미 길을 쟀으면 다시 재지 않아요
+        refined = agent_mode and bool(items)
         if not items:
             got = _relax(cond, now, wtext, visited, shown_set, visited_set)
             if got:
@@ -234,12 +231,28 @@ async def recommend(cond: Conditions, visited: list[str], shown: list[str] | Non
                 work_cond = cond.model_copy(deep=True)
                 if expanded:
                     work_cond.extra.expanded = list(expanded.get("words") or [])
-                pool = []
-        if items and not pool:
-            pool, _stats = await transit.refine(items, cond, now, min(config.TRANSIT_TIMEOUT, left(3.0)))
         # 에이전트 뒤에는 한 번 호출(6초) 자리가 남을 때만 코드로 말을 넓혀요
-        if expanded is None and (not agent_mode or left() > config.RECOMMEND_AI_MAX + config.EXPAND_TIMEOUT + 2.0):
-            pool, work_cond, expanded = await _expand_by_code(work_cond, items, pool, now, wtext, left, visited)
+        want_expand = (expanded is None and ex.needs_expand(work_cond, items) and config.has_ai() and left(3.0) > 0.5
+                       and (not agent_mode or left() > config.RECOMMEND_AI_MAX + config.EXPAND_TIMEOUT + 2.0))
+        need_refine = bool(items) and not refined
+        fresh: list[dict] = []
+        words: list[str] = []
+        places: list[str] = []
+        # 길 재기와 말 넓히기는 서로 기다리지 않게 같이 해요 (코드 길 한도가 8초라 차례로 하면 넓히기 · AI 고르기 시간이 모자라요)
+        if need_refine and want_expand:
+            (fresh, _stats), (words, places) = await asyncio.gather(
+                transit.refine(items, cond, now, min(config.TRANSIT_TIMEOUT, left(3.0))), ex.expand(work_cond, left(3.0)))
+        elif need_refine:
+            fresh, _stats = await transit.refine(items, cond, now, min(config.TRANSIT_TIMEOUT, left(3.0)))
+        elif want_expand:
+            words, places = await ex.expand(work_cond, left(3.0))
+        if fresh:
+            # 에이전트가 넓혀 찾은 곳(pool)은 버리지 않고 뒤에 둬요
+            ids = {x["place"]["id"] for x in fresh}
+            pool = fresh + [x for x in pool if x["place"]["id"] not in ids]
+        if words or places:
+            pool, work_cond, expanded = await _apply_expand(work_cond, items, pool, words, places, now, wtext, left,
+                                                            visited)
 
     external: list[dict] = []
     asked_external = False
