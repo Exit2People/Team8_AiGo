@@ -522,9 +522,8 @@ export function Welcome({ f }: { f: FlowApi }) {
       <Primary y={672} onClick={() => f.landAuthed()}>
         시작하기
       </Primary>
-      <Caption y={762} dark>
-        마이메뉴에서 다시 바꿀 수 있어요
-      </Caption>
+      {/* 코랄 바탕이라 회색(dark) 대신 진한 앱 색 글씨로 (회색은 거의 안 보여요) */}
+      <Caption y={762}>마이메뉴에서 다시 바꿀 수 있어요</Caption>
     </div>
   );
 }

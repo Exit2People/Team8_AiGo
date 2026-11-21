@@ -64,7 +64,7 @@ const FLAT = new Set([
   "stamped", "nextp", "next", "nextd",
 ]);
 const END_Y: Record<string, number> = {
-  loc: 450, locUp: 378, near: 260, gu: 260, st: 260, body: 320, time: 320, q1: 320, fb: 320, ask: 520, ask2: 520,
+  loc: 450, locUp: 378, near: 260, gu: 260, st: 260, open: 260, body: 320, time: 320, q1: 320, fb: 320, ask: 520, ask2: 520,
   last: 250, fill: 480, tear: 700, route: 250, none: 520, off: 520, end: 520, mine: 220, mine2: 220,
   chat: 160, chatmenu: 160, my: 160, del: 160, su1: 250, myedit: 160, upload: 220, cut: 230, review: 220,
   sdetail: 220, nudge: 250, voice: 520,
