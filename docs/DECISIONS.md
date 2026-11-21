@@ -12,3 +12,7 @@
 | 2026-11-21 | 로컬 서버 포트 | **8010** (8000은 다른 프로세스가 쓰는 중). `frontend/.env.local`도 8010 | 로컬 전용 |
 | 2026-11-21 | CORS 정규식 기본 | `https://aigo-final[a-z0-9-]*\.vercel\.app` | 02_ARCHITECTURE 6절 ⚠️ 대회 이름에 맞춤 |
 | 2026-11-21 | 명세 폴더 위치 | `/Users/kimsangjin/Desktop/PROMPTS` (문서의 `2026_YOUTH_HACKATHON/PROMPTS`를 이 경로로 읽음) | 실제 위치 |
+| 2026-11-21 | 제출 주소 | 화면 `https://ai-go-team8.vercel.app` · 서버 `https://ai-go-api.vercel.app` | 사용자 요청 "URL은 AI-GO" (`ai-go.vercel.app`은 남이 써서 사용자가 `ai-go-team8` 고름) |
+| 2026-11-21 | 카카오 리다이렉트 | `https://ai-go-team8.vercel.app/api/auth/kakao/callback` (사용자가 콘솔에 등록) | 07_AUTH 10.1 |
+| 2026-11-21 | 커밋 단위 | **기능별로** 나눠 커밋 | 사용자 요청 |
+| 2026-11-21 | `secrets.env` 넣기 | zsh `source`가 `DATABASE_URL`의 `&`에서 깨져서, 값을 찍지 않는 파이썬 읽기(`dotenv_values`) → 파이프로 넣음 | 08_DEPLOY 6.1 |

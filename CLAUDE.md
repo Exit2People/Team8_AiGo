@@ -12,6 +12,7 @@
 | Vercel 서버 프로젝트 | aigo-final-api | 리허설 `aigo-d1-api` · 본선 `aigo-final-api` |
 
 - 이름이 이미 쓰이면 에이전트가 `-2`를 붙이고 실제 주소를 이 표 아래에 적어요.
+- **실제 주소 (2026-11-21):** 화면 `https://ai-go-team8.vercel.app` (프로젝트 `aigo-final`, 보조 `aigo-final-phi.vercel.app`) · 서버 `https://ai-go-api.vercel.app` (프로젝트 `aigo-final-api`, 보조 `aigo-final-api.vercel.app`). 사용자 요청으로 `ai-go` 이름을 썼어요 (`ai-go.vercel.app`은 남이 씀)
 
 - 명세 폴더(PROMPTS)의 실제 위치: `/Users/kimsangjin/Desktop/PROMPTS` (문서 속 `2026_YOUTH_HACKATHON/PROMPTS` 경로는 이 위치로 읽어요)
 
