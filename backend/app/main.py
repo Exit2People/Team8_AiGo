@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import Body, FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
@@ -12,7 +13,19 @@ from app.routers import auth, game, social
 
 logging.basicConfig(level=logging.INFO)
 
-app = FastAPI(title="AI GO")
+
+
+@asynccontextmanager
+async def _lifespan(_app):
+    # 첫 요청이 AI 라이브러리 불러오기(이 컴퓨터에서 12초 넘게)에 막히지 않게 뒤에서 미리 불러요 (app/llm/warm.py)
+    if config.has_ai():
+        from app.llm import warm
+
+        warm.start()
+    yield
+
+
+app = FastAPI(title="AI GO", lifespan=_lifespan)
 
 app.add_middleware(
     CORSMiddleware,

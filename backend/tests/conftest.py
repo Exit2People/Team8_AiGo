@@ -16,6 +16,12 @@ os.environ["AIGO_WEATHER"] = "맑음"
 os.environ["AIGO_QUESTION_AGENT"] = "0"
 os.environ["AIGO_AGENT"] = "0"
 
+# 가짜 LLM 테스트가 라이브러리 불러오기 시간에 걸리지 않게 먼저 불러 둬요 (app/llm/warm.py)
+from app.llm import warm  # noqa: E402
+
+warm.start()
+warm._fut.result()
+
 
 @pytest.fixture(autouse=True)
 def _clean_env(monkeypatch, tmp_path):
