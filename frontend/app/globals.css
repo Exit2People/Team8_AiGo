@@ -498,10 +498,6 @@ h1:focus,
   opacity: 0.6;
   margin-top: 2px;
 }
-.tile.dontknow {
-  background: var(--soft);
-  box-shadow: none;
-}
 
 .row {
   position: relative;

@@ -147,9 +147,13 @@ export default function Question({ f, kind, i = 0, edit }: Props) {
           );
         })}
         {dkTile && (
-          <button className={`tile dontknow${cur === null ? " on" : ""}`} onClick={() => pick(null)} aria-pressed={cur === null}>
+          // "잘 모르겠어요"도 다른 선택지와 같은 모양 · 색이에요 (고르면 똑같이 검정으로)
+          <button className={`tile${cur === null ? " on" : ""}`} onClick={() => pick(null)} aria-pressed={cur === null}>
             <span className="num">{tiles.length + 1}</span>
-            <span className="ans" style={{ fontSize: "calc(20px * var(--fs))" }}>
+            <span className="tarrow">
+              <TileArrow color={cur === null ? "#FFFFFF" : "#111111"} />
+            </span>
+            <span className="ans" style={{ fontSize: tileSize(DONT_KNOW) }}>
               {DONT_KNOW}
             </span>
           </button>
