@@ -5,13 +5,18 @@ import { Caption, Primary, Progress, Title } from "../ui";
 import { buildConditions, type Step } from "@/lib/flow";
 import { rangeSentence } from "@/lib/range";
 import { SLOT_NAME } from "@/lib/questions";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Pack, { type PackRect } from "../Pack";
 
 type Row = { name: string; value: string; fix?: Step };
 
-/** 확인 (4.3 confirm) */
-export default function Confirm({ f }: { f: FlowApi }) {
+/** "결과 보기"로 온 확인 화면은 한 번만 저절로 담아요 (결과에서 뒤로 와도 다시 담지 않게) */
+const AUTO_DONE = new WeakSet<Step>();
+/** 결과 보기로 왔을 때 채운 답을 보여 주는 시간 */
+const AUTO_WAIT = 900;
+
+/** 확인 (4.3 confirm). auto가 있으면 "결과 보기"로 온 거라, 채운 답을 잠깐 보여 준 뒤 저절로 가방에 담아요 */
+export default function Confirm({ f, auto, step }: { f: FlowApi; auto?: string; step?: Step }) {
   const { s } = f;
   const rows: Row[] = [{ name: "출발", value: s.origin?.name ?? "" }];
   if (s.place) rows.push({ name: "가고 싶은 곳", value: s.place });
@@ -33,6 +38,19 @@ export default function Confirm({ f }: { f: FlowApi }) {
     setFrom(measureRows(listRef.current));
     setPacking(true);
   };
+  const goRef = useRef(go);
+  useEffect(() => {
+    goRef.current = go;
+  });
+  useEffect(() => {
+    if (auto === undefined || !step || AUTO_DONE.has(step)) return;
+    // 실제로 담기 시작할 때 표시해요 (개발 모드에서 effect가 두 번 돌아도 한 번은 꼭 담겨요)
+    const t = setTimeout(() => {
+      AUTO_DONE.add(step);
+      goRef.current();
+    }, AUTO_WAIT);
+    return () => clearTimeout(t);
+  }, [auto, step]);
 
   return (
     <div className="content">
@@ -85,7 +103,7 @@ export default function Confirm({ f }: { f: FlowApi }) {
           onDone={() => {
             f.setPoseOv(null);
             setPacking(false);
-            f.search("push");
+            f.search("push", false, auto ?? "");
           }}
         />
       )}

@@ -580,8 +580,11 @@ function useFlow() {
     patch.filled = Array.from(new Set(filled));
     patch.qs = p.qs.filter((q) => q.answered);
     set(patch);
-    search("push", false, told.length ? `답하지 않은 건 무난하게 정했어요 · ${told.join(" · ")}` : "");
-  }, [abortReq, search, set]);
+    const lead = told.length ? `답하지 않은 건 무난하게 정했어요 · ${told.join(" · ")}` : "";
+    // 피그마 설계: 답하지 않은 건 기본값으로 채운 뒤 같은 가방 장면으로 (확인 화면에서 저절로 담아요)
+    if (still) return search("push", false, lead);
+    go({ k: "confirm", auto: lead });
+  }, [abortReq, go, search, set, still]);
 
   /* ---------- 결과 · 고르기 (8.2 · 8.3) ---------- */
   const cand = (): Candidate | undefined => sRef.current.cands[sRef.current.idx];
