@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
 
 from app import config
-from app.schemas import Conditions, ForgetRequest, NextRequest, OpenRequest
+from app.schemas import Conditions, ForgetRequest, NextRequest, OpenRequest, RecommendRequest
 from app.data import external_api, loader, stations_api, sync, weather
 from app.routers import auth, game, social
 
@@ -38,7 +38,7 @@ def health():
         "jev": config.has_jev(),
         "model": config.model(),
         "question": config.question_mode(),
-        "agent": config.agent_on(),
+        "agent": False,  # 추천 에이전트(LangGraph)는 만들지 않았어요 → 늘 한 번 호출
         "now": config.now().strftime("%Y-%m-%d %H:%M"),
         "weather": weather.current()["weather"],
     }
@@ -81,6 +81,13 @@ async def questions_ai(cond: Conditions):
     from app.question import service
 
     return await service.ask_ai(cond)
+
+
+@app.post("/recommend")
+async def recommend(req: RecommendRequest):
+    from app.recommend.service import recommend as run
+
+    return await run(req.conditions, req.visited)
 
 
 @app.get("/data/status")

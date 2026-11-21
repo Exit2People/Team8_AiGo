@@ -268,7 +268,7 @@ async def refine(items: list[dict], cond, now: datetime, budget: float) -> tuple
     stats = {"asked": 0, "measured": 0, "dropped": {}}
     plain = [x for x in items if not x.get("overEstimate")]
     if not enabled() or not items or origin_point(cond) is None or budget <= 0.3:
-        return plain[: config.AI_POOL], stats
+        return diverse_pool(plain, cond, config.AI_POOL), stats
     targets = diverse_pool(items, cond, config.TRANSIT_TOP)
     stats["asked"] = len(targets)
     measured = await measure_all(targets, cond, now, min(config.TRANSIT_TIMEOUT, budget))
