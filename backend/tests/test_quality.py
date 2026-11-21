@@ -259,3 +259,34 @@ def test_open_place_without_ai():
     assert c.extra.place == "서울숲" and "place" in f and "place" in c.filled
     assert place_only(cond(), "오늘 바람 쐬러 공원 가고 싶어요")[0].extra.place is None
     assert place_only(cond(extra={"place": "한강"}), "서울숲 가고 싶어")[1] == []  # 이미 있으면 덮지 않아요
+
+
+def test_daily_jitter_is_small_and_stable(monkeypatch):
+    from app.recommend.pick import daily_jitter
+
+    monkeypatch.setenv("AIGO_NOW", "2026-11-21T11:00")
+    a = [daily_jitter(f"P{i}") for i in range(200)]
+    assert a == [daily_jitter(f"P{i}") for i in range(200)]  # 같은 날엔 늘 같아요
+    assert all(abs(x) <= config.DAILY_JITTER / 2 for x in a)
+    monkeypatch.setenv("AIGO_NOW", "2026-11-22T11:00")
+    assert a != [daily_jitter(f"P{i}") for i in range(200)]  # 날이 바뀌면 달라져요
+
+
+def test_recently_shown_goes_back():
+    from app.recommend.pick import rule_score
+    from app.recommend.service import _mark_shown
+
+    def it(pid):
+        return {"place": {"id": pid, "name": pid, "wants": []}, "route": {"totalMin": 20, "transfers": 0, "legs": []}}
+
+    items = _mark_shown([it("A"), it("B"), it("C")], {"A", "B"}, {"B"})
+    assert items[0].get("shownRecent") and not items[1].get("shownRecent") and not items[2].get("shownRecent")
+    assert rule_score(it("C"), cond()) - rule_score(items[0], cond()) == config.SHOWN_PENALTY
+
+
+def test_recommend_accepts_shown_and_changes_list():
+    c = cond(basic={"want": "구경하기"})
+    first = client.post("/recommend", json={"conditions": c.model_dump(), "visited": []}).json()["candidates"]
+    ids = [x["place"]["id"] for x in first]
+    again = client.post("/recommend", json={"conditions": c.model_dump(), "visited": [], "shown": ids}).json()["candidates"]
+    assert again and [x["place"]["id"] for x in again] != ids  # 어제 보여 준 곳이 그대로 반복되지 않아요

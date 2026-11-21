@@ -43,6 +43,10 @@ AGENT_RELAX_MIN = 20
 VISITED_PENALTY = 0.5
 # 규칙 추천에 다녀온 곳이 없을 때, 가장 잘 맞는 다녀온 곳이 3번째 후보와 이만큼 안쪽이면 3번째 자리에 넣어요
 REVISIT_MARGIN = 1.0
+# 지난 며칠 보여 줬지만 고르지 않은 곳: 점수를 깎아 다른 곳이 먼저 보이게 (빼지는 않아요)
+SHOWN_PENALTY = 1.0
+# 날짜별 섞기: 점수가 비슷한 곳끼리만 날마다 순서가 바뀌게 더하는 폭 (±절반)
+DAILY_JITTER = 0.5
 # 추천 3곳 가운데 다녀온 곳은 이만큼까지 (직접 말한 곳은 따로)
 MAX_VISITED_SHOWN = 1
 QUESTION_AGENT_TIMEOUT = 6.0

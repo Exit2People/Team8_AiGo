@@ -53,6 +53,8 @@ def rule_score(item: dict, cond: Conditions) -> float:
             s += 2  # 이름이 딱 맞는 곳(서울숲)을 '그 근처'(서울숲역 옆 박물관)보다 앞에
     elif item.get("visited"):
         s -= config.VISITED_PENALTY  # 다녀온 곳은 조금 뒤로 (직접 말한 곳이면 깎지 않아요)
+    elif item.get("shownRecent"):
+        s -= config.SHOWN_PENALTY  # 보여 줬는데 고르지 않은 곳은 조금 더 뒤로
     wishes = list(cond.extra.wish)
     if matched_wish(p, wishes):
         s += 3
@@ -65,8 +67,18 @@ def rule_score(item: dict, cond: Conditions) -> float:
     return s
 
 
+def daily_jitter(pid: str | None) -> float:
+    """날짜와 장소로 정해지는 작은 값(±DAILY_JITTER/2). 같은 날엔 늘 같고, 날이 바뀌면 달라져요."""
+    import hashlib
+
+    day = config.now().strftime("%Y-%m-%d")
+    h = int(hashlib.md5(f"{day}:{pid}".encode()).hexdigest()[:8], 16) / 0xFFFFFFFF
+    return (h - 0.5) * config.DAILY_JITTER
+
+
 def rank_by_rule(items: list[dict], cond: Conditions) -> list[dict]:
-    return sorted(items, key=lambda it: -rule_score(it, cond))
+    # 점수가 비슷한 곳끼리만 날마다 순서가 바뀌어요 (같은 답이면 매일 같은 목록이 되지 않게)
+    return sorted(items, key=lambda it: -(rule_score(it, cond) + daily_jitter(it["place"].get("id"))))
 
 
 def diverse_pool(items: list[dict], cond: Conditions, n: int = config.AI_POOL) -> list[dict]:
@@ -177,6 +189,8 @@ def for_ai(item: dict) -> dict:
     }
     if item.get("visited"):
         d["다녀온 곳"] = "최근 30일 안에 다녀왔어요"
+    elif item.get("shownRecent"):
+        d["최근에 보여 준 곳"] = "며칠 안에 추천했지만 고르지 않았어요"
     if measured:
         rides = [lg.get("line") for lg in r.get("legs") or [] if lg.get("kind") != "하차" and lg.get("line")]
         if rides:

@@ -54,7 +54,17 @@ def _finish(c: dict, it: dict) -> None:
     c["place"]["photo"] = _https((c.get("info") or {}).get("photo"))
 
 
-async def recommend(cond: Conditions, visited: list[str]) -> dict:
+def _mark_shown(items: list[dict], shown: set[str], visited: set[str]) -> list[dict]:
+    """최근에 보여 줬지만 고르지 않은 곳에 표시해요 (다녀온 곳은 '다녀온 곳' 규칙만 따라요)."""
+    for x in items:
+        pid = x["place"].get("id")
+        if pid in shown and pid not in visited:
+            x["shownRecent"] = True
+    return items
+
+
+async def recommend(cond: Conditions, visited: list[str], shown: list[str] | None = None) -> dict:
+    shown_set, visited_set = set(shown or []), set(visited)
     t0 = time.monotonic()
     agent_mode = config.agent_on() and config.has_ai()
     # 에이전트를 쓰면 8초 대신 화면 대기(REC_FAIL 20초) − 1초 안에서 끝내요
@@ -69,12 +79,13 @@ async def recommend(cond: Conditions, visited: list[str]) -> dict:
     w = await asyncio.to_thread(weather.current, *(start or (None, None)))
     wtext = w.get("weather")
 
-    items = fp.filter_places(cond, now, wtext, visited)
+    items = _mark_shown(fp.filter_places(cond, now, wtext, visited), shown_set, visited_set)
     relaxed = False
     if not items:
         wide = cond.model_copy(deep=True)
         wide.range.oneWayMin = cond.range.oneWayMin + config.AGENT_RELAX_MIN
-        items = [x for x in fp.filter_places(wide, now, wtext, visited) if not x.get("overEstimate")]
+        items = _mark_shown([x for x in fp.filter_places(wide, now, wtext, visited) if not x.get("overEstimate")],
+                            shown_set, visited_set)
         if items:
             # cond 자체를 넓혔으니 곳마다 relaxed를 달지 않아요 (달면 다시 잴 때 +20분을 한 번 더 해요)
             relaxed = True

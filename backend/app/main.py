@@ -90,7 +90,7 @@ async def questions_ai(cond: Conditions):
 async def recommend(req: RecommendRequest):
     from app.recommend.service import recommend as run
 
-    return await run(req.conditions, req.visited)
+    return await run(req.conditions, req.visited, req.shown)
 
 
 @app.get("/data/status")
