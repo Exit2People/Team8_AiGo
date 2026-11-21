@@ -188,3 +188,34 @@ class FakeAuthDB(FakeDB):
         u = self.users[str(p[-1])]
         for c, v in zip(cols, p[:-1]):
             u[c] = v
+
+    def h_score_del(self, sql, p, f):
+        self.scores.pop(str(p[0]), None)
+
+    def h_session_del_user(self, sql, p, f):
+        self.sessions = {k: v for k, v in self.sessions.items() if v["user_id"] != p[0]}
+
+    def h_user_soft_delete(self, sql, p, f):
+        from datetime import timedelta
+
+        u = self.users[str(p[1])]
+        u["deleted_at"] = self._rt()
+        u["purge_after"] = self._rt() + timedelta(days=p[0])
+
+    def h_user_del(self, sql, p, f):
+        self._delete_user(str(p[0]))
+
+    def h_user_undelete(self, sql, p, f):
+        u = self.users[str(p[0])]
+        u["deleted_at"] = None
+        u["purge_after"] = None
+
+    def h_code_get(self, sql, p, f):
+        c = self.codes.get(p[0])
+        return dict(c) if c else None
+
+    def h_code_del(self, sql, p, f):
+        self.codes.pop(p[0], None)
+
+    def h_user_password(self, sql, p, f):
+        self.users[str(p[1])]["password_hash"] = p[0]

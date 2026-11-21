@@ -329,3 +329,94 @@ def logout(request: Request):
     resp = Response(status_code=204)
     del_cookie(resp, SID)
     return resp
+
+
+# ---------- 탈퇴 (90일 보관) · 되살리기 ----------
+
+def kakao_unlink(kid: str) -> None:
+    """카카오 연결 끊기. 키가 없거나 실패해도 탈퇴는 이어 가요 (회원 번호는 로그에 안 남겨요)."""
+    key = config.env("KAKAO_ADMIN_KEY")
+    if not key:
+        return
+    try:
+        r = httpx.post(KAKAO_UNLINK, headers={"Authorization": f"KakaoAK {key}"},
+                       data={"target_id_type": "user_id", "target_id": kid}, timeout=3.0)
+        if r.status_code != 200:
+            log.warning("카카오 연결 끊기 실패: HTTP %s", r.status_code)
+    except httpx.HTTPError as e:
+        log.warning("카카오 연결 끊기 실패: %s", type(e).__name__)
+
+
+@router.delete("/auth/account", status_code=204)
+def delete_account(request: Request):
+    u = require_user(request)
+    if u.get("kakao_id"):
+        kakao_unlink(u["kakao_id"])
+    db.run("/*score_del*/ delete from game_scores where user_id = %s", (u["id"],))
+    db.run("/*session_del_user*/ delete from sessions where user_id = %s", (u["id"],))
+    db.run("/*user_soft_delete*/ update users set deleted_at = now(), purge_after = now() + make_interval(days => %s) "
+           "where id = %s", (config.RETENTION_DAYS, u["id"]))
+    resp = Response(status_code=204)
+    del_cookie(resp, SID)
+    if u.get("kakao_id"):
+        set_cookie(resp, RELOGIN, "1")
+    return resp
+
+
+RESTORE_STALE = "확인이 끝났거나 오래됐어요. 처음부터 다시 해 주세요"
+RESTORE_MISSING = "전에 쓰던 기록을 찾지 못했어요. 처음부터 다시 해 주세요"
+
+
+def _restore_target(request: Request) -> dict:
+    _secret()
+    uid = unsign(request.cookies.get(RESTORE))
+    if not uid:
+        raise HTTPException(401, RESTORE_STALE)
+    purge_expired()
+    u = db.run("/*user_by_id*/ select * from users where id = %s", (uid,), "one")
+    if not u or not u.get("deleted_at"):
+        raise HTTPException(401, RESTORE_MISSING)
+    if u.get("banned_at"):
+        raise HTTPException(403, BANNED)
+    return u
+
+
+def _day(dt) -> str | None:
+    return dt.astimezone(config.KST).strftime("%Y-%m-%d") if dt else None
+
+
+@router.get("/auth/restore")
+def restore_info(request: Request):
+    u = _restore_target(request)
+    return {"pending": True, "id": str(u["id"]), "provider": "kakao" if u.get("kakao_id") else "email",
+            "nickname": u.get("nickname") or "", "deletedAt": _day(u.get("deleted_at")),
+            "purgeAfter": _day(u.get("purge_after"))}
+
+
+class RestoreBody(BaseModel):
+    choice: str = Field(pattern="^(restore|fresh)$")
+
+
+@router.post("/auth/restore")
+def restore(body: RestoreBody, request: Request):
+    u = _restore_target(request)
+    provider = "kakao" if u.get("kakao_id") else "email"
+    resp_body = {"restored": body.choice == "restore", "id": str(u["id"]), "provider": provider}
+    from fastapi.responses import JSONResponse
+
+    resp = JSONResponse(resp_body)
+    if body.choice == "fresh":
+        db.run("/*user_del*/ delete from users where id = %s", (u["id"],))
+        del_cookie(resp, RESTORE)
+        return resp
+    db.run("/*user_undelete*/ update users set deleted_at = null, purge_after = null where id = %s", (u["id"],))
+    if provider == "email" and u.get("email"):
+        code = db.run("/*code_get*/ select * from email_codes where email = %s", (u["email"],), "one")
+        if code and code.get("verified"):
+            db.run("/*user_password*/ update users set password_hash = %s where id = %s",
+                   (code["password_hash"], u["id"]))
+            db.run("/*code_del*/ delete from email_codes where email = %s", (u["email"],))
+    new_session(resp, u["id"])
+    for n in (RESTORE, SIGNUP, ESIGNUP):
+        del_cookie(resp, n)
+    return resp
