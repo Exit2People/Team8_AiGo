@@ -142,7 +142,7 @@ export default function Chat({ f }: { f: FlowApi }) {
       >
         <input
           className="textbox"
-          style={{ flex: 1, height: 56, padding: "0 14px", fontSize: 18 }}
+          style={{ flex: 1, height: 56, padding: "0 14px", "--fs": "18px" } as React.CSSProperties}
           maxLength={200}
           value={text}
           placeholder="여기에 쓰기"

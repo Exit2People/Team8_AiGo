@@ -214,7 +214,7 @@ export function Upload({ f, stepKey }: { f: FlowApi; stepKey: string }) {
               }}
               placeholder="예) 단풍이 곱고 길이 완만했어요"
               aria-label="한 줄 남기기 · 비워도 돼요"
-              style={{ fontSize: 16, paddingRight: 56 }}
+              style={{ "--fs": "16px", paddingRight: 56 } as React.CSSProperties}
             />
             <div style={{ position: "absolute", right: 6, bottom: 10 }}>
               <Mic value={text} max={60} onText={(x) => { setText(x); pending.text = x; }} />
@@ -364,7 +364,7 @@ export function Review({ f, stepKey, edit }: { f: FlowApi; stepKey: string; edit
           직접 쓰기
         </p>
         <div style={{ position: "relative", marginTop: 6 }}>
-          <textarea className="textbox" rows={2} maxLength={60} value={text} onChange={(e) => setText(e.target.value)} style={{ fontSize: 17, paddingRight: 60 }} aria-label="직접 쓰기" />
+          <textarea className="textbox" rows={2} maxLength={60} value={text} onChange={(e) => setText(e.target.value)} style={{ "--fs": "17px", paddingRight: 60 } as React.CSSProperties} aria-label="직접 쓰기" />
           <div style={{ position: "absolute", right: 6, top: 8 }}>
             <Mic value={text} max={60} onText={setText} />
           </div>
