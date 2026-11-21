@@ -51,6 +51,7 @@ export function gameBest(uid?: string | null): number {
 export function My({ f }: { f: FlowApi }) {
   const u = f.s.user;
   const [ask, setAsk] = useState(false);
+  const [askOut, setAskOut] = useState(false); // 로그아웃 한 번 더 묻기
   const [busy, setBusy] = useState(false);
   const [stats, setStats] = useState({ stamps: 0, visits: 0, blocked: 0, best: 0 });
   const [badges, setBadges] = useState<BadgeState[]>([]);
@@ -149,22 +150,43 @@ export function My({ f }: { f: FlowApi }) {
         </Group>
         {u && (
           <Group>
-            <Line
-              label="로그아웃"
+            <Line label="로그아웃" onClick={() => setAskOut(true)} />
+            <Line label="계정 지우기" danger onClick={() => setAsk(true)} />
+          </Group>
+        )}
+      </div>
+      {askOut && u && (
+        <div className="modal-bg" onClick={() => !busy && setAskOut(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="ask-out-title">
+            <h2 id="ask-out-title" className="t-title pre">{"정말\n로그아웃할까요?"}</h2>
+            <p className="t-sub c-mute pre" style={{ marginTop: 10 }}>
+              {"다시 로그인하면\n이어서 쓸 수 있어요"}
+            </p>
+            <button className="btn btn-secondary" style={{ marginTop: 18 }} onClick={() => setAskOut(false)} disabled={busy}>
+              그만둘래요
+            </button>
+            <button
+              className="btn btn-primary"
+              style={{ justifyContent: "center" }}
+              disabled={busy}
               onClick={async () => {
+                setBusy(true);
                 try {
                   await api.logout();
                 } catch {
                   /* 실패해도 기기에서는 로그아웃 */
                 }
+                setBusy(false);
+                setAskOut(false);
                 f.setUser(null);
                 f.landHome("로그아웃했어요");
               }}
-            />
-            <Line label="계정 지우기" danger onClick={() => setAsk(true)} />
-          </Group>
-        )}
-      </div>
+            >
+              로그아웃할게요
+            </button>
+          </div>
+        </div>
+      )}
       {ask && u && (
         <div className="modal-bg" onClick={() => setAsk(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
