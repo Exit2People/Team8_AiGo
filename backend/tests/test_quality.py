@@ -367,3 +367,30 @@ def test_expanded_words_lead_rule_pick(monkeypatch):
 ])
 def test_chat_blocks_home_invite_and_money(text, bad):
     assert chat_safety.has_banned_word(text) is bad
+
+
+def test_kakao_place_inout_guess_and_filter(monkeypatch):
+    from app.recommend import map_candidates as mc
+
+    assert mc.guess_inout("문화,예술 > 문화시설 > 박물관") == "실내"
+    assert mc.guess_inout("여행 > 공원 > 도시근린공원") == "바깥"
+    assert mc.guess_inout("음식점 > 한식") is None
+    indoor = cond(basic={"inout": "실내가 좋아요"})
+    assert mc.can_resolve(indoor, "맑음") and mc.can_resolve(cond(), "비")  # 예전에는 둘 다 막았어요
+    assert mc.keep_inout({"inout": "실내"}, indoor, "맑음") and not mc.keep_inout({"inout": "바깥"}, indoor, "맑음")
+    assert not mc.keep_inout({"inout": None}, indoor, "맑음")  # 모르면 조건이 있을 때 빼요
+    assert not mc.keep_inout({"inout": "바깥"}, cond(), "비") and mc.keep_inout({"inout": None}, cond(), "맑음")
+
+    museum = {"id": "777", "place_name": "테스트자연사박물관", "x": "126.9726", "y": "37.5559",
+              "address_name": "서울 중구 봉래동2가", "road_address_name": "서울 중구 한강대로 405",
+              "category_name": "문화,예술 > 문화시설 > 박물관"}
+
+    async def fake(c, name):
+        return museum
+
+    monkeypatch.setattr(mc, "_lookup", fake)
+    monkeypatch.setenv("KAKAO_REST_API_KEY", "k")
+    got = asyncio.run(mc.resolve(["테스트자연사박물관"], indoor, config.now(), "맑음", 3.0))
+    assert [x["place"]["inout"] for x in got] == ["실내"]
+    out = asyncio.run(mc.resolve(["테스트자연사박물관"], cond(basic={"inout": "바깥이 좋아요"}), config.now(), "맑음", 3.0))
+    assert out == []
