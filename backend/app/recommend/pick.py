@@ -95,6 +95,10 @@ def ride_phrase(r: dict) -> str:
     return f"{t}번 갈아타고 {total}분이면 가요"
 
 
+# "맛있는 것 좋은 곳이에요"처럼 어색한 말을 자연스럽게 바꿔요
+_WANT_HEAD = {"맛있는 것": "먹을 것이 있는 곳이에요."}
+
+
 def rule_reason(item: dict, cond: Conditions) -> str:
     p = item["place"]
     want = want_of(cond)
@@ -109,9 +113,9 @@ def rule_reason(item: dict, cond: Conditions) -> str:
     elif want == "맛있는 것" and int((p.get("market") or {}).get("food") or 0) >= 10:
         head = "시장 안팎에 먹을 곳이 많아요."
     elif want and want in wants:
-        head = f"{want} 좋은 곳이에요."
+        head = _WANT_HEAD.get(want, f"{want} 좋은 곳이에요.")
     elif wants:
-        head = f"{wants[0]} 좋은 곳이에요."
+        head = _WANT_HEAD.get(wants[0], f"{wants[0]} 좋은 곳이에요.")
     else:
         head = "가 볼 만한 곳이에요."
     return f"{head} {ride_phrase(item['route'])}"
