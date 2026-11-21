@@ -140,12 +140,7 @@ export function My({ f, active }: { f: FlowApi; active?: string }) {
           <Group>
             <Line label="닉네임" value={u.nickname || "아직 없어요"} onClick={() => f.go({ k: "myedit", field: "nickname" })} on={active === "myedit-nickname"} />
             <Line label="나이" value={u.age ? `${u.age}세` : "아직 없어요"} onClick={() => f.go({ k: "myedit", field: "age" })} on={active === "myedit-age"} />
-            {u.provider === "email" && (
-              <>
-                <Line label="이메일" value={u.email} disabled />
-                <Line label="비밀번호 바꾸기" onClick={() => f.note("비밀번호 바꾸기는 아직 준비 중이에요")} />
-              </>
-            )}
+            {u.provider === "email" && <Line label="이메일" value={u.email} disabled />}
           </Group>
         )}
         <Group>
