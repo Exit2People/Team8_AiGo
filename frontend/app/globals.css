@@ -939,3 +939,13 @@ html.ios .textbox {
 @keyframes cbIn { from { opacity: 0; transform: translateY(40px) scale(0.92); } to { opacity: 1; transform: none; } }
 @keyframes cbPop { 0% { transform: scale(0.2) rotate(-25deg); opacity: 0; } 60% { transform: scale(1.12) rotate(6deg); opacity: 1; } 100% { transform: none; } }
 @keyframes cbSpin { to { transform: rotate(360deg); } }
+
+/* 배지 축하 화면이 떠 있는 동안 뒤 화면(담고 · 티켓 · 가방 등)의 애니메이션을 그 자리에 멈춰요. 축하 화면 자체는 그대로 움직여요 */
+.app.paused .canvas > :not(.celebrateDim),
+.app.paused .canvas > :not(.celebrateDim) *,
+.app.paused .canvas > :not(.celebrateDim)::before,
+.app.paused .canvas > :not(.celebrateDim)::after,
+.app.paused .canvas > :not(.celebrateDim) *::before,
+.app.paused .canvas > :not(.celebrateDim) *::after {
+  animation-play-state: paused !important;
+}

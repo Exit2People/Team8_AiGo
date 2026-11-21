@@ -18,7 +18,7 @@ import { THEMES } from "@/lib/theme";
 import { useChat, type ChatApi } from "./useChat";
 import Celebrate, { canCelebrate, useBadges } from "./Celebrate";
 import { WAG, useIdle } from "./useIdle";
-import { setPaused } from "@/lib/pause";
+import { later as pauseLater, setPaused } from "@/lib/pause";
 import { takeResume } from "@/lib/resume";
 import { randomNick } from "@/lib/nick";
 import { applyTextSize, readTextSize } from "@/lib/textSize";
@@ -39,7 +39,7 @@ function useFlow() {
   const [s, setS] = useState<FlowState>(initialState);
   const sRef = useRef(s);
   const req = useRef<Req | null>(null);
-  const timers = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  const timers = useRef<Set<() => void>>(new Set()); // 멈출 수 있는 타이머의 취소 함수
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const client = useRef("");
   const nick = useRef("");
@@ -58,13 +58,14 @@ function useFlow() {
     setS(next);
   }, []);
 
+  // 배지 축하 화면이 떠 있는 동안 멈추는 타이머(lib/pause.ts)
   const later = useCallback((ms: number, fn: () => void) => {
-    const t = setTimeout(() => {
-      timers.current.delete(t);
+    const cancel = pauseLater(ms, () => {
+      timers.current.delete(cancel);
       fn();
-    }, ms);
-    timers.current.add(t);
-    return t;
+    });
+    timers.current.add(cancel);
+    return cancel;
   }, []);
 
   const note = useCallback(
@@ -240,7 +241,7 @@ function useFlow() {
     }
     const ts = timers.current;
     return () => {
-      ts.forEach(clearTimeout);
+      ts.forEach((cancel) => cancel());
     };
   }, [set, note]);
 
@@ -756,6 +757,7 @@ export default function Flow() {
       coral={s.coral}
       still={f.still}
       inert={!!cele}
+      paused={!!cele}
       overlay={
         <>
           {s.note ? (

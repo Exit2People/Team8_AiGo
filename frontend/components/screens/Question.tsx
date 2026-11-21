@@ -5,6 +5,7 @@ import type { FlowApi } from "../Flow";
 import { TileArrow } from "../Icons";
 import { Caption, Dots, Primary, Progress, Sheet, Sub } from "../ui";
 import { BODY, DONT_KNOW, TIME, tileSize, titleSize, twoLines } from "@/lib/questions";
+import { later } from "@/lib/pause";
 
 type Props = { f: FlowApi; kind: "body" | "time" | "flex"; i?: number; edit?: boolean };
 
@@ -28,17 +29,17 @@ export default function Question({ f, kind, i = 0, edit }: Props) {
     }
     f.setPoseOv(`${base}In`);
     const ts = [
-      setTimeout(() => {
+      later(900, () => {
         setPhase("top");
         f.setPoseOv(`${base}Top`);
-      }, 900),
-      setTimeout(() => {
+      }),
+      later(900 + 600 + 80, () => {
         setPhase("base");
         f.setPoseOv(null);
-      }, 900 + 600 + 80),
+      }),
     ];
     return () => {
-      ts.forEach(clearTimeout);
+      ts.forEach((cancel) => cancel());
       f.setPoseOv(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
