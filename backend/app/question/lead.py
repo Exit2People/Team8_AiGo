@@ -1,5 +1,6 @@
 """발전 질문: 질문 0에서 들은 말을 오늘 갈 수 있는 곳 이름으로 이어 물어요 (AI 없음)."""
 
+from app.question import variety
 from app.question.themes import short_name, themes_of, wish_themes
 from app.recommend.wish import matched_wish
 from app.schemas import Conditions
@@ -43,13 +44,13 @@ def lead_question(cond: Conditions, items: list[dict]) -> dict | None:
     place = cond.extra.place
     if place:
         key = place.replace(" ", "")
-        tries.append((f"{place} 쪽, 어디가 끌리세요?",
+        tries.append((variety.pick_text([f"{place} 쪽, 어디가 끌리세요?", f"{place} 근처는 어디가 끌리세요?"]),
                       [it for it in items if key in (it["place"].get("name") or "").replace(" ", "")]))
         for t in sorted(wish_themes(place)):
             word = t.replace(" · ", "이나 ")
             tries.append((f"{word} 중에선 어디가 끌리세요?", [it for it in items if t in themes_of(it["place"])]))
     for w in cond.extra.wish:
-        q = f"{w}{eun_neun(w)} 어디가 좋으세요?"
+        q = variety.pick_text([f"{w}{eun_neun(w)} 어디가 좋으세요?", f"{w}{eun_neun(w)} 이 중 어디가 좋으세요?"])
         tries.append((q, [it for it in items if _strict(it["place"], w)]))
         loose = [it for it in items if matched_wish(it["place"], [w])]
         if len(loose) <= LOOSE_SHARE * len(items):
@@ -66,7 +67,7 @@ def lead_question(cond: Conditions, items: list[dict]) -> dict | None:
             if len(names) == 3:
                 break
         if len(names) >= 2:
-            return {"done": False, "id": "lead", "question": q, "choices": names, "slot": None, "source": "lead"}
+            return {"done": False, "id": "lead", "question": q, "choices": variety.shuffle(names), "slot": None, "source": "lead"}
     return None
 
 
