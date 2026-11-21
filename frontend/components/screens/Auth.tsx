@@ -56,7 +56,7 @@ function Bullets({ y, items }: { y: number; items: string[] }) {
           <span style={{ flex: "none", marginTop: 1 }}>
             <CheckIcon size={22} />
           </span>
-          <span className="t-answer" style={{ lineHeight: 1.35, fontSize: 16 }}>
+          <span className="t-answer" style={{ lineHeight: 1.35, fontSize: "calc(16px * var(--fs))" }}>
             {t}
           </span>
         </div>

@@ -149,7 +149,7 @@ export default function Question({ f, kind, i = 0, edit }: Props) {
         {dkTile && (
           <button className={`tile dontknow${cur === null ? " on" : ""}`} onClick={() => pick(null)} aria-pressed={cur === null}>
             <span className="num">{tiles.length + 1}</span>
-            <span className="ans" style={{ fontSize: 20 }}>
+            <span className="ans" style={{ fontSize: "calc(20px * var(--fs))" }}>
               {DONT_KNOW}
             </span>
           </button>

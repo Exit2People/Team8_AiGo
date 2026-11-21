@@ -21,6 +21,8 @@ import { WAG, useIdle } from "./useIdle";
 import { setPaused } from "@/lib/pause";
 import { takeResume } from "@/lib/resume";
 import { randomNick } from "@/lib/nick";
+import { applyTextSize, readTextSize } from "@/lib/textSize";
+import { TextSizeSheet } from "./TextSize";
 import { clockText } from "@/lib/format";
 
 const NICKS = ["봄나들이", "햇살마중", "솔바람", "도란도란", "꽃마중", "느림보", "새벽길", "산들바람"];
@@ -193,6 +195,7 @@ function useFlow() {
     client.current = uuid();
     nick.current = NICKS[Math.floor(Math.random() * NICKS.length)];
     sweepBackups();
+    applyTextSize(readTextSize()); // 이 기기에서 고른 글씨 크기
     const theme = load<string>("aigo.theme", "A");
     const coral = THEMES.find((t) => t.id === theme)?.color ?? THEMES[0].color;
     const cached = load<User | null>("aigo.user", null);
@@ -756,6 +759,7 @@ export default function Flow() {
               {s.note}
             </div>
           ) : null}
+          <TextSizeSheet />
           {cele && (
             <Celebrate
               b={cele}

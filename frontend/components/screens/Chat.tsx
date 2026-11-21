@@ -4,7 +4,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { FlowApi } from "../Flow";
 import { ChevronIcon } from "../Icons";
 import Mic from "../Mic";
-import { load, save } from "@/lib/device";
+import { TEXT_SIZES, useTextSize } from "@/lib/textSize";
+import { OPEN_TEXT_SIZE } from "../TextSize";
 import type { ChatMessage } from "@/lib/types";
 
 type Menu = null | "main" | "people" | "report" | "block";
@@ -12,7 +13,6 @@ type Menu = null | "main" | "people" | "report" | "block";
 /** 누르면 바로 보내는 말. 앞의 셋은 서버가 '빠른 말'로 알아봐요 */
 const QUICK = ["반가워요", "고마워요", "좋아요", "날씨가 좋네요", "천천히 둘러보세요", "조심히 가세요"];
 const MAX = 200;
-const BIG_KEY = "aigo.chat.big";
 
 /** 닉네임마다 늘 같은 동그라미 색 */
 const FACE = [
@@ -71,7 +71,7 @@ export default function Chat({ f }: { f: FlowApi }) {
   const [menu, setMenu] = useState<Menu>(null);
   const [ask, setAsk] = useState(false);
   const [who, setWho] = useState<string | null>(null); // 이름을 눌러 연 사람
-  const [big, setBig] = useState(() => load<boolean>(BIG_KEY, false)); // 톡방은 화면 흐름 안에서만 그려져서(서버에서 그리지 않아요) 바로 읽어도 돼요
+  const [size] = useTextSize(); // 글씨 크기는 앱 전체 설정 하나로 움직여요
   const [unread, setUnread] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const listRef = useRef<HTMLDivElement>(null);
@@ -157,14 +157,8 @@ export default function Chat({ f }: { f: FlowApi }) {
     } else setTimeout(() => f.note("톡방에서 나왔어요."), 30);
   }
 
-  function toggleBig() {
-    const v = !big;
-    setBig(v);
-    save(BIG_KEY, v);
-  }
-
   const others = chat.members.filter((n) => n !== chat.myNick);
-  const fs = big ? 22 : 18; // 말풍선 글씨 크기
+  const fs = "calc(18px * var(--fs))"; // 말풍선 글씨 크기(앱 글씨 크기를 따라가요)
   const left = MAX - text.length;
 
   return (
@@ -188,7 +182,7 @@ export default function Chat({ f }: { f: FlowApi }) {
             ))}
           </span>
           <span style={{ minWidth: 0 }}>
-            <span className="t-answer" style={{ display: "block", fontSize: 15 }}>
+            <span className="t-answer" style={{ display: "block", fontSize: "calc(15px * var(--fs))" }}>
               여기 온 {chat.count}명
             </span>
             <span className="t-item" style={{ display: "block", marginTop: 2, color: "var(--sub)" }}>
@@ -196,8 +190,8 @@ export default function Chat({ f }: { f: FlowApi }) {
             </span>
           </span>
         </button>
-        <button className="chip chip-soft" style={{ flex: "none", height: 34, fontSize: 14 }} onClick={toggleBig} aria-pressed={big}>
-          {big ? "글씨 보통" : "글씨 크게"}
+        <button className="chip chip-soft" style={{ flex: "none", height: 34, fontSize: "calc(14px * var(--fs))" }} onClick={() => window.dispatchEvent(new CustomEvent(OPEN_TEXT_SIZE))} aria-label="글씨 크기 바꾸기">
+          가 {TEXT_SIZES.find((t) => t.id === size)?.name}
         </button>
       </div>
 
@@ -223,7 +217,7 @@ export default function Chat({ f }: { f: FlowApi }) {
         </p>
         {!talked && (
           <div style={{ textAlign: "center", padding: "18px 8px", margin: "6px 0 10px", borderRadius: 18, background: "rgba(255,255,255,.8)" }}>
-            <p className="t-answer" style={{ fontSize: 18 }}>
+            <p className="t-answer" style={{ fontSize: "calc(18px * var(--fs))" }}>
               먼저 인사해 보세요
             </p>
             <p className="t-item c-mute" style={{ marginTop: 6 }}>
@@ -304,7 +298,7 @@ export default function Chat({ f }: { f: FlowApi }) {
       {unread > 0 && (
         <button
           className="abs chip"
-          style={{ left: "50%", transform: "translateX(-50%)", bottom: 200, height: 40, padding: "0 16px", fontSize: 16, boxShadow: "var(--sh-row)", zIndex: 2 }}
+          style={{ left: "50%", transform: "translateX(-50%)", bottom: 200, height: 40, padding: "0 16px", fontSize: "calc(16px * var(--fs))", boxShadow: "var(--sh-row)", zIndex: 2 }}
           onClick={toBottom}
         >
           새 말 {unread}개 ↓
@@ -317,7 +311,7 @@ export default function Chat({ f }: { f: FlowApi }) {
           <button
             key={q}
             className="btn btn-white"
-            style={{ position: "relative", flex: "none", height: 52, padding: "0 18px", fontSize: 17, boxShadow: "var(--sh-row)" }}
+            style={{ position: "relative", flex: "none", height: 52, padding: "0 18px", fontSize: "calc(17px * var(--fs))", boxShadow: "var(--sh-row)" }}
             onClick={() => send(q)}
             disabled={sending}
           >
@@ -344,7 +338,7 @@ export default function Chat({ f }: { f: FlowApi }) {
         <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
           <input
             className="textbox"
-            style={{ width: "100%", height: 56, padding: "0 58px 0 14px", fontSize: 18 }}
+            style={{ width: "100%", height: 56, padding: "0 58px 0 14px", fontSize: "calc(18px * var(--fs))" }}
             maxLength={MAX}
             value={text}
             placeholder="여기에 쓰기"
