@@ -59,7 +59,6 @@ async def recommend(cond: Conditions, visited: list[str]) -> dict:
 
     sync.refresh_in_background()
     now = config.now()
-    o = cond.origin
     start = transit.origin_point(cond)
     w = await asyncio.to_thread(weather.current, *(start or (None, None)))
     wtext = w.get("weather")
