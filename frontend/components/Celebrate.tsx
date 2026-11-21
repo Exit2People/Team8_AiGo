@@ -51,7 +51,7 @@ export function canCelebrate(s: FlowState) {
   return !!s.user && !s.tearing && !s.busy && !["cut", "stamped", "kwait", "welcome"].includes(k);
 }
 
-/** 얻은 순간 축하: TestTon과 같은 모양(components/Badges.tsx BadgeCelebrate) */
+/** 얻은 순간 축하 (components/Badges.tsx BadgeCelebrate) */
 export default function Celebrate({ b, more, onNext, onAll }: { b: BadgeDef; more: boolean; onNext: () => void; onAll: () => void }) {
   return <BadgeCelebrate badge={b} more={more ? 1 : 0} onNext={onNext} onOpenAll={onAll} />;
 }

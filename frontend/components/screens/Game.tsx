@@ -6,7 +6,7 @@ import { Sub, Title } from "../ui";
 import DamgoRun, { fmtSteps } from "../DamgoRun";
 import { ranking, type Player, type RankBoard, type RankEntry } from "@/lib/ranking";
 
-/* 담고 달리기 (12절) — 그림 · 움직임 · 판정은 TestTon과 같은 DamgoRun(components/DamgoRun.tsx) */
+/* 담고 달리기 (12절) — 그림 · 움직임 · 판정은 DamgoRun(components/DamgoRun.tsx) */
 
 const playerOf = (f: FlowApi): Player | null => (f.s.user ? { id: f.s.user.id, nickname: f.s.user.nickname || "닉네임 없음" } : null);
 

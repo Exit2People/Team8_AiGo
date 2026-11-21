@@ -214,7 +214,7 @@ export function Upload({ f, stepKey }: { f: FlowApi; stepKey: string }) {
               }}
               placeholder="예) 단풍이 곱고 길이 완만했어요"
               aria-label="한 줄 남기기 · 비워도 돼요"
-              style={{ fontSize: 16, paddingRight: 56 }}
+              style={{ fontSize: "calc(16px * var(--fs))", paddingRight: 56 }}
             />
             <div style={{ position: "absolute", right: 6, bottom: 10 }}>
               <Mic value={text} max={60} onText={(x) => { setText(x); pending.text = x; }} />
@@ -306,8 +306,8 @@ export function Stamped({ f, stepKey }: { f: FlowApi; stepKey: string }) {
             background: "rgba(255,255,255,.4)",
           }}
         >
-          <span style={{ fontSize: 15 }}>{(st?.name ?? "").slice(0, 4)}</span>
-          <span style={{ fontSize: 12, fontFamily: "var(--mono)" }}>{d.replace(/-/g, ".")}</span>
+          <span style={{ fontSize: "calc(15px * var(--fs))" }}>{(st?.name ?? "").slice(0, 4)}</span>
+          <span style={{ fontSize: "calc(12px * var(--fs))", fontFamily: "var(--mono)" }}>{d.replace(/-/g, ".")}</span>
         </span>
       </div>
       <Title y={600} align="center" size="m">{`${st?.name ?? ""} 우표를\n붙였어요`}</Title>
@@ -352,7 +352,7 @@ export function Review({ f, stepKey, edit }: { f: FlowApi; stepKey: string; edit
                 key={t}
                 className="chip"
                 aria-pressed={on}
-                style={{ height: 40, lineHeight: "40px", borderRadius: 20, fontSize: 16, padding: "0 16px", background: on ? "var(--ink)" : "var(--soft)", color: on ? "#fff" : "var(--ink)" }}
+                style={{ height: 40, lineHeight: "40px", borderRadius: 20, fontSize: "calc(16px * var(--fs))", padding: "0 16px", background: on ? "var(--ink)" : "var(--soft)", color: on ? "#fff" : "var(--ink)" }}
                 onClick={() => setTags(on ? tags.filter((x) => x !== t) : [...tags, t])}
               >
                 {t}
@@ -364,7 +364,7 @@ export function Review({ f, stepKey, edit }: { f: FlowApi; stepKey: string; edit
           직접 쓰기
         </p>
         <div style={{ position: "relative", marginTop: 6 }}>
-          <textarea className="textbox" rows={2} maxLength={60} value={text} onChange={(e) => setText(e.target.value)} style={{ fontSize: 17, paddingRight: 60 }} aria-label="직접 쓰기" />
+          <textarea className="textbox" rows={2} maxLength={60} value={text} onChange={(e) => setText(e.target.value)} style={{ fontSize: "calc(17px * var(--fs))", paddingRight: 60 }} aria-label="직접 쓰기" />
           <div style={{ position: "absolute", right: 6, top: 8 }}>
             <Mic value={text} max={60} onText={setText} />
           </div>
@@ -432,7 +432,7 @@ export function Sdetail({ f, stepKey }: { f: FlowApi; stepKey: string }) {
           )}
           {rv?.items.map((r) => (
             <div key={r.id} style={{ marginTop: 12, borderTop: "1.5px solid var(--soft)", paddingTop: 10 }}>
-              <p className="t-answer" style={{ fontSize: 16, lineHeight: 1.35 }}>
+              <p className="t-answer" style={{ fontSize: "calc(16px * var(--fs))", lineHeight: 1.35 }}>
                 {r.text}
               </p>
               <p className="t-item c-mute" style={{ marginTop: 4 }}>

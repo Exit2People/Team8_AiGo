@@ -1,4 +1,4 @@
-// 담고 달리기 랭킹. 화면(Game · Rank)은 아래 `ranking` 하나만 불러 써요. (TestTon lib/ranking.ts와 같은 방식)
+// 담고 달리기 랭킹. 화면(Game · Rank)은 아래 `ranking` 하나만 불러 써요.
 //
 //   기본: localStore — 이 기기(localStorage)에만 저장해요. 화면 확인용 예시 기록이 섞여 있어요.
 //   서버: apiStore   — NEXT_PUBLIC_RANKING_SOURCE=api 일 때 /api/game/* 를 불러요(lib/api.ts, 가짜 응답 스위치도 따라가요).
