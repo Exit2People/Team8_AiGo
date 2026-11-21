@@ -420,3 +420,190 @@ def restore(body: RestoreBody, request: Request):
     for n in (RESTORE, SIGNUP, ESIGNUP):
         del_cookie(resp, n)
     return resp
+
+
+# ---------- 이메일 가입 (Gmail로 확인 숫자) ----------
+
+CODE_MINUTES = 10
+CODE_TRIES = 5
+EMAIL_RE = re.compile(r"[^\s@]+@[^\s@]+\.[^\s@]+")
+EMAIL_TAKEN = "이미 가입한 이메일이에요. 로그인해 주세요"
+RESTART = "처음부터 다시 가입해 주세요"
+
+
+def hash_password(pw: str) -> str:
+    salt = secrets.token_bytes(16)
+    h = hashlib.scrypt(pw.encode(), salt=salt, n=2 ** 14, r=8, p=1)
+    return f"scrypt${salt.hex()}${h.hex()}"
+
+
+def check_password(pw: str, stored: str | None) -> bool:
+    try:
+        kind, salt, h = (stored or "").split("$")
+        if kind != "scrypt":
+            return False
+        got = hashlib.scrypt(pw.encode(), salt=bytes.fromhex(salt), n=2 ** 14, r=8, p=1)
+        return hmac.compare_digest(got.hex(), h)
+    except (ValueError, TypeError):
+        return False
+
+
+def _code_hash(code: str) -> str:
+    return hashlib.sha256(code.encode()).hexdigest()
+
+
+def smtp_ready() -> bool:
+    return bool(config.env("AIGO_SMTP_USER") and config.env("AIGO_SMTP_PASSWORD"))
+
+
+def send_code(to: str, code: str) -> bool:
+    import smtplib
+    from email.message import EmailMessage
+
+    user = config.env("AIGO_SMTP_USER") or ""
+    pw = (config.env("AIGO_SMTP_PASSWORD") or "").replace(" ", "")
+    msg = EmailMessage()
+    msg["Subject"] = f"[AI GO] 이메일 확인 숫자 {code}"
+    msg["From"] = f"AI GO <{user}>"
+    msg["To"] = to
+    msg.set_content(f"AI GO 가입 확인 숫자예요.\n\n{code}\n\n10분 안에 화면에 넣어 주세요. 직접 가입하지 않았다면 이 메일은 지워 주세요.")
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as s:
+            s.login(user, pw)
+            s.send_message(msg)
+        return True
+    except Exception as e:
+        log.warning("메일 보내기 실패: %s", type(e).__name__)
+        return False
+
+
+def _email(raw: str) -> str:
+    e = (raw or "").strip().lower()
+    if len(e) > 254 or not EMAIL_RE.fullmatch(e):
+        raise HTTPException(400, "이메일을 다시 확인해 주세요")
+    return e
+
+
+class EmailStartBody(BaseModel):
+    email: str = Field(max_length=254)
+    password: str = Field(min_length=8, max_length=72)
+
+
+@router.post("/auth/email/start", status_code=204)
+def email_start(body: EmailStartBody):
+    _secret()
+    email = _email(body.email)
+    purge_expired()
+    u = db.run("/*user_by_email*/ select * from users where email = %s", (email,), "one")
+    if u and u.get("banned_at"):
+        raise HTTPException(403, BANNED)
+    if u and not u.get("deleted_at"):
+        raise HTTPException(409, EMAIL_TAKEN)
+    if not smtp_ready():
+        raise HTTPException(503, "메일 보내기 설정이 아직 안 됐어요")
+    code = f"{secrets.randbelow(10 ** 6):06d}"
+    db.run("/*code_put*/ insert into email_codes (email, code_hash, password_hash, expires_at, tries, verified) "
+           "values (%s, %s, %s, %s, 0, false) on conflict (email) do update set code_hash = excluded.code_hash, "
+           "password_hash = excluded.password_hash, expires_at = excluded.expires_at, tries = 0, verified = false",
+           (email, _code_hash(code), hash_password(body.password),
+            datetime.now(config.KST) + timedelta(minutes=CODE_MINUTES)))
+    if not send_code(email, code):
+        raise HTTPException(502, "확인 메일을 보내지 못했어요. 잠시 뒤에 다시 해 주세요")
+    resp = Response(status_code=204)
+    set_cookie(resp, ESIGNUP, sign(email, AGE[ESIGNUP]))
+    return resp
+
+
+class EmailVerifyBody(BaseModel):
+    code: str = Field(pattern=r"^\d{6}$")
+
+
+@router.post("/auth/email/verify")
+def email_verify(body: EmailVerifyBody, request: Request):
+    _secret()
+    email = unsign(request.cookies.get(ESIGNUP))
+    if not email:
+        raise HTTPException(401, RESTART)
+    purge_expired()
+    row = db.run("/*code_get*/ select * from email_codes where email = %s", (email,), "one")
+    if not row:
+        raise HTTPException(401, RESTART)
+    u = db.run("/*user_by_email*/ select * from users where email = %s", (email,), "one")
+    if u and u.get("banned_at"):
+        raise HTTPException(403, BANNED)
+    if int(row.get("tries") or 0) >= CODE_TRIES:
+        raise HTTPException(429, "여러 번 틀렸어요. 메일을 다시 받아 주세요")
+    if row["expires_at"] < datetime.now(config.KST):
+        raise HTTPException(400, "확인 숫자가 지났어요. 메일을 다시 받아 주세요")
+    if not hmac.compare_digest(_code_hash(body.code), row["code_hash"]):
+        db.run("/*code_try*/ update email_codes set tries = tries + 1 where email = %s", (email,))
+        raise HTTPException(400, "숫자가 맞지 않아요")
+    db.run("/*code_ok*/ update email_codes set verified = true where email = %s", (email,))
+    from fastapi.responses import JSONResponse
+
+    restorable = bool(u and u.get("deleted_at"))
+    resp = JSONResponse({"email": email, "restorable": restorable})
+    if restorable:
+        set_cookie(resp, RESTORE, sign(str(u["id"]), AGE[RESTORE]))
+    return resp
+
+
+class EmailFinishBody(BaseModel):
+    name: str = Field(default="", max_length=20)
+    nickname: str = Field(default="", max_length=12)
+    age: str = Field(default="", max_length=3)
+    homeDong1: str | None = Field(default=None, max_length=40)
+    homeDong2: str | None = Field(default=None, max_length=40)
+
+
+@router.post("/auth/email/finish", status_code=204)
+def email_finish(body: EmailFinishBody, request: Request):
+    _secret()
+    email = unsign(request.cookies.get(ESIGNUP))
+    if not email:
+        raise HTTPException(401, RESTART)
+    row = db.run("/*code_get*/ select * from email_codes where email = %s", (email,), "one")
+    if not row or not row.get("verified"):
+        raise HTTPException(400, "이메일 확인부터 해 주세요")
+    age = parse_age(body.age)
+    d1, d2 = dong_id(body.homeDong1), dong_id(body.homeDong2)
+    purge_expired()
+    u = db.run("/*user_by_email*/ select * from users where email = %s", (email,), "one")
+    if u and u.get("banned_at"):
+        raise HTTPException(403, BANNED)
+    if u and u.get("deleted_at"):
+        raise HTTPException(409, RESTORE_FIRST)
+    if u:
+        raise HTTPException(409, EMAIL_TAKEN)
+    new = db.run("/*user_add_email*/ insert into users (email, password_hash, name, nickname, age, home_dong1_id, "
+                 "home_dong2_id) values (%s, %s, %s, %s, %s, %s, %s) returning id",
+                 (email, row["password_hash"], body.name.strip() or None, body.nickname.strip() or None, age, d1, d2),
+                 "one")
+    add_consents(new["id"])
+    db.run("/*code_del*/ delete from email_codes where email = %s", (email,))
+    resp = Response(status_code=204)
+    new_session(resp, new["id"])
+    del_cookie(resp, ESIGNUP)
+    return resp
+
+
+class EmailLoginBody(BaseModel):
+    email: str = Field(max_length=254)
+    password: str = Field(max_length=72)
+
+
+@router.post("/auth/email/login", status_code=204)
+def email_login(body: EmailLoginBody):
+    _secret()
+    email = (body.email or "").strip().lower()
+    purge_expired()
+    u = db.run("/*user_by_email*/ select * from users where email = %s", (email,), "one")
+    if not u or not check_password(body.password, u.get("password_hash")):
+        raise HTTPException(401, "이메일이나 비밀번호가 맞지 않아요")
+    if u.get("banned_at"):
+        raise HTTPException(403, BANNED)
+    if u.get("deleted_at"):
+        raise HTTPException(401, "탈퇴한 계정이에요. '처음이에요 · 가입하기'로 다시 가입하면 전에 쓰던 기록을 불러올 수 있어요")
+    resp = Response(status_code=204)
+    new_session(resp, u["id"])
+    return resp

@@ -251,3 +251,18 @@ class FakeAuthDB(FakeDB):
 
     def h_rank_total(self, sql, p, f):
         return {"n": len(self._visible_scores())}
+
+    def h_code_put(self, sql, p, f):
+        self.codes[p[0]] = {"email": p[0], "code_hash": p[1], "password_hash": p[2], "expires_at": p[3], "tries": 0,
+                            "verified": False}
+
+    def h_code_try(self, sql, p, f):
+        self.codes[p[0]]["tries"] += 1
+
+    def h_code_ok(self, sql, p, f):
+        self.codes[p[0]]["verified"] = True
+
+    def h_user_add_email(self, sql, p, f):
+        u = self.add_user(email=p[0], password_hash=p[1], name=p[2], nickname=p[3], age=p[4], home_dong1_id=p[5],
+                          home_dong2_id=p[6])
+        return {"id": u["id"]}
