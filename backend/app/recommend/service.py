@@ -205,6 +205,13 @@ async def recommend(cond: Conditions, visited: list[str]) -> dict:
         used = {v["item"]["place"]["id"] for v in shown}
         real = [x for x in pool if x["route"].get("source") in ("tmap", "seoul") and x["place"]["id"] not in used]
         shown += pick_by_rule(real, work_cond, config.MAX_CANDIDATES - len(shown))
+    if len(shown) < config.MAX_CANDIDATES and left(2.0) > 1.0 and transit.enabled():
+        # 재서 빠진 곳이 있으면, 남은 시간에 규칙 순서로 몇 곳 더 재서 3곳을 채워요 (실측에서 1~2곳만 나온 문제)
+        used = {v["item"]["place"]["id"] for v in shown}
+        more = [v["item"] for v in pick_by_rule([x for x in pool if x["place"]["id"] not in used
+                                                 and not x.get("overEstimate")], work_cond, 6)]
+        measured = await transit.measure_all(more, work_cond, now, min(config.TRANSIT_TIMEOUT, left(2.0)))
+        shown += pick_by_rule(measured, work_cond, config.MAX_CANDIDATES - len(shown))
     if not shown:
         return {"candidates": [], "notFound": True, "why": "none"}
     relaxed = relaxed and any(v["item"].get("relaxed") for v in shown)

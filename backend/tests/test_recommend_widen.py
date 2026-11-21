@@ -176,3 +176,30 @@ def test_agent_time_budget_keeps_screen_limit(monkeypatch):
     j = rec(cond())
     assert j["by"] == "rule" and len(j["candidates"]) == 3
     assert time.monotonic() - t0 < config.REC_WAIT - 1.0
+
+
+def test_refill_to_three_after_measured_drop(monkeypatch):
+    """고른 곳이 실제 길 재기에서 빠지면 남은 시간에 몇 곳 더 재서 3곳을 채워요."""
+    from app.data import transit
+
+    c = cond()
+    ctx = ctx_for(c)
+    bad = ctx.items[0]["place"]["id"]
+
+    async def refine(items, cond, now, budget):
+        return ctx.items, {}
+
+    async def measure_all(items, cond, now, budget):
+        out = []
+        for it in items:
+            if it["place"]["id"] == bad:
+                continue
+            out.append({**it, "route": {**it["route"], "source": "tmap"}})
+        return out
+
+    monkeypatch.setattr(transit, "enabled", lambda: True)
+    monkeypatch.setattr(transit, "refine", refine)
+    monkeypatch.setattr(transit, "measure_all", measure_all)
+    use(monkeypatch, [call("submit_picks", {"picks": [{"id": bad, "reason": "가 보기 좋아요"}]})])
+    j = rec(c)
+    assert len(j["candidates"]) == 3 and bad not in [x["place"]["id"] for x in j["candidates"]]
