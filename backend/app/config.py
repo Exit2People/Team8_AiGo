@@ -124,6 +124,11 @@ def chat_jev_on() -> bool:
     return env("AIGO_CHAT_JEV") != "0"
 
 
+def nickname_jev_on() -> bool:
+    """키가 있으면 닉네임도 Jev로 한 번 더 봐요. 0이면 규칙만."""
+    return env("AIGO_NICK_JEV") != "0"
+
+
 def transit_on() -> bool:
     return (env("AIGO_TRANSIT", "on") or "on").lower() != "off"
 
