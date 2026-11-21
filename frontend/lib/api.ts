@@ -172,6 +172,11 @@ export function deleteAccount() {
   if (isMock()) return m(() => mock.logout());
   return call<void>("/auth/account", { method: "DELETE", same: true });
 }
+/** 닉네임을 저장하기 전에 서버가 미리 확인해요. 안 되면 message에 이유 문장이 와요 */
+export function nicknameCheck(nickname: string) {
+  if (isMock()) return m(() => mock.nicknameCheck(nickname));
+  return call<{ ok: boolean; reason: string | null; message: string | null }>("/auth/nickname/check", { method: "POST", body: { nickname }, same: true });
+}
 export function patchProfile(p: Partial<{ homeDong1: string; homeDong2: string; name: string; nickname: string; age: string }>) {
   if (isMock()) return m(() => mock.patchProfile(p));
   return call<Me>("/auth/profile", { method: "PATCH", body: p, same: true });
