@@ -7,7 +7,7 @@ import Screen from "./screens";
 import Busy from "./screens/Busy";
 import * as api from "@/lib/api";
 import { ApiError } from "@/lib/errors";
-import { BASIC, DONT_KNOW } from "@/lib/questions";
+import { alreadyAsked, BASIC, DONT_KNOW, finishedQuestions, nextBasic } from "@/lib/questions";
 import { GEO_TIMEOUT, MAX_FLEX_QUESTIONS, OPEN_FAIL, Q_FALLBACK, Q_NOTICE, REC_FAIL, REC_NOTICE, RECHECK_AFTER, NOTE_MS } from "@/lib/constants";
 import { dongToOrigin, nearbyDongs, type Dong } from "@/lib/geo";
 import { addShown, addVisit, cancelVisit, load, readShownBefore, readVisits, save, sweepBackups, uuid } from "@/lib/device";
@@ -313,8 +313,6 @@ function useFlow() {
       const nav = how === "go" ? go : replaceTop;
       if (p.body === undefined) return nav({ k: "body" });
       if (p.time === undefined) return nav({ k: "time" });
-      const n = p.qs.length;
-      if (n >= MAX_FLEX_QUESTIONS && p.qs.every((q) => q.answered)) return nav({ k: "confirm" });
       return nav({ k: "flex", i: p.qs.filter((q) => q.answered).length });
     },
     [go, replaceTop],
@@ -322,7 +320,7 @@ function useFlow() {
 
   const submitOpen = useCallback(
     async (text: string | null) => {
-      const base: Partial<FlowState> = { body: undefined, time: undefined, qs: [], heard: [], filled: [], place: null, who: null, wish: [], fallback: false };
+      const base: Partial<FlowState> = { body: undefined, time: undefined, qs: [], questionTotal: undefined, heard: [], filled: [], place: null, who: null, wish: [], fallback: false };
       set(base);
       const t = (text ?? "").trim();
       if (!t || t === DONT_KNOW) return nextEmpty();
@@ -351,6 +349,7 @@ function useFlow() {
           body: f.has("body") ? c.body : undefined,
           time: f.has("time") ? c.time : undefined,
           qs,
+          questionTotal: r.next?.total,
           place: f.has("place") ? c.extra.place : null,
           who: f.has("who") ? c.extra.who : null,
           wish: f.has("wish") ? (c.extra.wish ?? []) : [],
@@ -373,13 +372,16 @@ function useFlow() {
   const toBasic = useCallback(
     (i: number) => {
       const p = sRef.current;
-      const used = new Set(p.qs.slice(0, i).map((q) => q.slot));
-      const b = BASIC.find((x) => !used.has(x.slot));
+      const history = p.qs.slice(0, i);
+      const last = history.at(-1);
+      const total = last?.total ?? p.questionTotal;
+      const no = 3 + history.filter((q) => q.src !== "open").length;
+      const b = total && no >= total ? undefined : nextBasic(history, p.place, p.wish, p.body);
       if (!b) {
         set({ preparing: -1, qNotice: false });
         return replaceTop({ k: "confirm" });
       }
-      const q: Q = { question: b.question, choices: b.choices, slot: b.slot, src: "basic", answered: false, a: null, dk: b.slot !== "inout" };
+      const q: Q = { question: b.question, choices: b.choices, slot: b.slot, src: "basic", answered: false, a: null, dk: b.slot !== "inout", no, total };
       set((pp) => ({ fallback: true, qs: [...pp.qs.slice(0, i), q], preparing: -1, qNotice: false }));
     },
     [replaceTop, set],
@@ -442,7 +444,8 @@ function useFlow() {
     const raw = (r.choices ?? []).filter(Boolean);
     const hadDk = raw.includes(DONT_KNOW);
     const choices = raw.filter((c) => c !== DONT_KNOW).slice(0, 4);
-    const q: Q = { question: r.question ?? "", choices, slot, src, answered: false, a: null, dk: slot !== "inout" || hadDk };
+    const q: Q = { question: r.question ?? "", choices, slot, src, answered: false, a: null, dk: slot !== "inout" || hadDk, no: r.no, total: r.total, extra: r.extra };
+    if (alreadyAsked(q, sRef.current.qs.slice(0, i))) return toBasic(i);
     set((p) => ({ qs: [...p.qs.slice(0, i), q], preparing: -1, qNotice: false }));
   }
 
@@ -462,7 +465,6 @@ function useFlow() {
       set((p) => ({ time: v, filled: p.filled.filter((f) => f !== "time") }));
       if (edit) return back();
       const n = sRef.current.qs.filter((q) => q.src === "open").length;
-      if (n >= MAX_FLEX_QUESTIONS) return go({ k: "confirm" });
       go({ k: "flex", i: n });
     },
     [back, go, set],
@@ -481,7 +483,8 @@ function useFlow() {
         return { qs, filled: old.slot === "walk" ? p.filled.filter((f) => f !== "walk") : p.filled };
       });
       if (edit) return back();
-      if (i + 1 >= MAX_FLEX_QUESTIONS) return go({ k: "confirm" });
+      const answered = sRef.current.qs.slice(0, i + 1);
+      if (finishedQuestions(answered, MAX_FLEX_QUESTIONS)) return go({ k: "confirm" });
       go({ k: "flex", i: i + 1 });
     },
     [back, go, set],
@@ -560,6 +563,7 @@ function useFlow() {
         }));
         // note()는 앞 안내를 덮어써서, 결과 보기 안내(lead)까지 한 줄로 합쳐요
         const told: string[] = lead ? [lead] : [];
+        if (r.destinationNote) told.push(r.destinationNote);
         if (r.expanded?.from?.length && r.expanded.words?.length)
           told.push(`${r.expanded.from.join(" · ")} → ${r.expanded.words.join(" · ")}으로 넓혀 찾았어요`);
         if (r.relaxed) told.push("가까운 곳이 없어서 조금 더 먼 곳까지 찾았어요");

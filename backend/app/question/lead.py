@@ -1,6 +1,7 @@
 """발전 질문: 질문 0에서 들은 말을 오늘 갈 수 있는 곳 이름으로 이어 물어요 (AI 없음)."""
 
 from app.question import variety
+from app.question.agent import name_list_bad
 from app.question.themes import short_name, themes_of, wish_themes
 from app.recommend.wish import matched_wish
 from app.schemas import Conditions
@@ -66,7 +67,7 @@ def lead_question(cond: Conditions, items: list[dict]) -> dict | None:
                 names.append(n)
             if len(names) == 3:
                 break
-        if len(names) >= 2:
+        if len(names) >= 2 and not name_list_bad(cond, items, names):
             return {"done": False, "id": "lead", "question": q, "choices": variety.shuffle(names), "slot": None, "source": "lead"}
     return None
 

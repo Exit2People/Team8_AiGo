@@ -250,10 +250,17 @@ def _experience(choice: str) -> bool:
 
 def name_list_bad(cond: Conditions, items: list[dict], choices: list[str]) -> str | None:
     """장소 이름 목록 규칙을 어기면 그 이유: 한 대화에 한 번만, 주제를 고른 바로 뒤에 그 주제 이름만 늘어놓지 않기."""
-    names = _today_names(items)
+    from app.data import loader
+
+    # 후보가 직전 답으로 좁혀져도 이미 보여 준 장소 이름은 계속 알아봐요.
+    names = _today_names(items) | {short_name(p) for p in loader.places()}
+    picked_names = set(choices) & names
+    destination = flow.destination_items(cond, items) if picked_names else None
+    if destination is not None and picked_names - _today_names(destination):
+        return "different_destination"
     if not _is_name_list(choices, names):
         return None
-    if names_used(cond, items):
+    if any(_is_name_list(x.choices, names) for x in cond.ai):
         return "name_list_repeat"
     lt = last_theme(cond)
     if lt and not cond.extra.place:  # 가고 싶은 곳(한강)을 직접 말했으면 그 안의 이름 목록 한 번은 돼요
@@ -319,7 +326,8 @@ def first_message(cond: Conditions, items: list[dict], no: int | None = None, to
     last = cond.ai[-1].a if cond.ai and cond.ai[-1].a and cond.ai[-1].a not in NEUTRAL else None
     if last and last not in clues and not word_ok(last):
         clues.append(last)
-    no_names = names_used(cond, items) or last_theme(cond) is not None
+    destination = flow.destination_items(cond, items)
+    no_names = destination is not None or names_used(cond, items) or last_theme(cond) is not None
     found = {c: find_places_by(items, c) for c in clues}
     if no_names:  # 이름 목록을 못 쓰는 때는 이름을 보여 주지 않아요 (늘어놓고 싶어지지 않게)
         found = {c: {k: v for k, v in f.items() if k not in ("가까운 곳 이름", "점수")} for c, f in found.items()}
@@ -334,6 +342,8 @@ def first_message(cond: Conditions, items: list[dict], no: int | None = None, to
                      else "곳 이름을 선택지로 늘어놓는 건 한 대화에 한 번만, 가고 싶은 곳을 직접 말했을 때만 써요."),
     }
     lt = last_theme(cond)
+    if destination is not None:
+        msg["지정한 목적지"] = f"{cond.extra.place}에서 할 일이나 이동에 필요한 조건을 물어요. 다른 장소를 고르게 하지 마요."
     if lt:
         msg["앞 답 주제"] = (f"'{lt[0]}'를 고르셨어요. 이 주제는 지키고, 그 안에서 경험(먹거리 · 분위기 · 걸으며 구경 / 앉아서 먹기 …)을 "
                          "물어요. 다른 주제로 넘어가거나 이름만 바꿔 되묻지 마요.")
@@ -601,8 +611,12 @@ async def ask_agent(cond: Conditions, items: list[dict], no: int | None = None, 
         return None
     if no is None or total is None:
         no, total = numbering(cond)
+    destination = flow.destination_items(cond, items)
+    candidates = items if destination is None else destination
+    if not candidates:
+        return None
     if extra:
-        left = len(narrowed(cond, items))
+        left = len(narrowed(cond, candidates))
         if left < config.EXTRA_MIN_LEFT:
             log.info("질문 에이전트: 1개 더 안 물어요 (좁힌 곳 %s곳)", left)
             return {"done": True}
@@ -616,12 +630,12 @@ async def ask_agent(cond: Conditions, items: list[dict], no: int | None = None, 
     if budget <= 0.5:
         return None
     deadline = time.monotonic() + budget
-    tools = {"find_places": lambda word: find_places_by(items, word),
-             "look_bank": lambda: look_bank(cond, items),
-             "count_choices": lambda choices: count_choices(cond, items, choices),
+    tools = {"find_places": lambda word: find_places_by(candidates, word),
+             "look_bank": lambda: look_bank(cond, candidates),
+             "count_choices": lambda choices: count_choices(cond, candidates, choices),
              "submit_question": lambda **kw: {"ok": True}}
     model = config.env("AIGO_QUESTION_AGENT_MODEL") or config.model()
-    first = first_message(cond, items, no, total, extra)  # 곳 찾기가 들어 있어 1초쯤 걸려요 → 남은 시간만 에이전트에
+    first = first_message(cond, candidates, no, total, extra)
     res = await agent_loop.run(SYSTEM, first, tools, SCHEMAS,
                                "submit_question", config.QUESTION_AGENT_ROUNDS, deadline - time.monotonic(), model,
                                1500, "low", name="질문 에이전트")
@@ -629,7 +643,7 @@ async def ask_agent(cond: Conditions, items: list[dict], no: int | None = None, 
         return None
     sub = res["submitted"]
     why = re.sub(r"\s+", " ", str(sub.get("why") or "")).strip()[:80]
-    q = check_question(cond, items, sub)
+    q = check_question(cond, candidates, sub)
     if q is None:
         log.info("질문 에이전트: 검사에서 빠졌어요 (no %s)", no)
         return None

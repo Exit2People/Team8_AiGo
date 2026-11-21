@@ -1,4 +1,5 @@
 import type { Slot } from "./types";
+import type { Q } from "./flow";
 
 /** 질문 은행 (11_FRONTEND_SPEC 5.3) */
 export const BODY = { question: "컨디션은 어떠세요?", choices: ["가뿐해요", "보통이에요", "좀 무거워요"] };
@@ -19,6 +20,37 @@ export const BASIC: BankQ[] = [
 export const SLOT_NAME: Record<string, string> = { want: "하고 싶은 것", walk: "걷기", inout: "실내 · 바깥" };
 
 export const DONT_KNOW = "잘 모르겠어요";
+
+type QuestionContent = Pick<Q, "question" | "choices" | "slot">;
+const questionKey = (s: string) => s.replace(/[\s?.!,·~]/g, "");
+
+export function alreadyAsked(next: QuestionContent, history: Q[]) {
+  const options = new Set(next.choices.filter((c) => ![DONT_KNOW, "둘 다 좋아요", "상관없어요"].includes(c)).map(questionKey));
+  return history.some((q) => {
+    if (!q.answered) return false;
+    if (next.slot && next.slot === q.slot) return true;
+    if (questionKey(next.question) === questionKey(q.question)) return true;
+    return [...new Set(q.choices.map(questionKey))].filter((c) => options.has(c)).length >= Math.max(2, options.size - 1);
+  });
+}
+
+export function nextBasic(history: Q[], place: string | null, wish: string[], body: string | null | undefined) {
+  return BASIC.find((b) => {
+    if (place && b.slot !== "walk") return false;
+    if (wish.length && b.slot === "want") return false;
+    if (body === "좀 무거워요" && b.slot === "walk") return false;
+    return !alreadyAsked(b, history);
+  });
+}
+
+export function finishedQuestions(history: Q[], legacyLimit: number) {
+  const asked = history.filter((q) => q.src !== "open" && q.answered);
+  const last = asked.at(-1);
+  if (!last?.total) return asked.length >= legacyLimit;
+  // 전체 수를 채운 뒤 서버가 추가 질문 하나를 결정해요. 기본 질문으로 전환했으면 여기서 끝나요.
+  return !!last.extra || (last.src === "basic" && last.no != null && last.no + 1 >= last.total)
+    || 3 + asked.length > last.total;
+}
 
 /** 질문 글 두 줄 만들기 (5.2) */
 export function twoLines(q: string): string {

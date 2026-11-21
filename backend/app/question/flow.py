@@ -150,6 +150,20 @@ def _splits(qid: str, items: list[dict] | None) -> bool:
     return len(live) >= 2 and any(n < len(items) for n in live)
 
 
+def destination_items(cond: Conditions, items: list[dict]) -> list[dict] | None:
+    """None은 지역·막연한 단서, 빈 목록은 이름이 일치하는 장소가 오늘 후보에 없다는 뜻이에요."""
+    from app.data import loader
+    from app.recommend.wish import exact_place
+
+    place = cond.extra.place
+    if not place:
+        return None
+    exact = [it for it in items if exact_place(it["place"], place)]
+    if exact or any(exact_place(p, place) for p in loader.places()):
+        return exact
+    return None
+
+
 def narrowed_items(cond: Conditions, items: list[dict] | None) -> list[dict] | None:
     """은행도 에이전트와 같은, 앞 답으로 좁힌 후보를 써요."""
     if items is None:
@@ -157,6 +171,9 @@ def narrowed_items(cond: Conditions, items: list[dict] | None) -> list[dict] | N
     from app.question.agent import narrowed
     from app.question.themes import themes_of, wish_themes
 
+    destination = destination_items(cond, items)
+    if destination is not None:
+        return destination
     left = narrowed(cond, items)
     # 에이전트가 만든 '북적이는 시장' 같은 선택지도 은행의 주제와 연결해요.
     clues = [cond.extra.place, *cond.extra.wish, *(x.a for x in cond.ai if x.a)]

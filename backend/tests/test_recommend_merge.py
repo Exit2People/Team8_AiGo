@@ -138,3 +138,22 @@ def test_open_direct_place_is_shown_instead_of_come_another_day(monkeypatch):
     r = client.post("/recommend", json={"conditions": cond(walk="제한 없음", wish=["공룡 구경"]), "visited": []}).json()
     assert any(direct_specific(c["place"], ["공룡 구경"]) for c in r["candidates"])
     assert "wishLater" not in r
+
+
+def test_available_named_destination_is_first_even_when_ai_omits_it(monkeypatch):
+    async def pick_other(pool, c, timeout):
+        assert any(x["place"]["name"] == "서울숲" for x in pool)
+        others = [x for x in pool if x["place"]["name"] != "서울숲" and not x.get("overEstimate")]
+        return [{"id": x["place"]["id"], "reason": "산책하기 좋아요"} for x in others[:3]]
+
+    monkeypatch.setattr(svc, "pick_by_ai", pick_other)
+    r = client.post("/recommend", json={"conditions": cond(walk="제한 없음", place="서울 숲")}).json()
+    assert r["candidates"][0]["place"]["name"] == "서울숲"
+
+    # 다른 추천을 요청하며 제외한 곳을 되살리거나 사유 없이 다른 곳으로 바꾸지 않아요.
+    c = cond(walk="제한 없음", place="서울숲")
+    c["exclude"] = [r["candidates"][0]["place"]["id"]]
+    monkeypatch.setattr(svc, "pick_by_ai", lambda *args: asyncio.sleep(0, None))
+    other = client.post("/recommend", json={"conditions": c}).json()
+    assert other["candidates"] and all(x["place"]["id"] not in c["exclude"] for x in other["candidates"])
+    assert "서울숲" in other["destinationNote"]

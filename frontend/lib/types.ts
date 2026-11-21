@@ -24,6 +24,8 @@ export type Slot = "want" | "walk" | "inout" | null;
 
 /** /questions/next · /questions/open 의 next 응답 */
 export type QuestionResp = {
+  total?: number;
+  extra?: boolean;
   done?: boolean;
   fallback?: boolean | QuestionResp | null;
   needsAi?: boolean;
@@ -86,6 +88,7 @@ export type RecommendResp = {
   expanded?: { from: string[]; words: string[]; places: string[]; found: number } | null;
   /** 범위 안에 0곳이라 편도 상한을 넓혀 찾았을 때만 true */
   relaxed?: boolean;
+  destinationNote?: string;
 };
 
 export type Social = { expectedToday: number; reviewCount: number; topTags: [string, number][] };

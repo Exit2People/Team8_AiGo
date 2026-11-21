@@ -104,6 +104,10 @@ def matched_wish(p: dict, wishes: list[str], expanded: list[str] | None = None) 
     return None
 
 
+def exact_place(p: dict, place: str | None) -> bool:
+    return bool(place) and (p.get("name") or "").replace(" ", "") == place.replace(" ", "")
+
+
 def matches_place(p: dict, place: str | None) -> bool:
     if not place:
         return False

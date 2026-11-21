@@ -47,6 +47,9 @@ export type Step =
 export type StepKey = Step["k"];
 
 export type Q = {
+  no?: number;
+  total?: number;
+  extra?: boolean;
   question: string;
   choices: string[];
   slot: Slot;
@@ -67,6 +70,7 @@ export type FlowState = {
   body: string | null | undefined;
   time: string | null | undefined;
   qs: Q[];
+  questionTotal?: number;
   fallback: boolean;
   filled: string[];
   place: string | null;

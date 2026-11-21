@@ -63,8 +63,11 @@ export default function Question({ f, kind, i = 0, edit }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kind, i, !!q]);
 
-  const progress =
-    kind === "body" ? <Progress on={2} text="2 / 4" right /> : kind === "time" ? <Progress on={3} text="3 / 4" right /> : <Progress on={4} text={`질문 ${i + 1}`} right bar={!!q && q.src !== "ai"} />; // AI가 고른 질문(과 고르는 중)엔 진행 막대를 빼요
+  const total = q?.total ?? s.questionTotal;
+  const number = kind === "body" ? 2 : kind === "time" ? 3 : q?.no != null ? q.no + 1 : undefined;
+  const progressText = number && total ? `질문 ${number} / ${total}`
+    : kind === "body" ? "몸 상태" : kind === "time" ? "시간" : q ? `질문 ${i + 1}` : "다음 질문";
+  const progress = <Progress on={number && total ? Math.ceil(4 * number / total) : 0} text={progressText} right bar={!!number && !!total} />;
 
   if (kind === "flex" && !q) {
     return (

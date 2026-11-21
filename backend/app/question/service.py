@@ -163,6 +163,12 @@ async def next_ai(cond: Conditions) -> dict:
         if r is not None and r.get("early"):
             return {**r, "no": no, "total": total}  # 이미 충분히 좁혀졌어요 (진행 표시는 그대로, 화면이 why 를 보여 줘요)
         # early 가 아닌 done이어도 질문 수는 채워요 → 아래의 더 좁히는 질문으로
+    destination = flow.destination_items(cond, items or [])
+    if destination is not None:
+        # 장소가 정해졌으면 이동에 필요한 빈 칸만 확인하고 추천 단계에서 가능 여부를 확인해요.
+        if destination and flow.bank_available(cond, "walk", destination):
+            return stamp(flow.bank_question("walk", destination, None))
+        return {"done": True, "early": True, "no": no, "total": total, "why": "가고 싶은 곳을 말씀해 주셨어요."}
     fallback_items = flow.narrowed_items(cond, items)
     lead = lead_question(cond, fallback_items or [])
     if lead:
@@ -173,6 +179,8 @@ async def next_ai(cond: Conditions) -> dict:
         v = await ask_json(AI_QUESTION_SYSTEM, strip_for_ai(cond), QUESTION_SCHEMA, config.QUESTION_AI_TIMEOUT)
     if v is not None and v.get("done") is not True:
         ok = validate_single(cond, v)
+        if ok and qa.name_list_bad(cond, items or [], ok["choices"]):
+            ok = None
         if ok:
             qid = qa.bank_id_of(ok["question"], ok["choices"])
             if qid and not flow.bank_available(cond, qid, fallback_items):

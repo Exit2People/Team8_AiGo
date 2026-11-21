@@ -16,7 +16,7 @@ from app.recommend import expand as ex
 from app.recommend import info, map_candidates
 from app.recommend.pick import limit_revisits, pick_by_ai, pick_by_rule, rule_reason
 from app.recommend.verify import check, confirm_by_jev, verify_picks
-from app.recommend.wish import direct_specific, place_text, specific_terms, unmatched_specific
+from app.recommend.wish import direct_specific, exact_place, place_text, specific_terms, unmatched_specific
 from app.schemas import Conditions
 
 log = logging.getLogger("aigo.recommend")
@@ -326,6 +326,12 @@ async def recommend(cond: Conditions, visited: list[str], shown: list[str] | Non
     if not verified:
         return done({"candidates": [], "notFound": True, "why": "none"})
 
+    place = work_cond.extra.place
+    if place:
+        requested = [it for it in pool if exact_place(it["place"], place) and not it.get("overEstimate")]
+        if requested and not any(exact_place(v["item"]["place"], place) for v in verified):
+            verified = pick_by_rule(requested, work_cond, 1) + verified
+        verified.sort(key=lambda v: not exact_place(v["item"]["place"], place))
     shown = verified[: config.MAX_CANDIDATES]
     late = time.monotonic() - t0 > total
     early: dict[str, dict] = {}  # 장소 id → 미리 붙인 정보 (사진 · 요금 · 전화)
@@ -354,12 +360,16 @@ async def recommend(cond: Conditions, visited: list[str], shown: list[str] | Non
 
     shown = limit_revisits(shown, work_cond)  # 다녀온 곳은 1곳까지, 맨 앞은 새로운 곳
     shown = _ensure_direct(shown, pool, items, work_cond)
+    if place:
+        shown.sort(key=lambda v: not exact_place(v["item"]["place"], place))
     # 넓혀 찾은 곳이 하나라도 보이면 화면이 "조금 더 먼 곳까지 찾았어요"를 띄워요.
     # 코드 길 _relax 는 cond 자체를 넓혀서 relaxed 가 이미 True, 에이전트 relax_travel 은 곳마다 relaxed 를 달아요
     # (에이전트가 넓혀 찾은 곳을 코드 길 · 규칙 채우기가 골라도 여기서 잡혀요)
     relaxed = relaxed or any(v["item"].get("relaxed") for v in shown)
     shown = _fix_wish_reasons(shown, work_cond)
     wish_later = _wish_later(work_cond, shown, now)
+    other_destination = (place and not any(exact_place(v["item"]["place"], place) for v in shown)
+                         and any(exact_place(p, place) for p in loader.places()))
     cands = [_candidate(v) for v in shown]
     todo = [(c, v["item"]) for c, v in zip(cands, shown) if c["place"]["id"] not in early]
     for c in cands:
@@ -374,6 +384,7 @@ async def recommend(cond: Conditions, visited: list[str], shown: list[str] | Non
         "candidates": cands, "notFound": False, "by": by, "weather": w,
         "dataAsOf": places_db.fetched_at(), "expanded": expanded,
         **({"relaxed": True} if relaxed else {}),
+        **({"destinationNote": f"{place} 대신 오늘 조건에 맞는 다른 곳을 골랐어요."} if other_destination else {}),
         # 칸 더하기: 바람과 맞는 곳이 오늘 쉬면 여는 요일을 알려요 (화면이 note를 띄울 수 있어요)
         **({"wishLater": wish_later} if wish_later else {}),
     })

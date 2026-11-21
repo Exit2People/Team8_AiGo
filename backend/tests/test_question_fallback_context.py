@@ -117,3 +117,28 @@ def test_no_submission_has_own_reason(monkeypatch, caplog):
     monkeypatch.setattr(agent_loop, "make_chat", lambda *a, **k: FakeChat([call("look_bank", {})] * 3))
     assert asyncio.run(agent.ask_agent(cond(), items())) is None
     assert "reason=no_submission" in caplog.text
+
+
+def test_place_list_not_repeated_when_switching_to_fallback(monkeypatch):
+    parks = items()[2:]
+    parks[1]["place"]["name"] = "여의도한강공원"
+    names = [it["place"]["name"] for it in parks]
+    c = cond(extra={"place": "한강"}, ai=[{"q": "한강에서 어느 곳으로 갈까요?", "choices": names, "a": None}])
+    monkeypatch.setattr(flow, "today_items", lambda _: parks)
+    r = asyncio.run(service.next_ai(c))
+    assert r.get("source") != "lead"
+    assert not set(names).intersection(r.get("choices", []))
+
+
+def test_named_destination_survives_generic_prompt_and_fallback(monkeypatch):
+    parks = items()[2:]
+    forest = {"place": {"name": "서울숲", "kind": "공원"}, "route": {"totalMin": 10}}
+    today = [forest, *parks]
+    c = cond(extra={"place": "서울 숲"}, filled=["place"])
+    other_names = [it["place"]["name"] for it in parks]
+    assert agent.check_question(c, today, {"question": "어느 공원에 가고 싶으세요?", "choices": other_names}) is None
+    monkeypatch.setattr(flow, "today_items", lambda _: today)
+    r = asyncio.run(service.next_ai(c))
+    assert r["slot"] == "walk"
+    c.basic.walk = r["choices"][0]
+    assert asyncio.run(service.next_ai(c))["done"]

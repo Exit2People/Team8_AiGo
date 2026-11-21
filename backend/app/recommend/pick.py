@@ -3,7 +3,7 @@
 import math
 
 from app import config
-from app.recommend.wish import matched_wish, matches_place, matches_who, place_text
+from app.recommend.wish import exact_place, matched_wish, matches_place, matches_who, place_text
 from app.schemas import Conditions, strip_for_ai, want_of
 
 FIT_TURN = 3
@@ -78,7 +78,10 @@ def daily_jitter(pid: str | None) -> float:
 
 def rank_by_rule(items: list[dict], cond: Conditions) -> list[dict]:
     # 점수가 비슷한 곳끼리만 날마다 순서가 바뀌어요 (같은 답이면 매일 같은 목록이 되지 않게)
-    return sorted(items, key=lambda it: -(rule_score(it, cond) + daily_jitter(it["place"].get("id"))))
+    return sorted(items, key=lambda it: (
+        not exact_place(it["place"], cond.extra.place),
+        -(rule_score(it, cond) + daily_jitter(it["place"].get("id"))),
+    ))
 
 
 def diverse_pool(items: list[dict], cond: Conditions, n: int = config.AI_POOL) -> list[dict]:
