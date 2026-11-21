@@ -19,18 +19,10 @@ export function TextSizeIcon({ color = "currentColor" }: { color?: string }) {
 export function TextSizeButton({ light }: { light?: boolean }) {
   return (
     <button
-      className="chip"
+      className="chip chip-top"
       onClick={() => window.dispatchEvent(new CustomEvent(OPEN_TEXT_SIZE))}
       aria-label="글씨 크기 바꾸기"
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        height: 34,
-        padding: "0 12px",
-        fontSize: 14, // 버튼 자체는 늘 같은 크기로 둬서 어느 단계에서도 찾기 쉽게
-        ...(light ? { background: "var(--white)", color: "var(--ink)", boxShadow: "var(--sh-row)" } : {}),
-      }}
+      style={light ? { background: "var(--white)", color: "var(--ink)", boxShadow: "var(--sh-row)" } : undefined}
     >
       <TextSizeIcon />
       글씨 크기
@@ -93,7 +85,7 @@ export function TextSizeSheet() {
           글씨 크기
         </h2>
         <p className="t-sub c-mute" style={{ marginTop: 6, marginBottom: 16 }}>
-          누르면 바로 바뀌어요 · 내 정보에서도 바꿀 수 있어요
+          누르면 바로 바뀌어요 · 마이메뉴에서도 바꿀 수 있어요
         </p>
         <TextSizePicker />
         <button className="btn btn-primary" style={{ justifyContent: "center", marginTop: 18 }} onClick={() => setOpen(false)}>

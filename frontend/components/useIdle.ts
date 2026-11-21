@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { hasPose } from "@/lib/poses";
+import { later } from "@/lib/pause";
 
 /** 담고 제자리 움직임 (11_FRONTEND_SPEC 15절, 4-animation 4-2) */
 const REST: Record<string, number> = { s1: 4200, home: 4200, loc: 3600, near: 3800, gu: 3400, st: 3500, body: 3800, time: 4000, q1: 3400, fb: 3600, last: 3800, mine: 3800 };
@@ -17,8 +18,8 @@ export function useIdle(base: string, enabled: boolean): { key: string; blink: b
     setBlink(false);
     if (!can) return;
     let alive = true;
-    const ts: ReturnType<typeof setTimeout>[] = [];
-    const at = (ms: number, fn: () => void) => ts.push(setTimeout(() => alive && fn(), ms));
+    const ts: (() => void)[] = [];
+    const at = (ms: number, fn: () => void) => ts.push(later(ms, () => alive && fn())); // 배지 축하 중에는 멈춰요
     const rest = REST[base] ?? 3800;
     function loop() {
       const k = Math.random() < 0.2 ? 1.8 + Math.random() * 1.4 : 0.6 + Math.random() * 1.3;
@@ -51,7 +52,7 @@ export function useIdle(base: string, enabled: boolean): { key: string; blink: b
     loop();
     return () => {
       alive = false;
-      ts.forEach(clearTimeout);
+      ts.forEach((cancel) => cancel());
     };
   }, [base, can]);
 
