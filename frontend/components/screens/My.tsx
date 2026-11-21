@@ -303,8 +303,6 @@ export function MyEdit({ f, field }: { f: FlowApi; field: keyof typeof FIELDS })
 
 /** 테마 색 (4.5 theme, 13절) */
 export function Theme({ f }: { f: FlowApi }) {
-  const [n, setN] = useState(0);
-  useEffect(() => setN(readVisits().length), []);
   return (
     <div className="content">
       <Title y={112}>테마 색</Title>
@@ -336,15 +334,6 @@ export function Theme({ f }: { f: FlowApi }) {
           })}
         </div>
       </div>
-      <div className="card" style={{ top: 470 }}>
-        <p className="t-answer">다녀온 곳 {n}곳</p>
-        <p className="t-caption c-mute" style={{ marginTop: 6, lineHeight: 1.45 }}>
-          이 기기에만 30일 동안 기억해요. 같은 곳을 또 추천하지 않으려고요.
-        </p>
-      </div>
-      <Caption y={760} dark>
-        이름 · 전화번호 · 위치는 남기지 않아요
-      </Caption>
     </div>
   );
 }
