@@ -85,11 +85,11 @@ export default function Stage({ poseKey, pose, coral, still, inert, overlay, chi
   const bg = bgFor(poseKey);
   const p = pose ?? getPose(poseKey);
 
+  const isA = coral.toUpperCase() === "#FF5A4F";
+  const bar = barColor(coral, bg.warm === 0 && bg.deep === 0 && bg.coralY === 0, isA);
   useEffect(() => {
-    const isA = coral.toUpperCase() === "#FF5A4F";
-    const color = barColor(coral, bg.warm === 0 && bg.deep === 0 && bg.coralY === 0, isA);
-    setThemeColor(color);
-  }, [coral, bg.warm, bg.deep, bg.coralY]);
+    setThemeColor(bar);
+  }, [bar]);
 
   const style = fit
     ? ({
@@ -103,6 +103,8 @@ export default function Stage({ poseKey, pose, coral, still, inert, overlay, chi
 
   return (
     <div className="viewport">
+      {/* 아이폰 사파리가 상태 표시줄을 이 띠 색으로 칠해요 (1.4) */}
+      <div aria-hidden="true" style={{ position: "fixed", left: 0, right: 0, top: 0, height: "max(env(safe-area-inset-top), 6px)", background: bar, zIndex: 100, transition: "background .3s" }} />
       <div ref={topRef} style={{ position: "fixed", top: 0, height: "env(safe-area-inset-top)", width: 1, visibility: "hidden" }} />
       <div ref={botRef} style={{ position: "fixed", bottom: 0, height: "env(safe-area-inset-bottom)", width: 1, visibility: "hidden" }} />
       <div ref={appRef} className={`app${still ? " still" : ""}`} style={style}>

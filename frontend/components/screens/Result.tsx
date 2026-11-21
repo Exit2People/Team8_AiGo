@@ -75,7 +75,7 @@ export function Ticket({ c, i, n, closed, expected }: { c: Candidate; i: number;
       {[
         ["노선", linesText(legs)],
         ["출구", last?.exit ? last.exit : "안내 없음"],
-        ["도보", `약 ${last?.walkMin ?? 0}분`],
+        ["걷기", `약 ${last?.walkMin ?? 0}분`],
       ].map(([k, v], n2) => (
         <div key={k} className="abs" style={{ left: 24 + n2 * 89, top: 440, width: 86 }}>
           <span className="t-tlabel c-tgray">{k}</span>
@@ -86,7 +86,7 @@ export function Ticket({ c, i, n, closed, expected }: { c: Candidate; i: number;
       ))}
       {[
         ["타는 곳", first?.station ?? "출발 동"],
-        ["환승", transfers ? `${transfers}번` : "없음"],
+        ["갈아타기", transfers ? `${transfers}번` : "없음"],
         ["운영 상황", closed ? "닫음" : c.open?.today ?? "운영 시간 확인 필요"],
       ].map(([k, v], n2) => (
         <div key={k} className="abs" style={{ left: 24, right: 24, top: 482 + n2 * 19, display: "flex", justifyContent: "space-between", gap: 8 }}>

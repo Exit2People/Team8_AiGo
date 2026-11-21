@@ -87,6 +87,7 @@ export type FlowState = {
   preparing: number;
   qNotice: boolean;
   arrivedAt: string;
+  weather: string;
 };
 
 export const initialState = (): FlowState => ({
@@ -117,6 +118,7 @@ export const initialState = (): FlowState => ({
   preparing: -1,
   qNotice: false,
   arrivedAt: "",
+  weather: "",
 });
 
 /** 조건 묶음 만들기 (02_ARCHITECTURE 3-1) */

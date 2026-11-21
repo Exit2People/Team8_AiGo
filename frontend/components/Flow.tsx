@@ -515,7 +515,10 @@ function useFlow() {
           receivedAt: Date.now(),
           closed: [],
           seen: Array.from(new Set([...(keepSeen ? q.seen : []), ...ids])),
+          weather: r.weather?.weather ?? "",
         }));
+        if (r.expanded?.from?.length && r.expanded.words?.length)
+          setTimeout(() => note(`${r.expanded!.from.join(" · ")} → ${r.expanded!.words.join(" · ")}으로 넓혀 찾았어요`), 60);
         window.dispatchEvent(new CustomEvent("aigo:badge", { detail: { ev: "recommend" } }));
         if (how === "push" || top().k !== "result") go({ k: "result" });
       } catch (e) {
@@ -630,7 +633,7 @@ function useFlow() {
     const c = cand();
     if (!c) return;
     set({ arrivedAt: clockText() });
-    window.dispatchEvent(new CustomEvent("aigo:badge", { detail: { ev: "arrive", id: c.place.id, kind: c.place.kind, gu: c.place.gu } }));
+    window.dispatchEvent(new CustomEvent("aigo:badge", { detail: { ev: "arrive", id: c.place.id, kind: c.place.kind, gu: c.place.gu, weather: sRef.current.weather } }));
     go({ k: "arrive" });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [go, set]);

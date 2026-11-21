@@ -162,12 +162,34 @@ export default function Mic({
       finish(ERR[e.error] ?? "잘 듣지 못했어요. 다시 눌러 주세요");
     };
     r.onend = () => finish();
-    const go = () => {
+    const begin = () => {
       try {
         r.start();
       } catch {
         /* 이미 듣는 중이면 이어 붙어요 */
       }
+    };
+    // 아이폰: 시작 직전에 아주 짧은 음성 합성으로 오디오를 깨워요 (14.4)
+    const go = () => {
+      if (!isIOS() || typeof speechSynthesis === "undefined") return begin();
+      let done = false;
+      const once = () => {
+        if (done) return;
+        done = true;
+        begin();
+      };
+      try {
+        const u = new SpeechSynthesisUtterance("음");
+        u.lang = "ko-KR";
+        u.volume = 0.01;
+        u.rate = 2;
+        u.onend = once;
+        u.onerror = once;
+        speechSynthesis.speak(u);
+      } catch {
+        once();
+      }
+      setTimeout(once, 1500);
     };
     const ae = document.activeElement as HTMLElement | null;
     if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")) {
