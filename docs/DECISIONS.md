@@ -16,3 +16,6 @@
 | 2026-11-21 | 카카오 리다이렉트 | `https://ai-go-team8.vercel.app/api/auth/kakao/callback` (사용자가 콘솔에 등록) | 07_AUTH 10.1 |
 | 2026-11-21 | 커밋 단위 | **기능별로** 나눠 커밋 | 사용자 요청 |
 | 2026-11-21 | `secrets.env` 넣기 | zsh `source`가 `DATABASE_URL`의 `&`에서 깨져서, 값을 찍지 않는 파이썬 읽기(`dotenv_values`) → 파이프로 넣음 | 08_DEPLOY 6.1 |
+| 2026-11-21 | 두 줄 나누기 시점 | 화면 줄(F0~)을 S3와 **동시에** 시작 (가짜 응답으로 먼저 만들기 때문에 S3를 기다릴 필요 없음) | 시간 절약 |
+| 2026-11-21 | 커밋 주체 | 사용자 요청(기능별 커밋)에 맞춰 각 줄의 하위 에이전트가 **자기 폴더만** `git commit -- <폴더>`로 기능마다 커밋. push는 메인만 | START_HERE 2.2 "커밋은 메인만"을 바꿈 |
+| 2026-11-21 | 화면 자료 위치 | `frontend/data/` (dongs · badges · poses) | 11_FRONTEND_SPEC 0절 |
