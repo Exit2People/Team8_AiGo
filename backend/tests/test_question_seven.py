@@ -125,8 +125,9 @@ def test_extra_skipped_when_already_narrow(on, monkeypatch):
     c = cond(ai=[{"q": f"q{i}?", "choices": [], "a": "x"} for i in range(3)]
              + [{"q": "어떤 구경이 좋으세요?", "choices": [], "a": "궁 · 한옥"}])
     items = flow.today_items(c)
-    if len(qa.narrowed(c, items)) >= config.EXTRA_MIN_LEFT:
-        pytest.skip("오늘 자료에 궁 · 한옥이 많아요")
+    left = len(qa.narrowed(c, items))
+    assert left < len(items)  # 답한 주제로 좁혀요
+    monkeypatch.setattr(config, "EXTRA_MIN_LEFT", left + 1)
     fake = use(monkeypatch, [])
     assert asyncio.run(service.next_ai(c)) == {"done": True}
     assert fake.seen == []  # 에이전트를 부르지도 않아요
