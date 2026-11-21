@@ -25,12 +25,26 @@ const UP = new Map<Pose, Pose>();
  * 큰 원은 화면마다 디자인에서 꼬리를 둔 자리(poses.json 첫 원)에서 지름의 0.3배만큼 위로 올려 머리 위로 부푼 끝이 보이게 두고,
  * 작은 원을 그림 비율대로 그 아래 · 머리 쪽에 붙여요
  * → 화면 가장자리의 담고도 꼬리가 예전만큼 보여요.
+ * 그런데 디자인 자리가 머리보다 아래인 화면(고민 · 찾는 중 · 도착 …)은 그렇게 두면 작은 원이 얼굴 밑에 매달려 떨어져 보여요.
+ * 이때는 그림처럼 작은 원을 머리 옆(머리 기준 바깥 73, 아래 25)에 붙이고 큰 원을 그 위 · 바깥으로 이어요.
  */
 const TIP_D = 80;
 /** 메인(시작) 화면은 머리가 아주 커서 꼬리가 가려져요 → 꼬리만 오른쪽 위(오른쪽 귀 너머)로 빼요 [x, y] */
 const TAIL_NUDGE: Record<string, [number, number]> = { s1: [28, -70], home: [28, -70], s1i: [28, -70] };
 const NUDGED = new Map<Pose, [number, number]>(Object.entries(TAIL_NUDGE).filter(([k]) => POSES[k]).map(([k, v]) => [POSES[k], v]));
 const ROOT_FROM_TIP: [number, number, number] = [-10, 47, 58]; // [바깥쪽 +x, 아래 +y, 지름]
+/** 그림 속 작은 원 자리: 머리 SVG 가운데(95,97)에서 바깥 73 · 아래 25 */
+const ROOT_ON_HEAD: [number, number] = [73, 25];
+
+/** 머리 안쪽(대략 타원) 정도 — 1보다 크면 머리 밖이에요 */
+function headEllipse([hx, hy, s, r]: Pose["h"], x: number, y: number): number {
+  const a = (-r * Math.PI) / 180;
+  const dx = x - hx;
+  const dy = y - hy;
+  const u = dx * Math.cos(a) - dy * Math.sin(a);
+  const v = dx * Math.sin(a) + dy * Math.cos(a);
+  return (u / (73 * s)) ** 2 + ((v - 4 * s) / (60 * s)) ** 2;
+}
 
 /** 꼬리 두 원을 [뿌리(작은 원), 끝(큰 원)]으로 다시 놓아요. poses.json은 그대로 두고 불러올 때만 고쳐요. */
 function tailShape(p: Pose): Pose {
@@ -50,7 +64,19 @@ function tailShape(p: Pose): Pose {
     const y = ROOT_FROM_TIP[1] * k;
     const root: Pose["t"][number] = [tx + x * Math.cos(a) - y * Math.sin(a), ty + x * Math.sin(a) + y * Math.cos(a), ROOT_FROM_TIP[2] * k, 1];
     const tip: Pose["t"][number] = [tx, ty, base[2], 1];
-    out = { ...p, t: [root, tip, ...rest] };
+    if (!NUDGED.has(p) && headEllipse(p.h, root[0], root[1]) > 0.85) {
+      // 작은 원이 머리 밖에 매달려 보이면: 머리 옆에 붙이고 큰 원을 그 위 · 바깥으로
+      const s = p.h[2];
+      const hx0 = side * ROOT_ON_HEAD[0] * s;
+      const hy0 = ROOT_ON_HEAD[1] * s;
+      const rx = hx + hx0 * Math.cos(a) - hy0 * Math.sin(a);
+      const ry = p.h[1] + hx0 * Math.sin(a) + hy0 * Math.cos(a);
+      const ux = -side * ROOT_FROM_TIP[0] * k;
+      const uy = -ROOT_FROM_TIP[1] * k;
+      const att: Pose["t"][number] = [rx, ry, ROOT_FROM_TIP[2] * k, 1];
+      const top: Pose["t"][number] = [rx + ux * Math.cos(a) - uy * Math.sin(a), ry + ux * Math.sin(a) + uy * Math.cos(a), base[2], 1];
+      out = { ...p, t: [att, top, ...rest] };
+    } else out = { ...p, t: [root, tip, ...rest] };
   }
   UP.set(p, out);
   return out;
