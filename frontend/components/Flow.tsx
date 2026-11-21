@@ -756,9 +756,9 @@ export default function Flow() {
   const { s } = f;
   const step = s.stack[s.stack.length - 1];
   const busy = s.busy && !s.busy.startsWith("질문") ? s.busy : null;
-  // PC처럼 넓은 화면: 내 정보 · 업적 · 게임은 뒤 화면을 흐리게 두고 옆 패널 · 가운데 창으로 띄워요 (WideLayers)
+  // 마이메뉴 · 업적 · 게임 등은 뒤 화면을 흐리게 두고 왼쪽 패널 · 가운데 창으로 띄워요 (WideLayers, 폰 · PC 모두)
   const wide = useWide();
-  const layer = busy ? null : layerOf(s.stack, wide);
+  const layer = busy ? null : layerOf(s.stack);
   const baseStep = layer ? s.stack[layer.baseAt - 1] : step;
   const poseKey = useMemo(() => {
     if (busy) return busy.startsWith("가까운") ? "kwait" : busy.startsWith("조금만") ? "wait" : "find";
@@ -792,9 +792,9 @@ export default function Flow() {
       paused={!!cele}
       overlay={
         <>
-          {wide && <WideLayers f={f} layer={layer} frozen={!!cele} />}
+          <WideLayers f={f} layer={layer} frozen={!!cele} wide={wide} />
           {s.note ? (
-            <div className={`toast${layer ? " lyToast" : ""}${layer && layer.myAt >= 0 ? " side" : ""}`} role="status">
+            <div className={`toast${layer ? " lyToast" : ""}${wide && layer && layer.myAt >= 0 ? " side" : ""}`} role="status">
               {s.note}
             </div>
           ) : null}

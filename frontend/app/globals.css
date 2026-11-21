@@ -1034,7 +1034,8 @@ html.ios .textbox {
   top: 0;
   bottom: 0;
   left: calc(var(--ly-bleed, 0px) * -1);
-  width: 400px;
+  /* PC는 400, 폰은 오른쪽에 흐린 뒤 화면이 44만큼 보이게 (거기를 누르면 닫혀요) */
+  width: min(400px, calc(393px + var(--ly-bleed, 0px) * 2 - 44px));
   overflow: hidden;
   background: var(--g-paper);
   border-radius: 0 30px 30px 0;
@@ -1080,11 +1081,46 @@ html.ios .textbox {
   top: 50px;
   animation: lyItem 520ms var(--ly-in) 60ms both;
 }
-.lyClose {
+/* 동그란 X 닫기 (패널 · 창 오른쪽 위) */
+.lyX {
   position: absolute;
-  z-index: 3;
-  right: 24px;
-  top: 58px;
+  z-index: 45;
+  right: 18px;
+  top: 50px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--white);
+  box-shadow: 0 4px 12px rgba(17, 17, 17, 0.22);
+  transition: transform 0.18s var(--ly-in), background-color 0.18s ease;
+}
+.lyX:active {
+  transform: scale(0.92);
+}
+@media (hover: hover) {
+  .lyX:hover {
+    transform: scale(1.06);
+  }
+}
+/* 폰: 창이 패널을 덮는 동안 패널은 살짝 어둡게, 누르면 뒤(흐린 막)로 넘어가 창이 닫혀요 */
+.lyDrawer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background: rgba(17, 17, 17, 0.32);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 360ms var(--ly-in);
+}
+.lyDrawer.under {
+  pointer-events: none;
+}
+.lyDrawer.under::after {
+  opacity: 1;
 }
 /* 지금 창으로 열린 항목 */
 .lyDrawer .myCardWrap {
@@ -1138,9 +1174,11 @@ html.ios .textbox {
 /* 가운데 창: 폰 화면(393 × 852)을 90%로 줄여 화면 가운데에 띄워요 */
 .lyModal {
   --bleed: 0px;
+  --ms: 0.9; /* 창 크기 (폰 화면 393 × 852 대비) */
   position: absolute;
   z-index: 74;
-  top: 0;
+  /* 키 큰 폰은 무대가 852보다 길어서, 창을 위아래 가운데에 둬요 */
+  top: calc((var(--canvas-h, 852px) - 852px) / 2);
   left: 0;
   width: 393px;
   height: 852px;
@@ -1150,7 +1188,7 @@ html.ios .textbox {
   border-radius: 34px;
   box-shadow: 0 30px 80px rgba(17, 17, 17, 0.38), 0 6px 18px rgba(17, 17, 17, 0.18);
   transform-origin: 50% 50%;
-  transform: scale(0.9);
+  transform: scale(var(--ms));
   opacity: 1;
   transition: transform 520ms var(--ly-in), opacity 360ms var(--ly-in), left 520ms var(--ly-in);
   will-change: transform, opacity;
@@ -1161,15 +1199,19 @@ html.ios .textbox {
 .lyModal.side {
   left: max(0px, calc(405px - var(--ly-bleed, 0px)));
 }
+/* 폰: 글씨가 너무 작아지지 않게 조금만 줄여요 */
+.lyModal.narrow {
+  --ms: 0.94;
+}
 .lyModal.leaving {
-  transform: translateY(18px) scale(0.87);
+  transform: translateY(18px) scale(calc(var(--ms) - 0.03));
   opacity: 0;
   pointer-events: none;
   transition: transform 280ms var(--ly-out), opacity 240ms var(--ly-out);
 }
 @starting-style {
   .lyModal {
-    transform: translateY(36px) scale(0.86);
+    transform: translateY(36px) scale(calc(var(--ms) - 0.04));
     opacity: 0;
   }
 }
