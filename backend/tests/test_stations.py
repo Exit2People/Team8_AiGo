@@ -29,7 +29,7 @@ def test_dongs_and_404():
     assert r.status_code == 404 and r.json()["detail"] == "구를 찾을 수 없어요"
 
 
-def test_nearby_post_and_get():
+def test_nearby_post_only():
     r = client.post("/stations/nearby", json={"lat": 37.5446, "lng": 127.0446})
     j = r.json()
     assert r.status_code == 200 and j["radiusKm"] == 2.0 and not j["widened"]
@@ -39,7 +39,8 @@ def test_nearby_post_and_get():
     assert s["distanceM"] % 10 == 0 and s["walkMin"] >= 1
     d = [x["distanceM"] for x in j["stations"]]
     assert d == sorted(d)
-    assert client.get("/stations/nearby", params={"lat": 37.5446, "lng": 127.0446}).json() == j
+    # 좌표가 주소(접근 로그)에 남지 않게 GET은 두지 않아요
+    assert client.get("/stations/nearby", params={"lat": 37.5446, "lng": 127.0446}).status_code == 405
 
 
 def test_nearby_widen_and_empty():

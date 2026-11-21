@@ -22,7 +22,7 @@ CONTEXT_MINE = 3
 CONTEXT_OTHERS = 3
 NOT_JOINED = "톡방에 먼저 들어와 주세요"
 BLOCKED = {"code": "blocked", "message": "보낼 수 없는 말이 들어 있는 것 같아요. 고쳐서 보내 주세요"}
-_LINK = re.compile(r"https?://|www\.|\.com|\.net|\.kr|\.co", re.I)
+_LINK = re.compile(r"https?://|www\.|\.(com|net|kr|co)\b", re.I)
 _PHONE = re.compile(r"(01[016789]|0\d{1,2})[\s.\-]?\d{3,4}[\s.\-]?\d{4}")
 
 
@@ -200,9 +200,10 @@ async def chat_message(pid: str, body: MessageBody):
             (today(), pid, body.client, CONTEXT_OTHERS), "all")
         mine_t = [r["body"] for r in reversed(mine or [])]
         others_t = [r["body"] for r in reversed(others or [])]
+        # 전화번호는 먼저 가려요: 외부 검사(Jev)에도 번호가 나가지 않게
+        text = _PHONE.sub("(전화번호는 가렸어요)", text)
         if await chat_safety.is_blocked(text, mine_t, others_t):
             return JSONResponse(status_code=400, content={"detail": BLOCKED})
-        text = _PHONE.sub("(전화번호는 가렸어요)", text)
     r = await asyncio.to_thread(_say, pid, body.client, m["nick"], kind, text)
     return {**_msg({**r, "client": body.client}, body.client)}
 

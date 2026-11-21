@@ -36,6 +36,11 @@ def check(reason: str, item: dict) -> bool:
         return False
     if "계단 없" in r and "계단" in (p.get("terrain") or []):
         return False
+    # 요금 · 시간 길이는 자료로 확인할 수 있을 때만 써요
+    if "무료" in r and ((p.get("info") or {}).get("fee") or {}).get("free") is not True:
+        return False
+    if re.search(r"\d+\s*(천|만)?\s*원", r) or re.search(r"\d+\s*시간", r):
+        return False
     return True
 
 
@@ -55,15 +60,17 @@ def verify_picks(picks: list[dict], items: list[dict]) -> list[dict]:
     return out
 
 
-async def confirm_by_jev(verified: list[dict]) -> list[dict]:
+async def confirm_by_jev(verified: list[dict], timeout: float | None = None) -> list[dict]:
+    """timeout: 남은 시간 안에서만 확인해요. 0.3초보다 적게 남으면 건너뛰어요."""
     from app.llm import jev
     from app.recommend.pick import for_ai
     from app.recommend.prompts import VERIFY_JEV_QUESTION
 
-    if not config.has_jev() or not verified:
+    t = config.JEV_TIMEOUT if timeout is None else min(config.JEV_TIMEOUT, timeout)
+    if not config.has_jev() or not verified or t < 0.3:
         return verified
     res = await asyncio.gather(*[
-        jev.ask_yes({"장소 자료": for_ai(v["item"]), "추천 이유": v["reason"]}, VERIFY_JEV_QUESTION, config.JEV_TIMEOUT)
+        jev.ask_yes({"장소 자료": for_ai(v["item"]), "추천 이유": v["reason"]}, VERIFY_JEV_QUESTION, t)
         for v in verified
     ])
     return [v for v, p in zip(verified, res) if p is None or p >= config.JEV_MIN_YES]

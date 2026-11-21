@@ -3,6 +3,7 @@
 import re
 
 from app import config
+from app.guards import scrub_pii
 from app.question.flow import BODY_CHOICES, INOUT_CHOICES, TIME_CHOICES, WALK_CHOICES, WANT_CHOICES, WHO_CHOICES
 from app.schemas import Conditions, Range
 
@@ -13,6 +14,12 @@ BANNED = ["증상", "아프", "아픈", "통증", "병원", "질환", "약 ", "�
           "연락처", "전화", "주민"]
 BODY_WORDS = ["무릎", "허리", "다리", "관절", "당뇨", "혈압", "수술", "치료", "진료", "약국"]
 HINT_BODY = [*BODY_WORDS, "피곤", "힘들", "불편"]
+# 질문 검사에서만 더 보는 몸 이야기 (첫 말 단서는 지우지 않게 BODY_WORDS와 따로 둬요). 몸 칸은 고정 질문이 물어요
+Q_BODY_WORDS = ["몸은", "몸이", "몸 상태", "컨디션", "건강", "기운"]
+
+
+def asks_body(q: str, choices: list[str] | None = None) -> bool:
+    return has_banned(" ".join([q, *(choices or [])]), BODY_WORDS) or has_banned(q, Q_BODY_WORDS)
 VAGUE = ["어디든", "아무데나", "아무 곳", "아무거나", "그냥", "몰라", "모름"]
 OUTDOOR_WORDS = ("자전거", "따릉이", "등산", "캠핑", "피크닉", "소풍", "낚시", "단풍", "꽃구경", "벚꽃")
 KEYS = ["place", "who", "wish", "want", "time", "body", "walk", "inout"]
@@ -148,13 +155,24 @@ def apply(cond: Conditions, v: dict) -> tuple[Conditions, list[str]]:
 async def parse_open(cond: Conditions, text: str) -> tuple[Conditions, list[str]]:
     from app.llm.client import ask_json
 
-    t = re.sub(r"\s+", " ", text or "").strip()[:200]
+    t = scrub_pii(re.sub(r"\s+", " ", text or "").strip())[:200]
     if not t or t == "잘 모르겠어요" or cond.fallback:
         return cond, []
     v = await ask_json(OPEN_SYSTEM, {"어르신의 말": t}, OPEN_SCHEMA, config.OPEN_AI_TIMEOUT)
     if not v:
-        return cond, []
+        return outdoor_only(cond, t)
     return apply(cond, v)
+
+
+def outdoor_only(cond: Conditions, t: str) -> tuple[Conditions, list[str]]:
+    """AI가 늦거나 실패해도, 밖에서만 하는 일(자전거 · 등산 …)을 말했으면 실내 · 바깥은 다시 묻지 않아요."""
+    if cond.basic.inout or not any(w in t for w in OUTDOOR_WORDS):
+        return cond, []
+    c = cond.model_copy(deep=True)
+    c.basic.inout = "바깥이 좋아요"
+    if "inout" not in c.filled:
+        c.filled.append("inout")
+    return c, ["inout"]
 
 
 _LABELS = {

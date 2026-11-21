@@ -11,7 +11,7 @@ from app import config
 from app.data import preferences, weather
 from app.question import flow
 from app.question.lead import lead_question
-from app.question.opening import BODY_WORDS, has_banned
+from app.question.opening import asks_body
 from app.schemas import Conditions, strip_for_ai, want_of
 
 AI_QUESTION_SYSTEM = f"""너는 'AI GO'의 질문 담당이야. AI GO는 서울에 사는 어르신이 오늘 대중교통으로 나들이 갈 곳 한 곳을 고르도록 돕는 서비스야.
@@ -93,7 +93,7 @@ def validate_single(cond: Conditions, v: dict) -> dict | None:
         return None
     if norm(q) in _asked(cond):
         return None
-    if has_banned(" ".join([q, *choices]), BODY_WORDS):
+    if asks_body(q, choices):
         return None
     return {"done": False, "question": q, "choices": choices, "slot": slot}
 
@@ -152,7 +152,7 @@ def _q5_ok(cond: Conditions, q: str, prefix: str, q4_text: str | None) -> bool:
         asked.add(norm(q4_text))
     if norm(q) in asked:
         return False
-    return not has_banned(q, BODY_WORDS)
+    return not asks_body(q)
 
 
 async def ask_q5(cond: Conditions) -> dict:

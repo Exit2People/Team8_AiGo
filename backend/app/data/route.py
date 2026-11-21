@@ -28,6 +28,9 @@ def estimate_route(from_name: str, place: dict, now: datetime) -> dict | None:
         board = {"kind": "탑승", "station": a["name"], "mode": "지하철"}
         if line:
             board["line"] = line
+        if transfers:
+            # 어림 길은 갈아타는 역을 모르니, 갈아탄다는 것만 알려요 (첫 구간 tip은 출발 걷기 안내가 써요)
+            alight["tip"] = "중간에 한 번 갈아타요"
         legs = [board, alight]
     return {
         "totalMin": total,

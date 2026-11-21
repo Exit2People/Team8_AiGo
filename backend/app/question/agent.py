@@ -11,7 +11,7 @@ from collections import Counter
 
 from app import config
 from app.question import flow
-from app.question.opening import BODY_WORDS, has_banned
+from app.question.opening import asks_body
 from app.question.search import place_scores, word_ok
 from app.question.themes import ALL_THEMES, short_name, themes_of
 from app.schemas import Conditions, strip_for_ai, want_of
@@ -154,7 +154,7 @@ def check_question(cond: Conditions, items: list[dict], sub: dict) -> dict | Non
         return None
     if _norm(q) in {_norm(x.q) for x in cond.ai}:
         return None
-    if has_banned(" ".join([q, *choices]), BODY_WORDS):
+    if asks_body(q, choices):
         return None
     if not 2 <= len(choices) <= 4 or any(len(c) > 14 for c in choices):
         return None

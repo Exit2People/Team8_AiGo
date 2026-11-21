@@ -74,9 +74,8 @@ async def recommend(cond: Conditions, visited: list[str]) -> dict:
         wide.range.oneWayMin = cond.range.oneWayMin + config.AGENT_RELAX_MIN
         items = [x for x in fp.filter_places(wide, now, wtext, visited) if not x.get("overEstimate")]
         if items:
+            # cond 자체를 넓혔으니 곳마다 relaxed를 달지 않아요 (달면 다시 잴 때 +20분을 한 번 더 해요)
             relaxed = True
-            for x in items:
-                x["relaxed"] = True
             cond = wide
 
     expanded = None
@@ -97,7 +96,7 @@ async def recommend(cond: Conditions, visited: list[str]) -> dict:
         search_all = [x for x in items if any(wd in place_text(x["place"]) for wd in words)]
         added = []
         if places:
-            added = await map_candidates.resolve(places, work_cond, now, wtext, left(3.0))
+            added = await map_candidates.resolve(places, work_cond, now, wtext, left(3.0), visited)
             added = [a for a in added if a["place"]["id"] not in have]
             if added:
                 measured = await transit.measure_all(added, work_cond, now, min(config.TRANSIT_TIMEOUT, left(3.0)))
@@ -122,7 +121,7 @@ async def recommend(cond: Conditions, visited: list[str]) -> dict:
             picks, seen = r
             seen_ids = {x["place"]["id"] for x in seen}
             pool = seen + [x for x in pool if x["place"]["id"] not in seen_ids]
-            verified = await confirm_by_jev(verify_picks(picks, seen))
+            verified = await confirm_by_jev(verify_picks(picks, seen), left(0.5))
             if len(verified) < config.MAX_CANDIDATES:
                 used = {v["item"]["place"]["id"] for v in verified}
                 rest = [x for x in pool if x["place"]["id"] not in used and not x.get("overEstimate")]
@@ -134,7 +133,7 @@ async def recommend(cond: Conditions, visited: list[str]) -> dict:
         if picks is not None:
             by = "ai"
             verified = verify_picks(picks, pool)
-            verified = await confirm_by_jev(verified)
+            verified = await confirm_by_jev(verified, left(0.5))
             names = []
             for pk in picks:
                 n = pk.get("externalName")
@@ -143,8 +142,8 @@ async def recommend(cond: Conditions, visited: list[str]) -> dict:
             names = names[:3]
             if names:
                 asked_external = True
-                ext_items = await map_candidates.resolve(names, work_cond, now, wtext, left(0.5))
-                ext = verify_picks([{"id": x["place"]["id"], "reason": map_candidates.REASON} for x in ext_items],
+                ext_items = await map_candidates.resolve(names, work_cond, now, wtext, left(0.5), visited)
+                ext = verify_picks([{"id": x["place"]["id"], "reason": rule_reason(x, work_cond)} for x in ext_items],
                                    ext_items)
                 have = {v["item"]["place"]["id"] for v in verified}
                 external = [e for e in ext if e["item"]["place"]["id"] not in have]
@@ -161,29 +160,37 @@ async def recommend(cond: Conditions, visited: list[str]) -> dict:
         if by == "rule" and not verified:
             verified = pick_by_rule([x for x in pool if not x.get("overEstimate")], work_cond)
 
+    def done(res: dict) -> dict:
+        # 배포 환경 응답 시간을 재려고 남겨요. 글 · 조건 · 장소는 남기지 않아요
+        log.info("recommend by=%s n=%d why=%s %.2fs", res.get("by", "-"), len(res["candidates"]),
+                 res.get("why", "-"), time.monotonic() - t0)
+        return res
+
     if not verified:
-        return {"candidates": [], "notFound": True, "why": "none"}
-    if time.monotonic() - t0 > total:
-        return {"candidates": [], "notFound": True, "why": "timeout"}
+        return done({"candidates": [], "notFound": True, "why": "none"})
 
     shown = verified[: config.MAX_CANDIDATES]
-    shown = await _measure_shown(shown, work_cond, now, min(config.TRANSIT_TIMEOUT, left(1.5)))
-    if len(shown) < config.MAX_CANDIDATES:
+    late = time.monotonic() - t0 > total
+    if not late:
+        shown = await _measure_shown(shown, work_cond, now, min(config.TRANSIT_TIMEOUT, left(1.5)))
+    # 늦었어도 이미 고른 곳은 버리지 않아요: 길 다시 재기 · 정보 붙이기만 건너뛰어요
+    if not late and len(shown) < config.MAX_CANDIDATES:
         used = {v["item"]["place"]["id"] for v in shown}
         real = [x for x in pool if x["route"].get("source") in ("tmap", "seoul") and x["place"]["id"] not in used]
         shown += pick_by_rule(real, work_cond, config.MAX_CANDIDATES - len(shown))
     if not shown:
-        return {"candidates": [], "notFound": True, "why": "none"}
+        return done({"candidates": [], "notFound": True, "why": "none"})
 
     cands = [_candidate(v) for v in shown]
-    await info.attach(cands, [v["item"] for v in shown], min(config.INFO_TIMEOUT, left(0.3)))
+    # 늦었으면 시간 0으로 불러 자료에 있는 기본 정보(사진 · 요금)만 붙여요
+    await info.attach(cands, [v["item"] for v in shown], 0 if late else min(config.INFO_TIMEOUT, left(0.3)))
     for c, v in zip(cands, shown):
         _finish(c, v["item"])
-    return {
+    return done({
         "candidates": cands, "notFound": False, "by": by, "weather": w,
         "dataAsOf": places_db.fetched_at(), "expanded": expanded,
         **({"relaxed": True} if relaxed else {}),
-    }
+    })
 
 
 async def _measure_shown(shown: list[dict], cond: Conditions, now, budget: float) -> list[dict]:
