@@ -157,7 +157,7 @@ def test_kakao_places_dedup_and_visited(monkeypatch):
     a = asyncio.run(mc.resolve(["테스트공원", "테스트 공원"], cond(), config.now(), "맑음", 3.0))
     assert [x["place"]["id"] for x in a] == ["KAKAO:123"]
     b = asyncio.run(mc.resolve(["테스트공원"], cond(), config.now(), "맑음", 3.0, ["KAKAO:123"]))
-    assert b == []
+    assert [x.get("visited") for x in b] == [True]  # 다녀온 곳은 표시만
 
 
 def test_relax_measures_once(monkeypatch):
@@ -186,3 +186,107 @@ def test_relax_measures_once(monkeypatch):
     assert j.get("relaxed") is True and seen
     # 넓힌 상한(30+20)으로 한 번만 재요. 예전에는 50+20=70으로 한 번 더 넓혀 쟀어요
     assert max(seen) == 30 + config.AGENT_RELAX_MIN
+
+
+def test_visited_places_can_come_back():
+    from app.recommend.pick import limit_revisits, rule_score
+
+    def v(pid, visited=False, name="곳"):
+        it = {"place": {"id": pid, "name": name, "wants": []}, "route": {"totalMin": 20, "transfers": 0, "legs": []}}
+        if visited:
+            it["visited"] = True
+        return {"item": it, "reason": "r"}
+
+    # 다녀온 곳은 점수만 깎여요
+    a, b = v("A")["item"], v("B", True)["item"]
+    assert rule_score(a, cond()) - rule_score(b, cond()) == config.VISITED_PENALTY
+    # 3곳 가운데 다녀온 곳은 1곳까지, 맨 앞에는 새로운 곳
+    out = limit_revisits([v("A", True), v("B", True), v("C"), v("D")], cond())
+    assert [x["item"]["place"]["id"] for x in out] == ["C", "A", "D"]
+    # 새로운 곳이 하나도 없으면 다녀온 곳만으로 3곳까지 채워요
+    assert [x["item"]["place"]["id"] for x in limit_revisits([v("A", True), v("B", True)], cond())] == ["A", "B"]
+    # 어르신이 직접 말한 곳이면 깎지도 줄이지도 않아요
+    named = v("S", True, "서울숲")
+    c = cond(extra={"place": "서울숲"})
+    assert rule_score(named["item"], c) > rule_score(v("X")["item"], c)
+    assert limit_revisits([named, v("C")], c)[0]["item"]["place"]["id"] == "S"
+
+
+def test_recommend_with_visited_shows_at_most_one(monkeypatch):
+    c = cond(basic={"want": "바람 쐬기"})
+    first = client.post("/recommend", json={"conditions": c.model_dump(), "visited": []}).json()
+    ids = [x["place"]["id"] for x in first["candidates"]]
+    j = client.post("/recommend", json={"conditions": c.model_dump(), "visited": ids}).json()
+    got = j["candidates"]
+    assert got and sum(1 for x in got if x.get("visited")) <= config.MAX_VISITED_SHOWN
+    assert not got[0].get("visited")
+
+
+def test_rule_pick_keeps_one_familiar_slot():
+    from app.recommend.pick import pick_by_rule
+
+    def it(pid, kind, wants, visited=False):
+        x = {"place": {"id": pid, "name": pid, "kind": kind, "wants": wants},
+             "route": {"totalMin": 20, "transfers": 0, "legs": []}}
+        if visited:
+            x["visited"] = True
+        return x
+
+    c = cond(basic={"want": "바람 쐬기"})
+    fits = [it("A", "공원", ["바람 쐬기"]), it("B", "시장", ["바람 쐬기"]), it("C", "행사", ["바람 쐬기"])]
+    # 잘 맞는 다녀온 곳은 마지막 자리로 들어와요
+    got = [p["item"]["place"]["id"] for p in pick_by_rule([*fits, it("V", "박물관", ["바람 쐬기"], True)], c)]
+    assert "V" in got and got[0] != "V"
+    # 잘 안 맞는 다녀온 곳은 억지로 넣지 않아요
+    got = [p["item"]["place"]["id"] for p in pick_by_rule([*fits, it("W", "박물관", [], True)], c)]
+    assert "W" not in got
+
+
+def test_named_place_first_even_if_visited():
+    sf = [p["id"] for p in loader.places() if p.get("name") == "서울숲"]
+    assert sf
+    c = cond(extra={"place": "서울숲"})
+    for visited in ([], sf):  # 기록 없음 · 어제 다녀옴 모두
+        j = client.post("/recommend", json={"conditions": c.model_dump(), "visited": visited}).json()
+        assert j["candidates"][0]["place"]["name"] == "서울숲"
+        assert j["candidates"][0]["reason"].startswith("말씀하신 서울숲")
+
+
+def test_open_place_without_ai():
+    from app.question.opening import place_only
+
+    c, f = asyncio.run(opening.parse_open(cond(), "서울숲 가고 싶어"))
+    assert c.extra.place == "서울숲" and "place" in f and "place" in c.filled
+    assert place_only(cond(), "오늘 바람 쐬러 공원 가고 싶어요")[0].extra.place is None
+    assert place_only(cond(extra={"place": "한강"}), "서울숲 가고 싶어")[1] == []  # 이미 있으면 덮지 않아요
+
+
+def test_daily_jitter_is_small_and_stable(monkeypatch):
+    from app.recommend.pick import daily_jitter
+
+    monkeypatch.setenv("AIGO_NOW", "2026-11-21T11:00")
+    a = [daily_jitter(f"P{i}") for i in range(200)]
+    assert a == [daily_jitter(f"P{i}") for i in range(200)]  # 같은 날엔 늘 같아요
+    assert all(abs(x) <= config.DAILY_JITTER / 2 for x in a)
+    monkeypatch.setenv("AIGO_NOW", "2026-11-22T11:00")
+    assert a != [daily_jitter(f"P{i}") for i in range(200)]  # 날이 바뀌면 달라져요
+
+
+def test_recently_shown_goes_back():
+    from app.recommend.pick import rule_score
+    from app.recommend.service import _mark_shown
+
+    def it(pid):
+        return {"place": {"id": pid, "name": pid, "wants": []}, "route": {"totalMin": 20, "transfers": 0, "legs": []}}
+
+    items = _mark_shown([it("A"), it("B"), it("C")], {"A", "B"}, {"B"})
+    assert items[0].get("shownRecent") and not items[1].get("shownRecent") and not items[2].get("shownRecent")
+    assert rule_score(it("C"), cond()) - rule_score(items[0], cond()) == config.SHOWN_PENALTY
+
+
+def test_recommend_accepts_shown_and_changes_list():
+    c = cond(basic={"want": "구경하기"})
+    first = client.post("/recommend", json={"conditions": c.model_dump(), "visited": []}).json()["candidates"]
+    ids = [x["place"]["id"] for x in first]
+    again = client.post("/recommend", json={"conditions": c.model_dump(), "visited": [], "shown": ids}).json()["candidates"]
+    assert again and [x["place"]["id"] for x in again] != ids  # 어제 보여 준 곳이 그대로 반복되지 않아요

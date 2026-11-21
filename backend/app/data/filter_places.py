@@ -182,8 +182,6 @@ def filter_places(cond: Conditions, now: datetime, weather: str | None, visited:
         if p.get("kind") == "행사" and ev:
             if not (ev.get("start") or "") <= today <= (ev.get("end") or "9999"):
                 drop("행사 날짜 아님"); continue
-        if p.get("id") in visited_set:
-            drop("30일 안에 다녀옴"); continue
         if p.get("id") in exclude:
             drop("이번에 이미 봄"); continue
         pin = p.get("inout")
@@ -217,6 +215,8 @@ def filter_places(cond: Conditions, now: datetime, weather: str | None, visited:
         item = {"place": p, "route": r, "open": {"today": oi["today"], "lastEntry": oi.get("lastEntry")}}
         if over:
             item["overEstimate"] = True
+        if p.get("id") in visited_set:
+            item["visited"] = True  # 빼지 않고 표시만 해요 (점수는 pick.rule_score에서 깎아요)
         out.append(item)
 
     from app.data import preferences

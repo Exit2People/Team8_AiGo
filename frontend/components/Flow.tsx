@@ -10,7 +10,7 @@ import { ApiError } from "@/lib/errors";
 import { BASIC, DONT_KNOW } from "@/lib/questions";
 import { GEO_TIMEOUT, MAX_FLEX_QUESTIONS, OPEN_FAIL, Q_FALLBACK, Q_NOTICE, REC_FAIL, REC_NOTICE, RECHECK_AFTER, NOTE_MS } from "@/lib/constants";
 import { dongToOrigin, nearbyDongs, type Dong } from "@/lib/geo";
-import { addVisit, cancelVisit, load, readVisits, save, sweepBackups, uuid } from "@/lib/device";
+import { addShown, addVisit, cancelVisit, load, readShownBefore, readVisits, save, sweepBackups, uuid } from "@/lib/device";
 import { buildConditions, initialState, poseOf, type FlowState, type Q, type Step, type User } from "@/lib/flow";
 import { getPose } from "@/lib/poses";
 import type { Candidate, QuestionResp } from "@/lib/types";
@@ -520,13 +520,14 @@ function useFlow() {
         replaceTop(step);
       };
       try {
-        const r = await api.recommend(buildConditions(p, exclude), readVisits().map((v) => v.id), ctrl.signal);
+        const r = await api.recommend(buildConditions(p, exclude), readVisits().map((v) => v.id), ctrl.signal, readShownBefore());
         clearTimeout(tn);
         clearTimeout(tf);
         if (req.current?.ctrl === ctrl) req.current = null;
         set({ busy: null });
         if (!r.candidates?.length) return place({ k: "notFound", why: (r.why as "none" | "timeout") === "timeout" ? "timeout" : "none" });
         const ids = r.candidates.map((c) => c.place.id);
+        addShown(ids); // 내일 같은 답을 해도 오늘 본 곳이 그대로 반복되지 않게
         set((q) => ({
           cands: r.candidates,
           idx: 0,

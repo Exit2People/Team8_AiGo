@@ -160,8 +160,28 @@ async def parse_open(cond: Conditions, text: str) -> tuple[Conditions, list[str]
         return cond, []
     v = await ask_json(OPEN_SYSTEM, {"어르신의 말": t}, OPEN_SCHEMA, config.OPEN_AI_TIMEOUT)
     if not v:
-        return outdoor_only(cond, t)
+        c, filled = outdoor_only(cond, t)
+        c, more = place_only(c, t)
+        return c, filled + more
     return apply(cond, v)
+
+
+def place_only(cond: Conditions, t: str) -> tuple[Conditions, list[str]]:
+    """AI가 늦거나 실패해도, 자료에 있는 장소 이름(서울숲 · 경복궁 …)을 말했으면 가고 싶은 곳으로 받아요."""
+    if cond.extra.place:
+        return cond, []
+    from app.data import loader
+
+    said = t.replace(" ", "")
+    names = {(p.get("name") or "").replace(" ", "") for p in loader.places()}
+    hits = [n for n in names if 3 <= len(n) <= 12 and n in said]
+    if not hits:
+        return cond, []
+    c = cond.model_copy(deep=True)
+    c.extra.place = max(hits, key=len)
+    if "place" not in c.filled:
+        c.filled.append("place")
+    return c, ["place"]
 
 
 def outdoor_only(cond: Conditions, t: str) -> tuple[Conditions, list[str]]:

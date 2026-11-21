@@ -79,7 +79,9 @@ def test_filter_free_only_and_events():
 def test_filter_visited_and_exclude():
     items = fp.filter_places(cond(), config.now(), "맑음", [])
     first = items[0]["place"]["id"]
-    assert first not in {x["place"]["id"] for x in fp.filter_places(cond(), config.now(), "맑음", [first])}
+    # 다녀온 곳은 빼지 않고 표시만 해요 (다시 가고 싶을 수 있어서)
+    again = {x["place"]["id"]: x for x in fp.filter_places(cond(), config.now(), "맑음", [first])}
+    assert again[first].get("visited") is True
     assert first not in {x["place"]["id"] for x in fp.filter_places(cond(exclude=[first]), config.now(), "맑음", [])}
 
 

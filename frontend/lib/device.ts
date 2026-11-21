@@ -58,6 +58,28 @@ export function cancelVisit(id: string) {
   );
 }
 
+/* ---------- 최근에 보여 준 곳 (같은 답이면 매일 같은 추천이 되지 않게) ---------- */
+
+type Shown = { id: string; date: string };
+const SHOWN = "aigo.shown";
+const SHOWN_DAYS = 3;
+const SHOWN_MAX = 30;
+
+/** 추천으로 보여 준 곳을 오늘 날짜로 적어 둬요. 3일 · 30곳까지만 남겨요 */
+export function addShown(ids: string[]) {
+  const d = today();
+  const cut = today(new Date(Date.now() - SHOWN_DAYS * 86400_000));
+  const keep = load<Shown[]>(SHOWN, []).filter((x) => x.date > cut && !(x.date === d && ids.includes(x.id)));
+  save(SHOWN, [...ids.map((id) => ({ id, date: d })), ...keep].slice(0, SHOWN_MAX));
+}
+
+/** 오늘 이전(지난 3일)에 보여 준 곳. 오늘 보여 준 곳은 빼요 (같은 날 다시 찾아도 결과가 흔들리지 않게) */
+export function readShownBefore(): string[] {
+  const d = today();
+  const cut = today(new Date(Date.now() - SHOWN_DAYS * 86400_000));
+  return Array.from(new Set(load<Shown[]>(SHOWN, []).filter((x) => x.date > cut && x.date < d).map((x) => x.id)));
+}
+
 export type Stamp = { id: string; name: string; date: string; photo: string; text: string; tags: string[]; at: number };
 const STAMPS = "aigo.stamps";
 export function readStamps(): Record<string, Stamp> {
