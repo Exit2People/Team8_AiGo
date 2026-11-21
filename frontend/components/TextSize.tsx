@@ -5,6 +5,39 @@ import { TEXT_SIZES, useTextSize } from "@/lib/textSize";
 
 export const OPEN_TEXT_SIZE = "aigo:textsize-open";
 
+/** 글씨 크기 표시: 작은 '가' + 큰 '가'. 글자가 커진다는 뜻이 한눈에 보이게(설정과 상관없이 늘 같은 크기) */
+export function TextSizeIcon({ color = "currentColor" }: { color?: string }) {
+  return (
+    <span aria-hidden="true" style={{ display: "inline-flex", alignItems: "flex-end", gap: 1, color, fontWeight: 900, lineHeight: 1, letterSpacing: "-0.04em" }}>
+      <span style={{ fontSize: 11 }}>가</span>
+      <span style={{ fontSize: 17 }}>가</span>
+    </span>
+  );
+}
+
+/** 글씨 크기 판을 여는 버튼 (첫 화면 · 톡방). '[작은가 큰가] 글씨 크기' */
+export function TextSizeButton({ light }: { light?: boolean }) {
+  return (
+    <button
+      className="chip"
+      onClick={() => window.dispatchEvent(new CustomEvent(OPEN_TEXT_SIZE))}
+      aria-label="글씨 크기 바꾸기"
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        height: 34,
+        padding: "0 12px",
+        fontSize: 14, // 버튼 자체는 늘 같은 크기로 둬서 어느 단계에서도 찾기 쉽게
+        ...(light ? { background: "var(--white)", color: "var(--ink)", boxShadow: "var(--sh-row)" } : {}),
+      }}
+    >
+      <TextSizeIcon />
+      글씨 크기
+    </button>
+  );
+}
+
 /** 글씨 크기 고르기: 큰 버튼 3개. 누르면 바로 화면 전체가 바뀌어요 */
 export function TextSizePicker() {
   const [cur, set] = useTextSize();

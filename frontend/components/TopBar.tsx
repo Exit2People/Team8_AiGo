@@ -2,7 +2,7 @@
 
 import type { FlowApi } from "./Flow";
 import type { Step } from "@/lib/flow";
-import { OPEN_TEXT_SIZE } from "./TextSize";
+import { TextSizeButton } from "./TextSize";
 
 /** 상단 막대 (11_FRONTEND_SPEC 2.3) */
 export default function TopBar({ f, step }: { f: FlowApi; step: Step }) {
@@ -17,7 +17,7 @@ export default function TopBar({ f, step }: { f: FlowApi; step: Step }) {
     blocked: "차단한 사람",
   };
   let title = titles[step.k];
-  if (step.k === "myedit") title = `${{ name: "이름", nickname: "닉네임", age: "나이", home1: "사는 곳" }[step.field]} 고치기`;
+  if (step.k === "myedit") title = `${{ nickname: "닉네임", age: "나이", home1: "사는 곳" }[step.field]} 고치기`;
   const showResult =
     !!s.origin &&
     ((step.k === "body" && !step.edit) || (step.k === "time" && !step.edit) || (step.k === "flex" && !step.edit) || step.k === "open");
@@ -48,9 +48,7 @@ export default function TopBar({ f, step }: { f: FlowApi; step: Step }) {
       )}
       <div className="topbar-right">
         {step.k === "start" && (
-          <button className="chip" onClick={() => window.dispatchEvent(new CustomEvent(OPEN_TEXT_SIZE))}>
-            가 글씨 크기
-          </button>
+          <TextSizeButton />
         )}
         {showResult && (
           <button className="chip" style={{ background: "var(--white)", color: "var(--ink)" }} onClick={f.skipToResult}>
