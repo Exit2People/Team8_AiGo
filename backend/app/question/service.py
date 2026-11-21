@@ -38,8 +38,8 @@ slot 정하기 (답을 장소 거르기에 바로 쓰기 위한 표시)
 
 그만 묻기
 - 지금까지의 답으로 갈 곳을 고르기에 충분하면 done을 true로 하고 question은 빈 글, choices는 빈 목록으로 돌려줘.
-- 질문은 많아야 3개야. 기본 칸(하고 싶은 것 · 걷는 양 · 실내와 바깥)이 이미 채워져 있으면 다시 묻지 말고, 단서나 분위기처럼 아직 모르는 것을 물어.
-- 단서도 없고 기본 칸도 다 채워졌으면 done을 true로 해."""
+- 기본 칸(하고 싶은 것 · 걷는 양 · 실내와 바깥)이 이미 채워져 있으면 다시 묻지 말고, 단서 · 바로 앞 답 · 분위기처럼 아직 모르는 것을 물어.
+- 질문 수는 화면이 정해. 바로 앞 답이 있으면 그 답을 이어 받아 더 좁혀."""
 
 QUESTION_SCHEMA = {
     "type": "object",
@@ -99,39 +99,51 @@ def validate_single(cond: Conditions, v: dict) -> dict | None:
 
 
 async def next_ai(cond: Conditions) -> dict:
-    """조건 묶음만 온 /questions/next (A안 화면이 쓰는 경로)."""
+    """조건 묶음만 온 /questions/next (A안 화면이 쓰는 경로).
+
+    exp/agent-full: 질문 수 고정 total(기본 7). 이번 번호 no = 3 + 이미 물은 수.
+    no < total → 질문 에이전트 → (실패 · 늦음) 발전 질문 → (에이전트를 못 썼을 때만) Claude 한 번 → 은행 → fallback.
+    no == total → 에이전트가 '1개 더'(no 7)가 꼭 필요한지 판단. 대신 길에서는 묻지 않고 done.
+    """
     from app.llm.client import ask_json
+    from app.question import agent as qa
 
     if cond.fallback:
         return {"done": False, "fallback": True}
-    if len(cond.ai) >= config.MAX_AI_QUESTIONS:
+    no, total = qa.numbering(cond)
+    if no > total:
         return {"done": True}
     items = flow.today_items(cond)
-    tried_agent = False
-    if config.question_agent_on() and config.has_ai() and items:
-        from app.question.agent import ask_agent
+    agent_ok = config.question_agent_on() and config.has_ai() and bool(items)
+    if no == total:
+        if agent_ok:
+            r = await qa.ask_agent(cond, items, no, total, extra=True)
+            if r is not None and not r.get("done"):
+                return {**r, "no": no, "total": total + 1, "extra": True}
+        return {"done": True}
 
-        tried_agent = True
-        r = await ask_agent(cond, items)
-        if r is not None:
-            return {"done": True} if r.get("done") else r
+    def stamp(q: dict) -> dict:
+        return {**q, "no": no, "total": total}
+
+    if agent_ok:
+        r = await qa.ask_agent(cond, items, no, total)
+        if r is not None and not r.get("done"):
+            return stamp(r)
+        # done이어도 질문 수는 채워요 → 아래의 더 좁히는 질문으로
     lead = lead_question(cond, items or [])
     if lead:
-        return lead
+        return stamp(lead)
     v = None
-    if not tried_agent:
+    if not agent_ok:
         v = await ask_json(AI_QUESTION_SYSTEM, strip_for_ai(cond), QUESTION_SCHEMA, config.QUESTION_AI_TIMEOUT)
-    if v is not None:
-        if v.get("done") is True:
-            return {"done": True}
+    if v is not None and v.get("done") is not True:
         ok = validate_single(cond, v)
         if ok:
-            return {**ok, "source": "ai"}
+            return stamp({**ok, "source": "ai"})
     qid = flow.best_bank(cond, items)
     if qid:
-        q = flow.bank_question(qid, items, None)
-        return q
-    return {"done": False, "fallback": True}
+        return stamp(flow.bank_question(qid, items, None))
+    return {"done": False, "fallback": True, "no": no, "total": total}
 
 
 def _skip_criteria(cond: Conditions, items) -> set[str]:
@@ -190,7 +202,7 @@ async def ask_q5(cond: Conditions) -> dict:
         if p is not None and p >= 0.5:
             text, source = chosen["question"], "fixed"
     return {"done": False, "no": 5, "id": chosen["id"], "question": text, "choices": chosen["choices"],
-            "slot": None, "source": source}
+            "slot": None, "source": source, "total": config.question_total()}
 
 
 async def ask_ai(cond: Conditions) -> dict:
@@ -203,7 +215,8 @@ async def ask_ai(cond: Conditions) -> dict:
         if items:
             r = await ask_agent(cond, items)
             if r is not None:
-                return {"done": True, "no": 5, "source": "agent"} if r.get("done") else {**r, "no": 5}
+                return {"done": True, "no": 5, "source": "agent"} if r.get("done") else {**r, "no": 5,
+                                                                                           "total": config.question_total()}
     if config.question_mode() == "single":
         r = await next_ai(cond)
         if r.get("question"):

@@ -184,31 +184,42 @@ def best_bank(cond: Conditions, items: list[dict] | None) -> str | None:
 
 
 def next_step(cond: Conditions, answered: list[int]) -> dict:
+    """번호로 진행하는 길 (AI 없이). 질문 수는 config.question_total()로 고정 (기본 7: no 0~6)."""
     from app.question.lead import lead_question
 
+    total = config.question_total()
     ans = set(answered)
     open_mode = config.question_start() == "open"
+
+    def stamp(q: dict) -> dict:
+        return {**q, "total": total}
+
     if open_mode and 0 not in ans:
-        return dict(OPEN_Q)
+        return stamp(dict(OPEN_Q))
     if open_mode and not cond.body and 1 not in ans:
-        return dict(BODY_Q)
+        return stamp(dict(BODY_Q))
     if open_mode and not cond.time and 2 not in ans:
-        return dict(TIME_Q)
+        return stamp(dict(TIME_Q))
     if 3 not in ans and not cond.basic.want:
-        return dict(WANT_Q)
-    if 4 not in ans:
-        items = today_items(cond)
-        lead = lead_question(cond, items or [])
-        if lead:
-            return {"done": False, "no": 4, **{k: v for k, v in lead.items() if k != "done"}}
-        qid = q4_id(cond, items)
-        if qid and qid not in asked_ids(cond):
-            return bank_question(qid, items, 4)
-    if 5 not in ans:
+        return stamp(dict(WANT_Q))
+    for no in range(config.QUESTION_FIXED, total):
+        if no in ans:
+            continue
+        if no <= 4:
+            # 3(하고 싶은 것을 이미 들었으면) · 4: 앞 말을 이어 받는 발전 질문 → 은행
+            items = today_items(cond)
+            lead = lead_question(cond, items or [])
+            if lead:
+                return stamp({"done": False, "no": no, **{k: v for k, v in lead.items() if k != "done"}})
+            qid = q4_id(cond, items)
+            if qid and qid not in asked_ids(cond):
+                return stamp(bank_question(qid, items, no))
+            if no == 3:
+                continue
         fb = None
         if config.question_mode() == "single":
             items = today_items(cond)
             fid = q5_fallback_id(cond, items)
-            fb = bank_question(fid, items, 5) if fid else None
-        return {"done": False, "no": 5, "needsAi": True, "fallback": fb}
+            fb = bank_question(fid, items, no) if fid else None
+        return stamp({"done": False, "no": no, "needsAi": True, "fallback": fb})
     return {"done": True}

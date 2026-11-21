@@ -65,7 +65,8 @@ def test_agent_finds_then_asks_by_name(on, monkeypatch):
     fake = use(monkeypatch, [call("find_places", {"word": "한강"}),
                              call("submit_question", {"question": "한강 쪽은 어디가 좋으세요?", "choices": names})])
     r = asyncio.run(qa.ask_agent(c, items))
-    assert r == {"done": False, "question": "한강 쪽은 어디가 좋으세요?", "choices": names, "slot": None, "source": "agent"}
+    assert r == {"done": False, "question": "한강 쪽은 어디가 좋으세요?", "choices": names, "slot": None, "source": "agent",
+                 "follows": "한강"}
     tool_msgs = [m for m in fake.seen[1] if isinstance(m, ToolMessage)]
     assert tool_msgs and "찾은 곳 수" in tool_msgs[0].content
     assert "37.5" not in str(fake.seen[0][1].content)
@@ -166,7 +167,8 @@ def test_endpoint_uses_agent_first_then_falls_back(on, monkeypatch):
     use(monkeypatch, [call("submit_question", {"question": "무엇을 보고 싶으세요?", "choices": ["공원", "그림 · 사진"]})])
     assert asyncio.run(service.next_ai(c))["source"] == "agent"
     use(monkeypatch, [call("submit_question", {"done": True, "question": "", "choices": []})])
-    assert asyncio.run(service.next_ai(c)) == {"done": True}
+    r = asyncio.run(service.next_ai(c))  # 질문 수 고정: done이어도 더 좁히는 질문으로 채워요
+    assert r["done"] is False and r["no"] == 4 and r["total"] == 7 and r.get("source") in ("fixed", "lead")
     use(monkeypatch, [RuntimeError("x")])
     called = []
 

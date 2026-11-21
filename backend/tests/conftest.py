@@ -14,6 +14,7 @@ for _k in KEYS:
     os.environ[_k] = ""
 os.environ["AIGO_WEATHER"] = "맑음"
 os.environ["AIGO_QUESTION_AGENT"] = "0"
+os.environ["AIGO_AGENT"] = "0"
 
 
 @pytest.fixture(autouse=True)
@@ -22,6 +23,7 @@ def _clean_env(monkeypatch, tmp_path):
         monkeypatch.setenv(k, "")
     monkeypatch.setenv("AIGO_WEATHER", "맑음")
     monkeypatch.setenv("AIGO_QUESTION_AGENT", "0")
+    monkeypatch.setenv("AIGO_AGENT", "0")  # 브랜치 기본은 켜짐, 테스트는 필요할 때만 켜요
     # 매일 DB는 빈 임시 폴더 → 저장소 스냅숏을 읽어요
     monkeypatch.setenv("AIGO_DB_PATH", str(tmp_path / "cache" / "aigo.db"))
     from app.data import loader, weather
