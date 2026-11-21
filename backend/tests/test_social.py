@@ -172,3 +172,30 @@ def test_safety_jev(monkeypatch):
     monkeypatch.setenv("AIGO_CHAT_JEV", "0")
     monkeypatch.setattr(jev, "ask_many", fake)
     assert not asyncio.run(chat_safety.is_blocked("평범한 말"))
+
+
+def test_daily_cleanup_cron(fdb, monkeypatch):
+    """서울 날짜가 바뀐 뒤 Vercel Cron이 부르면 어제 톡방 · 멤버 · 신고 · 도착 예정이 지워져요."""
+    p = pid()
+    client.post(f"/chat/{p}/join", json={"client": A, "nick": "솔바람"})
+    client.post(f"/chat/{p}/messages", json={"client": A, "text": "안녕하세요"})
+    client.post(f"/places/{p}/expect", json={"client": A})
+    client.post(f"/chat/{p}/report", json={"client": A, "target": "솔바람"})
+    assert fdb.members and fdb.messages and fdb.expects
+
+    monkeypatch.delenv("CRON_SECRET", raising=False)
+    monkeypatch.setenv("CRON_SECRET", "")
+    assert client.get("/cron/daily-cleanup").status_code == 503  # 비밀이 없으면 아무도 못 불러요
+
+    monkeypatch.setenv("CRON_SECRET", "test-secret")
+    assert client.get("/cron/daily-cleanup").status_code == 401
+    assert client.get("/cron/daily-cleanup", headers={"Authorization": "Bearer nope"}).status_code == 401
+
+    ok = {"Authorization": "Bearer test-secret"}
+    assert client.get("/cron/daily-cleanup", headers=ok).status_code == 200
+    assert fdb.members and fdb.messages and fdb.expects  # 같은 날이면 그대로
+
+    monkeypatch.setenv("AIGO_NOW", "2026-11-22T00:05")
+    j = client.get("/cron/daily-cleanup", headers=ok).json()
+    assert j == {"ok": True, "day": "2026-11-22"}
+    assert not fdb.members and not fdb.messages and not fdb.expects and not fdb.reports

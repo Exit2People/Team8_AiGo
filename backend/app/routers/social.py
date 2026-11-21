@@ -1,11 +1,12 @@
 """도착 예정 · 방명록 읽기 · 톡방. 익명(client · nick), 좌표 안 받음. SQL 앞 /*이름*/ 은 테스트 가짜 DB가 알아봐요."""
 
 import asyncio
+import hmac
 import math
 import re
 from datetime import timedelta
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Header, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -56,6 +57,19 @@ def _cleanup() -> None:
     d = today()
     for t in ("chat_messages", "chat_members", "chat_reports", "place_expects"):
         db.run(f"/*cleanup*/ delete from {t} where day < %s", (d,))
+
+
+@router.get("/cron/daily-cleanup", include_in_schema=False)
+def daily_cleanup(authorization: str | None = Header(None)):
+    """서울 날짜가 바뀌면 Vercel Cron이 불러요 (매일 00시 KST). 어제까지의 톡방 · 멤버 · 신고 · 도착 예정을 지워요.
+    Vercel은 `CRON_SECRET`을 `Authorization: Bearer …`로 붙여 보내요. 비밀이 없거나 틀리면 거절해요."""
+    secret = config.env("CRON_SECRET")
+    if not secret:
+        raise HTTPException(503, "정리 설정이 없어요")
+    if not hmac.compare_digest(authorization or "", f"Bearer {secret}"):
+        raise HTTPException(401, "권한이 없어요")
+    _cleanup()
+    return {"ok": True, "day": today().isoformat()}
 
 
 def _expected(pid: str) -> int:
