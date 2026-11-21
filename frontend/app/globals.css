@@ -1,5 +1,6 @@
-/* AI GO — 디자인 값 (design_handoff/3-tokens.json) */
-:root {
+/* AI GO — 디자인 값 (design_handoff/3-tokens.json). .app 에서도 다시 계산해 테마 색(--coral)을 따라가요 */
+:root,
+.app {
   /* 색 */
   --coral: #ff5a4f;
   --coral-deep: color-mix(in srgb, var(--coral) 90%, #000);

@@ -13,6 +13,9 @@ import NotFound from "./NotFound";
 import Login from "./Login";
 import { Arrive, ChatJoin, Guestbook } from "./Social";
 import Chat from "./Chat";
+import { Blocked, My, MyEdit, Theme } from "./My";
+import { Badges, Cut, Mine, Review, Sdetail, Stamped, Upload } from "./Mine";
+import { Game, Rank } from "./Game";
 import { Addr, Agree, Elogin, Kwait, Restore, Signup, Welcome } from "./Auth";
 import { Secondary, Sub, Title } from "../ui";
 
@@ -68,6 +71,32 @@ export default function Screen({ f, step }: { f: FlowApi; step: Step }) {
       return <Signup key={`${key}-${step.i}`} f={f} i={step.i} />;
     case "welcome":
       return <Welcome key={key} f={f} />;
+    case "my":
+      return <My key={key} f={f} />;
+    case "myedit":
+      return <MyEdit key={key} f={f} field={step.field} />;
+    case "theme":
+      return <Theme key={key} f={f} />;
+    case "blocked":
+      return <Blocked key={key} f={f} />;
+    case "mine":
+      return <Mine key={key} f={f} />;
+    case "upload":
+      return <Upload key={key} f={f} stepKey={step.key} />;
+    case "cut":
+      return <Cut key={key} f={f} stepKey={step.key} />;
+    case "stamped":
+      return <Stamped key={key} f={f} stepKey={step.key} />;
+    case "review":
+      return <Review key={key} f={f} stepKey={step.key} edit={step.edit} />;
+    case "sdetail":
+      return <Sdetail key={key} f={f} stepKey={step.key} />;
+    case "badges":
+      return <Badges key={key} f={f} />;
+    case "game":
+      return <Game key={key} f={f} />;
+    case "rank":
+      return <Rank key={key} f={f} />;
     default:
       return (
         <div className="content">

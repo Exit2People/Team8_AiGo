@@ -16,6 +16,7 @@ import { getPose } from "@/lib/poses";
 import type { Candidate, QuestionResp } from "@/lib/types";
 import { THEMES } from "@/lib/theme";
 import { useChat, type ChatApi } from "./useChat";
+import Celebrate, { canCelebrate, useBadges } from "./Celebrate";
 import { clockText } from "@/lib/format";
 
 const NICKS = ["봄나들이", "햇살마중", "솔바람", "도란도란", "꽃마중", "느림보", "새벽길", "산들바람"];
@@ -676,8 +677,37 @@ export default function Flow() {
     return poseOf(step, s);
   }, [busy, s, step]);
 
+  const badges = useBadges(s.user);
+  const cele = badges.queue.length && canCelebrate(s) ? badges.queue[0] : null;
+
   return (
-    <Stage poseKey={poseKey} pose={getPose(poseKey)} coral={s.coral} still={f.still} overlay={s.note ? <div className="toast" role="status">{s.note}</div> : null}>
+    <Stage
+      poseKey={poseKey}
+      pose={getPose(poseKey)}
+      coral={s.coral}
+      still={f.still}
+      inert={!!cele}
+      overlay={
+        <>
+          {s.note ? (
+            <div className="toast" role="status">
+              {s.note}
+            </div>
+          ) : null}
+          {cele && (
+            <Celebrate
+              b={cele}
+              more={badges.queue.length > 1}
+              onNext={badges.next}
+              onAll={() => {
+                badges.clear();
+                if (step.k !== "badges") f.go({ k: "badges" });
+              }}
+            />
+          )}
+        </>
+      }
+    >
       {busy ? (
         <Busy text={busy} />
       ) : (
