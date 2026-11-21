@@ -212,7 +212,8 @@ def test_expand_only_when_missing(monkeypatch):
     monkeypatch.setattr(llm, "ask_json", fake)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
     j = rec(c)
-    assert j["expanded"]["from"] == ["공룡 구경"] and j["expanded"]["words"] == ["자연사", "화석"]
+    # 공룡은 구체적인 바람이라 AI 말 대신 바로 맞는 말로만 넓혀요 (test_wish_specific.py)
+    assert j["expanded"]["from"] == ["공룡 구경"] and j["expanded"]["words"] == ["화석", "자연사", "매머드", "빙하기"]
 
 
 def test_transit_choose_subway_first():

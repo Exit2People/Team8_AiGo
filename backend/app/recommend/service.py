@@ -15,12 +15,77 @@ from app.recommend import expand as ex
 from app.recommend import info, map_candidates
 from app.recommend.pick import limit_revisits, pick_by_ai, pick_by_rule, rule_reason
 from app.recommend.verify import check, confirm_by_jev, verify_picks
-from app.recommend.wish import place_text
+from app.recommend.wish import direct_specific, place_text, specific_terms, unmatched_specific
 from app.schemas import Conditions
 
 log = logging.getLogger("aigo.recommend")
 
 AGENT_RESERVE = 8.0  # 에이전트가 실패해도 한 번 호출(6초) + 다시 재기 · 정보 붙이기가 들어갈 자리
+
+_DAYS = "월화수목금토일"
+
+
+def _eun(word: str) -> str:
+    """받침이 있으면 '은', 없으면 '는'."""
+    ch = (word or " ").rstrip()[-1:] or " "
+    if "가" <= ch <= "힣":
+        return "은" if (ord(ch) - 0xAC00) % 28 else "는"
+    return "은"
+
+
+def _open_days(closed: list[int]) -> str:
+    """쉬는 요일 목록 → "월~금" · "화~일" 같은 여는 요일 말 (이어진 날이 아니면 하나씩)."""
+    days = [d for d in range(7) if d not in set(closed)]
+    if not days:
+        return ""
+    runs: list[list[int]] = []
+    for d in days:
+        if runs and d == runs[-1][-1] + 1:
+            runs[-1].append(d)
+        else:
+            runs.append([d])
+    return " · ".join(_DAYS[r[0]] if len(r) == 1 else f"{_DAYS[r[0]]}~{_DAYS[r[-1]]}" for r in runs)
+
+
+def _wish_later(cond: Conditions, shown: list[dict], now) -> dict | None:
+    """구체적인 바람(공룡 …)과 맞는 곳을 오늘 못 보여 주면, 맞는 곳이 언제 여는지 알려 다른 날 가시게 해요."""
+    wish = unmatched_specific(list(cond.extra.wish), shown)
+    if not wish:
+        return None
+    later = []
+    for p in loader.places():
+        if p.get("kind") == "행사" or not direct_specific(p, [wish]):
+            continue
+        oi = fp.open_info(p, now)
+        if oi["ok"] is False and oi["why"] == "쉬는 날" and _open_days(p.get("closed") or []):
+            later.append(p)
+    if not later:
+        return {"wish": wish, "note": "말씀하신 것과 꼭 맞는 곳은 오늘 찾지 못했어요. 대신 갈 만한 곳을 골랐어요."}
+    start = transit.origin_point(cond)
+    if start:
+        later.sort(key=lambda p: (p["lat"] - start[0]) ** 2 + (p["lng"] - start[1]) ** 2)
+    p = later[0]
+    days = _open_days(p.get("closed") or [])
+    return {
+        "wish": wish,
+        "place": {"id": p.get("id"), "name": p.get("name"), "gu": p.get("gu"), "station": p.get("station")},
+        "openDays": days,
+        "note": f"{p['name']}{_eun(p['name'])} 오늘 쉬어요. {days}요일에 가 보세요. 오늘은 대신 갈 만한 곳을 골랐어요.",
+    }
+
+
+def _fix_wish_reasons(shown: list[dict], cond: Conditions) -> list[dict]:
+    """바람과 바로 맞지 않는 곳의 이유에 그 바람(공룡 …)이 들어 있으면 규칙 이유로 바꿔요."""
+    terms = specific_terms(list(cond.extra.wish))
+    if not terms:
+        return shown
+    out = []
+    for v in shown:
+        p = v["item"]["place"]
+        if not direct_specific(p, list(cond.extra.wish)) and any(t in (v.get("reason") or "") for t in terms):
+            v = {**v, "reason": rule_reason(v["item"], cond)}
+        out.append(v)
+    return out
 
 
 def _https(url: str | None) -> str | None:
@@ -241,6 +306,8 @@ async def recommend(cond: Conditions, visited: list[str], shown: list[str] | Non
     shown = limit_revisits(shown, work_cond)  # 다녀온 곳은 1곳까지, 맨 앞은 새로운 곳
     if by == "agent":
         relaxed = relaxed and any(v["item"].get("relaxed") for v in shown)
+    shown = _fix_wish_reasons(shown, work_cond)
+    wish_later = _wish_later(work_cond, shown, now)
     cands = [_candidate(v) for v in shown]
     # 늦었으면 시간 0으로 불러 자료에 있는 기본 정보(사진 · 요금)만 붙여요
     await info.attach(cands, [v["item"] for v in shown], 0 if late else min(config.INFO_TIMEOUT, left(0.3)))
@@ -250,6 +317,8 @@ async def recommend(cond: Conditions, visited: list[str], shown: list[str] | Non
         "candidates": cands, "notFound": False, "by": by, "weather": w,
         "dataAsOf": places_db.fetched_at(), "expanded": expanded,
         **({"relaxed": True} if relaxed else {}),
+        # 칸 더하기: 바람과 맞는 곳이 오늘 쉬면 여는 요일을 알려요 (화면이 note를 띄울 수 있어요)
+        **({"wishLater": wish_later} if wish_later else {}),
     })
 
 

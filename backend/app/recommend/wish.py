@@ -52,11 +52,52 @@ def wish_hits(p: dict, wish: str) -> bool:
     return any(t in text for t in wish_tokens(wish))
 
 
+# 구체적인 바람: 이 말이 이름 · 종류에 든 곳만 그 바람과 맞는 곳이에요.
+# "과학관"처럼 넓은 말로 넓히면 공룡 → 하수도과학관 같은 엉뚱한 추천이 나와서 넓히지 않아요.
+SPECIFIC = {
+    "공룡": ("공룡", "화석", "자연사", "매머드", "빙하기"),
+    "화석": ("공룡", "화석", "자연사", "매머드", "빙하기"),
+    "자전거": ("자전거", "따릉이"),
+    "따릉이": ("자전거", "따릉이"),
+}
+
+
+def specific_terms(wishes: list[str] | None) -> list[str]:
+    return list(dict.fromkeys(t for w in wishes or [] for k, terms in SPECIFIC.items() if k in w for t in terms))
+
+
+def direct_specific(p: dict, wishes: list[str] | None) -> bool:
+    """구체적인 바람과 이름 · 종류가 바로 맞는 곳이에요 (자전거는 자전거 타기 좋은 공원도 맞아요)."""
+    terms = specific_terms(wishes)
+    if not terms:
+        return False
+    if any("자전거" in w or "따릉이" in w for w in wishes or []):
+        from app.question.themes import themes_of
+
+        if "자전거" in themes_of(p):
+            return True
+    text = place_text(p)
+    return any(t in text for t in terms)
+
+
+def unmatched_specific(wishes: list[str] | None, shown: list[dict]) -> str | None:
+    """구체적인 바람이 있는데 보여 줄 곳 중 맞는 곳이 하나도 없으면 그 바람을 돌려줘요."""
+    for w in wishes or []:
+        if specific_terms([w]) and not any(direct_specific(v["item"]["place"], [w]) for v in shown):
+            return w
+    return None
+
+
 def matched_wish(p: dict, wishes: list[str], expanded: list[str] | None = None) -> str | None:
     for w in wishes or []:
+        if specific_terms([w]):
+            # 구체적인 바람은 바로 맞는 곳만 이어 써요 (넓힌 말로 맞았다고 하지 않아요)
+            if direct_specific(p, [w]):
+                return w
+            continue
         if wish_hits(p, w):
             return w
-    if wishes and expanded:
+    if wishes and expanded and not specific_terms(wishes):
         text = place_text(p)
         if any(e in text for e in expanded):
             return wishes[0]
@@ -85,4 +126,6 @@ def matches_who(p: dict, who: str | None) -> bool:
     want = WHO_MOODS.get(who or "")
     if not want:
         return False
+    if who == "손주" and any(w in (p.get("name") or "") for w in ("어린이", "키즈", "놀이")):
+        return True
     return bool(set(p.get("mood") or []) & want)
