@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import type { FlowApi } from "../Flow";
-import { Barcode, Printer, TicketPaper } from "../Icons";
+import { Barcode, Printer, PRINTER_SLOT_Y, TicketPaper } from "../Icons";
 import { Caption, Secondary } from "../ui";
 import { lastLeg, linesText, placeNameSize } from "@/lib/format";
 import { wideIll } from "@/lib/illust";
@@ -128,14 +128,21 @@ export default function Result({ f }: { f: FlowApi }) {
       return;
     }
     setPhase("wait");
-    const t1 = setTimeout(() => setPhase("up"), 900);
+    // 담고가 한 손으로 프린터 단추를 누르고(press) → 티켓이 나오기 시작하면 사라져요(s4)
+    f.setPoseOv("press");
+    const t1 = setTimeout(() => {
+      setPhase("up");
+      f.setPoseOv("s4");
+    }, 900);
     const t2 = setTimeout(() => {
       setPhase("done");
       f.set((p) => ({ printed: { ...p.printed, [key]: true } }));
+      f.setPoseOv(null);
     }, 900 + 3000);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
+      f.setPoseOv(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
@@ -146,11 +153,27 @@ export default function Result({ f }: { f: FlowApi }) {
   const lastOne = s.idx >= s.cands.length - 1;
   const y = phase === "wait" ? 584 : 0;
   const shown = phase === "done";
+  const gone = s.tearing || shown;
+  // 티켓이 다 나오면 프린터는 아래로 내려가며 완전히 사라져요 (몸체 · 입구 같이)
+  const printerStyle: CSSProperties = {
+    left: 24,
+    top: 652,
+    opacity: gone ? 0 : 1,
+    visibility: gone ? "hidden" : "visible",
+    transform: gone ? "translateY(120px)" : "none",
+    // 사라질 때만 천천히, 다음 후보에서 다시 나올 땐 바로 보여요
+    transition: gone ? "opacity .6s, transform .7s, visibility 0s .7s" : "none",
+    filter: "drop-shadow(0 14px 26px rgba(89,20,15,.45))",
+  };
 
   return (
     <div className="content">
-      {/* 티켓 영역: 프린터 입구(y 684) 아래는 잘려요 */}
-      <div className="abs" style={{ left: 24, top: 62, width: 345, height: 622, overflow: "hidden" }}>
+      {/* 프린터 몸체 (티켓 뒤) */}
+      <div className="abs" style={printerStyle}>
+        <Printer part="body" />
+      </div>
+      {/* 티켓 영역: 프린터 출력 입구 틈(y 652 + 32 = 684) 아래는 잘려서, 티켓이 틈에서 나오는 것처럼 보여요 */}
+      <div className="abs" style={{ left: 24, top: 62, width: 345, height: 652 + PRINTER_SLOT_Y - 62, overflow: "hidden" }}>
         {s.tearing ? (
           (["top", "bottom"] as const).map((part) => (
             <div
@@ -186,8 +209,9 @@ export default function Result({ f }: { f: FlowApi }) {
           찌익
         </span>
       )}
-      <div className="abs" style={{ left: 24, top: 652, opacity: s.tearing ? 0 : shown ? 0.25 : 1, transform: s.tearing ? "translateY(120px)" : "none", transition: "opacity .6s, transform .7s", filter: "drop-shadow(0 14px 26px rgba(89,20,15,.45))" }}>
-        <Printer led={phase !== "wait"} />
+      {/* 프린터 입구 · 표시등 (티켓 앞) */}
+      <div className="abs" style={{ ...printerStyle, filter: "none" }}>
+        <Printer part="front" led={phase !== "wait"} />
       </div>
       {shown && (
         <>
