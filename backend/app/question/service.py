@@ -109,7 +109,8 @@ async def _capped(coro, limit: float):
     """에이전트 전체(도구 · Jev 포함)를 한도에서 끊어요. 늦으면 None → 대신 길."""
     t = time.monotonic()
     try:
-        return await asyncio.wait_for(coro, timeout=max(0.1, limit + 0.3))
+        # 한도를 그대로 써요 (예전엔 0.3초를 몰래 더 줘서 8초에 바짝 붙었어요)
+        return await asyncio.wait_for(coro, timeout=max(0.1, limit))
     except asyncio.TimeoutError:
         log.warning("question_fallback reason=timeout limit=%.1f", limit)
         return None
