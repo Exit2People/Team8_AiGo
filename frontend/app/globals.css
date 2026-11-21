@@ -391,6 +391,16 @@ html.ios .viewport {
   color: var(--white);
   white-space: nowrap;
 }
+/* 첫 화면 위쪽 버튼(마이메뉴 · 글씨 크기): 둘이 같은 크기 · 높이로 나란히. 글씨 크기 설정과 상관없이 늘 같은 크기 */
+.chip.chip-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  font-size: 14px;
+  line-height: 1;
+}
 .chip-soft {
   background: var(--soft);
   color: var(--ink);

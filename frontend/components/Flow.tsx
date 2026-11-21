@@ -687,7 +687,7 @@ function useFlow() {
           const m = await api.patchProfile({ nickname });
           if (sRef.current.user?.id !== u.id) return; // 그 사이 로그아웃 · 다른 계정
           setUser(m && m.loggedIn ? m : { ...u, nickname });
-          setTimeout(() => note(`닉네임을 '${nickname}'(으)로 지어 드렸어요. 내 정보에서 바꿀 수 있어요`), 400);
+          setTimeout(() => note(`닉네임을 '${nickname}'(으)로 지어 드렸어요. 마이메뉴에서 바꿀 수 있어요`), 400);
           return;
         } catch {
           /* 같은 이름이 있거나 잠깐 실패: 다른 이름으로 한 번 더 */

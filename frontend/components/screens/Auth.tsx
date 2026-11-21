@@ -151,7 +151,7 @@ export function Addr({ f }: { f: FlowApi }) {
         다 됐어요
       </Primary>
       <Caption y={762} dark>
-        내 정보에서 다시 바꿀 수 있어요
+        마이메뉴에서 다시 바꿀 수 있어요
       </Caption>
       {pick && (
         <HomePicker
@@ -372,7 +372,7 @@ export function Signup({ f, i }: { f: FlowApi; i: number }) {
       // 비워 두면 이름을 지어 줘요(가입 규칙 2 ~ 8자에 맞아요)
       const made = randomNick();
       store(made);
-      f.note(`닉네임을 '${made}'(으)로 지어 드렸어요. 내 정보에서 바꿀 수 있어요`);
+      f.note(`닉네임을 '${made}'(으)로 지어 드렸어요. 마이메뉴에서 바꿀 수 있어요`);
     } else if (k === "nick" && nickProblem(t)) return f.note(nickProblem(t)!);
     if (k === "age" && !(/^\d+$/.test(t) && +t >= 14 && +t <= 120)) return f.note("나이를 숫자로 적어 주세요");
     setBusy(true);
@@ -523,7 +523,7 @@ export function Welcome({ f }: { f: FlowApi }) {
         시작하기
       </Primary>
       <Caption y={762} dark>
-        내 정보에서 다시 바꿀 수 있어요
+        마이메뉴에서 다시 바꿀 수 있어요
       </Caption>
     </div>
   );

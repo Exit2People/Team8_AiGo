@@ -166,7 +166,7 @@ export default function WideLayers({ f, layer, frozen }: { f: FlowApi; layer: La
         >
           <div className="lyBg" style={{ transform: `translateY(${bgFor("my").coralY}px)` }} />
           <h1 id="lyDrawerTitle" className="lyTitle t-title-s" tabIndex={-1}>
-            내 정보
+            마이메뉴
           </h1>
           <button className="chip lyClose" onClick={closeAll}>
             닫기

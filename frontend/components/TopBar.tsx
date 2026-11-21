@@ -13,7 +13,7 @@ export default function TopBar({ f, step, depth }: { f: FlowApi; step: Step; dep
   const titles: Partial<Record<Step["k"], string>> = {
     guestbook: `${name} 방명록`,
     chat: `${name} 톡방`,
-    my: "내 정보",
+    my: "마이메뉴",
     blocked: "차단한 사람",
   };
   let title = titles[step.k];
@@ -36,8 +36,14 @@ export default function TopBar({ f, step, depth }: { f: FlowApi; step: Step; dep
       )}
       {step.k === "start" && (
         <div className="topbar-left">
-          <button className="chip" onClick={() => f.go({ k: "my" })}>
-            내 정보
+          <button className="chip chip-top" onClick={() => f.go({ k: "my" })} aria-label="마이메뉴 열기">
+            {/* 글씨 크기 버튼과 같은 크기 · 높이. 왼쪽에 메뉴 표시(세 줄) */}
+            <svg width="15" height="12" viewBox="0 0 15 12" aria-hidden="true">
+              <rect y="0" width="15" height="2.4" rx="1.2" fill="currentColor" />
+              <rect y="4.8" width="15" height="2.4" rx="1.2" fill="currentColor" />
+              <rect y="9.6" width="15" height="2.4" rx="1.2" fill="currentColor" />
+            </svg>
+            마이메뉴
           </button>
         </div>
       )}
