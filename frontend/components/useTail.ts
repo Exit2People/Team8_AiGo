@@ -6,13 +6,19 @@ import { useEffect, useRef, type RefObject } from "react";
  * 꼬리 살랑 — 귀엽게 살랑살랑, 실제 동물처럼 불규칙하게
  * (figma-plugin 07 움직임 "꼬리 살랑": 빠르게 몇 번 → 천천히 → 쉬기)
  *
+ * 꼬리 모양(lib/poses.ts): 작은 원 = 머리 옆에 붙은 꼬리 뿌리, 큰 원 = 뿌리에서 위 · 바깥으로 이어져 부푼 꼬리 끝.
+ *  - 작은 뿌리는 머리 쪽 끝을 축으로 조금만 기울어요
+ *  - 부푼 큰 원은 털뭉치라 늦게 따라오며 더 크게 살랑여요 (관성)
+ *  - 빨리 흔들 땐 큰 원이 살짝 바깥으로 늘어지고, 멈추면 제자리로 돌아와요
+ *
  * 꼬리는 원 두 개(뿌리 · 끝)지만 한 덩어리예요. 꼬리 뿌리(머리 쪽 끝)를 축으로
  * 두 원을 함께 좌우로 기울여요 → 두 원이 절대 떨어지지 않고, 뱀처럼 꿈틀대지 않아요.
- * 끝 원만 아주 조금 더 기울여 부드럽게 휘어 보이게 해요 (뿌리 원 둘레를 도는 거라 역시 붙어 있어요).
+ * 끝 원(위쪽)은 용수철로 뿌리를 늦게 따라와요(관성): 뿌리보다 더 크게 휘고, 뿌리가 멈춰도
+ * 한두 번 더 출렁이다 가라앉아요. 끝 원은 뿌리 원 둘레를 도는 거라 역시 붙어 있어요.
  *
  * 정해진 반복 대신 동작을 그때그때 골라 이어 붙여요.
- *  - 살랑: 0.5 ~ 0.7초짜리 좌우 흔들기 2 ~ 3번
- *  - 톡톡: 0.24 ~ 0.3초짜리 작은 흔들기 2 ~ 3번
+ *  - 살랑: 1.3 ~ 1.7초짜리 느긋한 좌우 흔들기 1.5 ~ 2.5번 (대부분)
+ *  - 톡톡: 가끔, 0.55 ~ 0.65초짜리 작은 흔들기 2번
  *  - 쉬기: 숨 쉬듯 아주 작게만
  *
  * mode
@@ -20,7 +26,10 @@ import { useEffect, useRef, type RefObject } from "react";
  *  - "think": 고민하는 화면(찾는 중 · 질문 고르는 중 …) — 쉬지 않고 계속 살랑여요
  *  - "off":   움직임 줄이기 · 담고가 없는 화면
  *
- * 화면마다 다시 그리지 않도록 DOM의 translate 속성만 직접 바꿔요 (자세 전환용 transform과 겹치지 않아요).
+ * 머리도 꼬리에 맞춰 움직여요: 꼬리 뿌리가 기우는 반대쪽으로 살짝 갸웃하고(몸이 꼬리를 흔드는 느낌),
+ * 꼬리가 양 끝으로 갈 때마다 아주 조금 들썩여요. 큰 원(털뭉치)의 출렁임도 반 박자 늦게 조금 받아요.
+ *
+ * 화면마다 다시 그리지 않도록 DOM의 translate · rotate 속성만 직접 바꿔요 (자세 전환용 transform과 겹치지 않아요).
  */
 export type TailMode = "idle" | "think" | "off";
 /** [가운데 x, 가운데 y, 지름] */
@@ -34,16 +43,17 @@ const rand = (a: number, b: number) => a + Math.random() * (b - a);
 function nextSeg(t0: number, mode: TailMode, prev?: Seg): Seg {
   const think = mode === "think";
   if (prev && prev.kind !== "rest") {
-    const r = think ? rand(0.08, 0.35) : Math.random() < 0.3 ? rand(0.3, 0.7) : rand(1.4, 4.2);
+    const r = think ? rand(0.25, 0.7) : Math.random() < 0.2 ? rand(0.8, 1.4) : rand(2.6, 5.5);
     return { t0, dur: r, kind: "rest", amp: 0, cycles: 0, dir: 1 };
   }
   const dir = Math.random() < 0.5 ? -1 : 1;
-  if (Math.random() < (think ? 0.7 : 0.6)) {
-    const cycles = 2 + Math.floor(Math.random() * 2);
-    return { t0, dur: cycles * rand(0.5, 0.7), kind: "sway", amp: rand(0.7, 1), cycles, dir };
+  if (Math.random() < 0.88) {
+    const cycles = [1.5, 2, 2.5][Math.floor(Math.random() * 3)];
+    return { t0, dur: cycles * rand(1.3, 1.7), kind: "sway", amp: rand(0.85, 1), cycles, dir };
   }
-  const cycles = 2 + Math.floor(Math.random() * 2);
-  return { t0, dur: cycles * rand(0.24, 0.3), kind: "pat", amp: rand(0.4, 0.6), cycles, dir };
+  // 가끔 작은 톡톡 (느긋하게, 작게)
+  const cycles = 2;
+  return { t0, dur: cycles * rand(0.55, 0.65), kind: "pat", amp: rand(0.35, 0.5), cycles, dir };
 }
 
 function segValue(s: Seg, t: number): number {
@@ -58,7 +68,13 @@ function rot(x: number, y: number, deg: number): [number, number] {
   return [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];
 }
 
-export function useTail(base: RefObject<HTMLDivElement | null>, tip: RefObject<HTMLDivElement | null>, mode: TailMode, geom: TailGeom) {
+export function useTail(
+  base: RefObject<HTMLDivElement | null>,
+  tip: RefObject<HTMLDivElement | null>,
+  mode: TailMode,
+  geom: TailGeom,
+  head?: RefObject<HTMLDivElement | null>,
+) {
   const modeRef = useRef(mode);
   const geomRef = useRef(geom);
   useEffect(() => {
@@ -67,8 +83,14 @@ export function useTail(base: RefObject<HTMLDivElement | null>, tip: RefObject<H
   }, [mode, geom]);
 
   useEffect(() => {
+    const headSvg = () => (head?.current?.firstElementChild as HTMLElement | SVGElement | null) ?? null;
     const clear = () => {
       for (const el of [base.current, tip.current]) if (el) el.style.translate = "";
+      const h = headSvg();
+      if (h) {
+        h.style.translate = "";
+        h.style.rotate = "";
+      }
     };
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return clear;
 
@@ -76,6 +98,14 @@ export function useTail(base: RefObject<HTMLDivElement | null>, tip: RefObject<H
     let segs: Seg[] = [];
     let lastMode = modeRef.current;
     let amp = lastMode === "think" ? 1 : 0; // 고민 중엔 더 크게 (부드럽게 바뀜)
+    // 끝 원의 관성: 각도(도)와 각속도. 용수철(K)로 뿌리 각도 × TIP_GAIN을 따라가고, 덜 꺾인 감쇠(C)라 살짝 넘쳤다 돌아와요
+    const K = 70; // 고유 진동 약 1.3Hz
+    const C = 2 * 0.32 * Math.sqrt(K); // 감쇠비 0.32
+    const TIP_GAIN = 1.7; // 위쪽(끝)이 아래쪽(뿌리)보다 더 크게
+    let tipDeg = 0;
+    let tipVel = 0;
+    let open = 0; // 큰 원이 바깥으로 늘어진 정도 (0 ~ 0.05)
+    let lastT = 0;
     const now = performance.now() / 1000;
     segs.push({ t0: now, dur: rand(0.3, 1.2), kind: "rest", amp: 0, cycles: 0, dir: 1 });
 
@@ -105,10 +135,24 @@ export function useTail(base: RefObject<HTMLDivElement | null>, tip: RefObject<H
 
       amp += ((m === "think" ? 1 : 0) - amp) * 0.05;
       // 숨 쉬듯 아주 작은 흔들림 + 동작
-      const breath = 0.08 * Math.sin(t * 1.7) + 0.04 * Math.sin(t * 2.9 + 1.1);
+      const breath = 0.04 * Math.sin(t * 1.3) + 0.02 * Math.sin(t * 2.3 + 1.1);
       const v = valueAt(t) + breath;
-      const vLate = valueAt(t - 0.05) + breath;
-      const deg = v * (7 + 3 * amp); // 쉬는 화면 최대 7도, 고민 화면 10도
+      const deg = v * (12 + 3 * amp); // 뿌리: 쉬는 화면 최대 12도, 고민 화면 15도
+
+      // 끝 원 관성 (탭이 숨었다 돌아오면 크게 튀지 않게 한 번에 최대 0.05초씩만 적분)
+      let dt = lastT ? Math.min(0.05, t - lastT) : 0;
+      lastT = t;
+      while (dt > 0) {
+        const h = Math.min(dt, 1 / 120);
+        tipVel += (K * (deg * TIP_GAIN - tipDeg) - C * tipVel) * h;
+        tipDeg += tipVel * h;
+        // 빨리 움직일수록 살짝 풀리고, 느려지면 천천히 다시 말려요
+        const want = Math.min(0.05, Math.abs(tipVel) * 0.0008);
+        open += (want - open) * Math.min(1, h * (want > open ? 6 : 2.5));
+        dt -= h;
+      }
+      // 뿌리 원 둘레로 더 꺾이는 각도 (귀엽게 보이도록 ±28도까지)
+      const bend = Math.max(-28, Math.min(28, tipDeg - deg));
 
       const g = geomRef.current;
       const [bx, by, bd] = g.base;
@@ -124,11 +168,23 @@ export function useTail(base: RefObject<HTMLDivElement | null>, tip: RefObject<H
       const [rbx, rby] = rot(bx - px, by - py, deg);
       const nbx = px + rbx;
       const nby = py + rby;
-      // 끝 원: 같은 회전 + 뿌리 원 둘레로 조금 더 (늦게 따라오는 살짝 휨)
+      // 끝 원: 같은 회전 + 뿌리 원 둘레로 관성만큼 더 (늦게 따라와 더 크게 휘고, 멈춘 뒤에도 살짝 출렁여요)
       const [rtx, rty] = rot(tx - px, ty - py, deg);
-      const [ex, ey] = rot(px + rtx - nbx, py + rty - nby, vLate * 3);
+      const [ex0, ey0] = rot(px + rtx - nbx, py + rty - nby, bend);
+      // 풀린 만큼 뿌리 원에서 조금 더 멀어져요 (두 원은 여전히 겹쳐 붙어 있어요)
+      const ex = ex0 * (1 + open);
+      const ey = ey0 * (1 + open);
       const ntx = nbx + ex;
       const nty = nby + ey;
+
+      // 머리: 뿌리 반대쪽으로 갸웃(최대 약 2.4도) + 큰 원 출렁임 조금, 꼬리가 기울수록 살짝 들썩 (머리 SVG 단위라 크기 따라 커져요)
+      const h = headSvg();
+      if (h) {
+        const tilt = -deg * 0.16 + bend * 0.04;
+        const bob = -Math.min(1, Math.abs(deg) / 15) * 1.6;
+        h.style.rotate = `${tilt.toFixed(2)}deg`;
+        h.style.translate = `0px ${bob.toFixed(2)}px`;
+      }
 
       if (base.current) base.current.style.translate = `${(nbx - bx).toFixed(2)}px ${(nby - by).toFixed(2)}px`;
       if (tip.current) tip.current.style.translate = `${(ntx - tx).toFixed(2)}px ${(nty - ty).toFixed(2)}px`;
@@ -139,5 +195,5 @@ export function useTail(base: RefObject<HTMLDivElement | null>, tip: RefObject<H
       cancelAnimationFrame(raf);
       clear();
     };
-  }, [base, tip]);
+  }, [base, tip, head]);
 }

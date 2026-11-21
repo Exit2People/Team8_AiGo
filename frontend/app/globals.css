@@ -248,6 +248,8 @@ html.ios .viewport {
 .damgo-head svg {
   display: block;
   overflow: visible;
+  /* 꼬리 살랑에 맞춘 머리 갸웃 · 들썩 (useTail이 rotate · translate만 바꿔요) */
+  transform-origin: 95px 120px;
 }
 .damgo-eyes {
   transition: transform var(--t-move) var(--ease);
