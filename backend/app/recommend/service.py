@@ -12,7 +12,7 @@ from app.data import filter_places as fp
 from app.data import loader, places_db, sync, transit, weather
 from app.recommend import expand as ex
 from app.recommend import info, map_candidates
-from app.recommend.pick import pick_by_ai, pick_by_rule, rule_reason
+from app.recommend.pick import limit_revisits, pick_by_ai, pick_by_rule, rule_reason
 from app.recommend.verify import check, confirm_by_jev, verify_picks
 from app.recommend.wish import place_text
 from app.schemas import Conditions
@@ -38,6 +38,8 @@ def _candidate(v: dict) -> dict:
         "open": it.get("open") or {"today": None, "lastEntry": None},
         "route": it["route"],
     }
+    if it.get("visited"):
+        c["visited"] = True  # 칸 더하기: 화면이 쓰면 '다녀온 곳' 표시를 붙일 수 있어요
     return c
 
 
@@ -173,6 +175,7 @@ async def recommend(cond: Conditions, visited: list[str]) -> dict:
     late = time.monotonic() - t0 > total
     if not late:
         shown = await _measure_shown(shown, work_cond, now, min(config.TRANSIT_TIMEOUT, left(1.5)))
+    shown = limit_revisits(shown, work_cond)  # 다녀온 곳을 줄였으면 아래에서 새로운 곳으로 채워요
     # 늦었어도 이미 고른 곳은 버리지 않아요: 길 다시 재기 · 정보 붙이기만 건너뛰어요
     if not late and len(shown) < config.MAX_CANDIDATES:
         used = {v["item"]["place"]["id"] for v in shown}
@@ -181,6 +184,7 @@ async def recommend(cond: Conditions, visited: list[str]) -> dict:
     if not shown:
         return done({"candidates": [], "notFound": True, "why": "none"})
 
+    shown = limit_revisits(shown, work_cond)  # 다녀온 곳은 1곳까지, 맨 앞은 새로운 곳
     cands = [_candidate(v) for v in shown]
     # 늦었으면 시간 0으로 불러 자료에 있는 기본 정보(사진 · 요금)만 붙여요
     await info.attach(cands, [v["item"] for v in shown], 0 if late else min(config.INFO_TIMEOUT, left(0.3)))

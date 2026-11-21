@@ -49,6 +49,8 @@ def rule_score(item: dict, cond: Conditions) -> float:
             s += 1
     if matches_place(p, cond.extra.place):
         s += 5
+    elif item.get("visited"):
+        s -= config.VISITED_PENALTY  # 다녀온 곳은 조금 뒤로 (직접 말한 곳이면 깎지 않아요)
     wishes = list(cond.extra.wish)
     if matched_wish(p, wishes):
         s += 3
@@ -121,6 +123,20 @@ def rule_reason(item: dict, cond: Conditions) -> str:
     return f"{head} {ride_phrase(item['route'])}"
 
 
+def limit_revisits(picks: list[dict], cond: Conditions) -> list[dict]:
+    """다녀온 곳은 MAX_VISITED_SHOWN 곳까지, 맨 앞에는 두지 않아요. 어르신이 직접 말한 곳이면 그대로 둬요.
+    새로운 곳이 하나도 없으면 다녀온 곳만으로 채워요 ('찾지 못했어요'보다 나아요)."""
+    def revisit(v: dict) -> bool:
+        it = v["item"]
+        return bool(it.get("visited")) and not matches_place(it["place"], cond.extra.place)
+
+    fresh = [v for v in picks if not revisit(v)]
+    again = [v for v in picks if revisit(v)][: config.MAX_VISITED_SHOWN]
+    if not fresh:
+        return picks[: config.MAX_CANDIDATES]  # 새로운 곳이 없으면 다녀온 곳이라도 3곳까지
+    return fresh[:1] + again + fresh[1:] if again else fresh
+
+
 def pick_by_rule(items: list[dict], cond: Conditions, n: int = config.MAX_CANDIDATES) -> list[dict]:
     ranked = rank_by_rule(items, cond)
     chosen: list[dict] = []
@@ -137,6 +153,11 @@ def pick_by_rule(items: list[dict], cond: Conditions, n: int = config.MAX_CANDID
             break
         if it not in chosen:
             chosen.append(it)
+    # 익숙한 곳 한 자리: 다녀온 곳이 하나도 안 들었으면, 잘 맞는 다녀온 곳을 마지막 자리에 넣어요
+    if len(chosen) >= 2 and not any(it.get("visited") for it in chosen):
+        best = next((it for it in ranked if it.get("visited") and it not in chosen), None)
+        if best is not None and rule_score(best, cond) >= rule_score(chosen[-1], cond) - config.REVISIT_MARGIN:
+            chosen[-1] = best
     return [{"item": it, "reason": rule_reason(it, cond)} for it in chosen]
 
 
@@ -152,6 +173,8 @@ def for_ai(item: dict) -> dict:
         "오늘 운영": (item.get("open") or {}).get("today"),
         "길": "실제로 잰 길" if measured else "어림 길 (실제와 다를 수 있어요)",
     }
+    if item.get("visited"):
+        d["다녀온 곳"] = "최근 30일 안에 다녀왔어요"
     if measured:
         rides = [lg.get("line") for lg in r.get("legs") or [] if lg.get("kind") != "하차" and lg.get("line")]
         if rides:

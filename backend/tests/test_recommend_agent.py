@@ -67,12 +67,14 @@ def test_search_then_submit_passes_checks(monkeypatch):
     assert "37.5" not in first and "lat" not in first and "다녀온 곳 요약" in first
 
 
-def test_visited_hidden_and_history(monkeypatch):
+def test_visited_marked_and_history(monkeypatch):
     c = cond()
     every = fp.filter_places(c, config.now(), "맑음", [])
     v = every[0]["place"]["id"]
     ctx = ctx_for(c, visited=[v])
-    assert v not in [d["id"] for d in tools.search_places(ctx)]
+    # 다녀온 곳은 숨기지 않고 '다녀온 곳' 표시를 붙여 AI에 보여요
+    found = {d["id"]: d for d in tools.search_places(ctx, word=every[0]["place"]["name"][:6])}
+    assert v in found and found[v]["다녀온 곳"].startswith("최근 30일")
     h = tools.get_visit_history(ctx, 5)
     assert h and set(h[0]) == {"이름", "종류", "구"}
     assert memory.profile_text([]) == "다녀온 곳 기록이 없어요."
