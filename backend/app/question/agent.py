@@ -106,10 +106,10 @@ def find_places_by(items: list[dict], word: str) -> dict:
 
 
 def look_bank(cond: Conditions, items: list[dict]) -> dict:
-    asked = flow.asked_ids(cond)
+    items = flow.narrowed_items(cond, items)
     out = {}
     for qid, b in flow.BANK.items():
-        if qid in asked or flow.skipped(cond, qid):
+        if not flow.bank_available(cond, qid, items):
             continue
         if qid == "budget" and want_of(cond) != "맛있는 것":
             continue
@@ -335,6 +335,11 @@ def same_as_asked(cond: Conditions, choices: list[str]) -> bool:
 
 
 def check_question(cond: Conditions, items: list[dict], sub: dict) -> dict | None:
+    def reject(reason: str):
+        # 검사 이름만 기록해요. 질문 · 답 · 모델이 쓴 이유는 남기지 않아요.
+        log.info("question_fallback reason=validation check=%s", reason)
+        return None
+
     if sub.get("done") is True:
         return {"done": True}
     q = re.sub(r"\s+", " ", str(sub.get("question") or "")).strip()
@@ -344,19 +349,20 @@ def check_question(cond: Conditions, items: list[dict], sub: dict) -> dict | Non
         if ch and ch != "잘 모르겠어요" and ch not in choices:
             choices.append(ch)
     if not q or len(q) > config.QUESTION_MAX_LEN or not q.endswith("?") or sum(q.count(x) for x in "?.!") != 1:
-        return None
+        return reject("question_format")
     if _norm(q) in {_norm(x.q) for x in cond.ai}:
-        return None
+        return reject("repeated_question")
     if asks_body(q, choices):
-        return None
+        return reject("sensitive_question")
     if "대신" in q:
         # 어르신 바람을 접는 말이라 쓰지 않아요 ("공룡 대신 어떤 걸 볼까요?")
-        return None
+        return reject("abandons_wish")
     # 은행 질문을 그대로 골랐으면 은행 선택지(오늘 남는 것만)를 써요. 은행 질문은 미리 검사한 거예요
     bank_id = flow.bank_id_of(q)
     if bank_id and bank_id not in ("walk", "inout"):
-        if bank_id in flow.asked_ids(cond) or flow.skipped(cond, bank_id) or not flow.bank_fits_want(cond, bank_id):
-            return None  # '하고 싶은 것'과 맞지 않는 은행 질문도 거르기 (맛있는 것인데 궁 · 한옥 구경)
+        if not flow.bank_available(cond, bank_id, items):
+            return reject("bank_not_available")
+        items = flow.narrowed_items(cond, items)
         live = flow.live_choices(bank_id, items)
         # 은행 질문(또는 그 다른 말투)은 은행 선택지로. 에이전트가 고른 순서를 따르고 나머지는 뒤에
         mine = [c for c in choices if c in live]
@@ -364,7 +370,7 @@ def check_question(cond: Conditions, items: list[dict], sub: dict) -> dict | Non
         # 같은 선택지 묶음을 다른 말투로 이미 물었으면 되풀이예요 (asked_ids 는 은행 문장 그대로일 때만 알아봐요)
         sig = {_norm(c) for c in out if c != "잘 모르겠어요"}
         if any(sig == {_norm(c) for c in x.choices if c != "잘 모르겠어요"} for x in cond.ai):
-            return None
+            return reject("repeated_bank_choices")
         # 오늘 갈 곳이 0곳인 선택지는 빼요. 고를 만한 선택지('잘 모르겠어요' 빼고)가 2개 미만이면 묻지 않아요
         # (live_choices 는 나눌 수 없으면 원래 선택지를 그대로 돌려줘서 0곳 선택지가 섞여요.
         #  요금처럼 셀 수 있는 선택지가 하나뿐인 은행 질문도 있어서, 셀 수 없는 선택지는 그대로 둬요)
@@ -372,36 +378,38 @@ def check_question(cond: Conditions, items: list[dict], sub: dict) -> dict | Non
         if counts is not None:
             out = [c for c in out if counts.get(c, 1) > 0]
             if sum(1 for c in out if c != "잘 모르겠어요") < 2:
-                return None
+                return reject("bank_no_split")
         return {"done": False, "question": q, "choices": out, "slot": flow.BANK[bank_id]["slot"]}
     if not 2 <= len(choices) <= 4 or any(len(c) > 14 for c in choices):
-        return None
+        return reject("choice_format")
     if len({_norm(c) for c in choices}) != len(choices):
-        return None
+        return reject("duplicate_choices")
     # 앞에서 이미 고른 답 · 처음 말의 단서를 선택지로 다시 내지 않아요, 앞 질문과 같은 선택지 묶음도 안 돼요
     before = {_norm(x.a) for x in cond.ai if x.a} | {_norm(w) for w in cond.extra.wish}
     choices = [c for c in choices if _norm(c) not in before]
     if any({_norm(c) for c in choices} == {_norm(c) for c in x.choices if c != "잘 모르겠어요"} for x in cond.ai):
-        return None
+        return reject("repeated_choice_set")
     if len(choices) < 2:
-        return None
+        return reject("answered_choices")
     counts = {}
     for ch in choices:
         n = choice_count(ch, cond, items)
         if n is False:
-            return None
+            return reject("ungrounded_choice")
         counts[ch] = n
     choices = [c for c in choices if counts[c] != 0]
     if len(choices) < 2:
-        return None
+        return reject("empty_choices")
     if same_as_asked(cond, choices):
-        return None
+        return reject("repeated_choices")
     qid = bank_id_of(q, choices)
-    if qid and not flow.bank_fits_want(cond, qid):
-        return None
+    if qid and (not flow.bank_fits_want(cond, qid)
+                or (set(choices) == set(flow.BANK[qid]["choices"])
+                    and not flow.bank_available(cond, qid, items))):
+        return reject("bank_not_available")
     counted = [c for c in choices if counts[c] is not None]
     if counted and len(counted) < 2:
-        return None
+        return reject("uncountable_split")
     # 단서를 말하면서 장소 이름을 고르게 하면, 그 이름은 그 단서로 찾은 곳이어야 해요
     today_names = {short_name(it["place"]) for it in items}
     place_choices = [c for c in choices if c in today_names]
@@ -411,22 +419,22 @@ def check_question(cond: Conditions, items: list[dict], sub: dict) -> dict | Non
             if clue in q or first in q:
                 ok = {short_name(it["place"]) for w in {clue, first} for it, _ in place_scores(items, w)}
                 if any(c not in ok for c in place_choices):
-                    return None
+                    return reject("clue_mismatch")
     slot = None
     for s, opts in _SLOT_CHOICES.items():
         if all(c in opts for c in choices):
             filled = want_of(cond) if s == "want" else getattr(cond.basic, s)
             if filled:
-                return None
+                return reject("filled_slot")
             slot = s
             if s in ("walk", "inout"):
                 b = flow.BANK[s]
                 if _norm(b["question"]) in {_norm(x.q) for x in cond.ai}:
-                    return None
+                    return reject("repeated_slot")
                 q, choices = b["question"], list(b["choices"])
             break
     if slot is None and asks_filled(cond, q):
-        return None
+        return reject("asks_filled")
     return {"done": False, "question": q, "choices": choices, "slot": slot}
 
 
@@ -449,8 +457,10 @@ async def jev_ok(cond: Conditions, q: dict, deadline: float) -> bool:
     t = min(config.JEV_TIMEOUT, left)
     nat, fit = await asyncio.gather(jev.ask_yes(state, JEV_NATURAL, t), jev.ask_yes(state, JEV_FIT, t))
     if nat is not None and nat < config.QUESTION_JEV_NATURAL_MIN:
+        log.info("question_fallback reason=jev_natural")
         return False
     if fit is not None and fit < config.QUESTION_JEV_FIT_MIN:
+        log.info("question_fallback reason=jev_fit")
         return False
     return True
 
@@ -496,7 +506,7 @@ async def ask_agent(cond: Conditions, items: list[dict], no: int | None = None, 
         return None
     if q.get("done"):
         if extra:
-            log.info("질문 에이전트: 1개 더 필요 없음 (%s)", why or "이유 없음")
+            log.info("질문 에이전트: 1개 더 필요 없음 (이유 있음 %s)", bool(why))
         return q
     if extra and not why:
         log.info("질문 에이전트: 1개 더인데 이유가 없어서 안 물어요")
@@ -512,7 +522,7 @@ async def ask_agent(cond: Conditions, items: list[dict], no: int | None = None, 
         out["follows"] = f
     if extra:
         out["why"] = why
-        log.info("질문 에이전트: 1개 더 물어요 (%s)", why)
+        log.info("질문 에이전트: 1개 더 물어요 (이유 있음 %s)", bool(why))
     else:
         log.info("질문 에이전트: no %s/%s, 은행 %s, 이어 받음 %s", no, total, bank_id or "-", bool(f))
     return out

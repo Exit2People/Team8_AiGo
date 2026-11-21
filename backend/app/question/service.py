@@ -111,7 +111,10 @@ async def _capped(coro, limit: float):
     try:
         return await asyncio.wait_for(coro, timeout=max(0.1, limit + 0.3))
     except asyncio.TimeoutError:
-        log.warning("질문 에이전트: 한도 %.1f초를 넘어 끊었어요", limit)
+        log.warning("question_fallback reason=timeout limit=%.1f", limit)
+        return None
+    except Exception as exc:
+        log.warning("question_fallback reason=error error_type=%s", type(exc).__name__)
         return None
     finally:
         log.info("질문 에이전트 걸린 시간 %.2f초", time.monotonic() - t)
@@ -157,8 +160,10 @@ async def next_ai(cond: Conditions) -> dict:
         if r is not None and not r.get("done"):
             return stamp(r)
         # done이어도 질문 수는 채워요 → 아래의 더 좁히는 질문으로
-    lead = lead_question(cond, items or [])
+    fallback_items = flow.narrowed_items(cond, items)
+    lead = lead_question(cond, fallback_items or [])
     if lead:
+        log.info("question_fallback destination=lead")
         return stamp(lead)
     v = None
     if not agent_ok:
@@ -166,10 +171,17 @@ async def next_ai(cond: Conditions) -> dict:
     if v is not None and v.get("done") is not True:
         ok = validate_single(cond, v)
         if ok:
+            qid = qa.bank_id_of(ok["question"], ok["choices"])
+            if qid and not flow.bank_available(cond, qid, fallback_items):
+                log.info("question_fallback reason=validation check=single_bank_not_available")
+                ok = None
+        if ok:
             return stamp({**ok, "source": "ai"})
-    qid = flow.best_bank(cond, items)
+    qid = flow.best_bank(cond, fallback_items)
     if qid:
-        return stamp(flow.bank_question(qid, items, None))
+        log.info("question_fallback destination=bank id=%s", qid)
+        return stamp(flow.bank_question(qid, fallback_items, None))
+    log.info("question_fallback destination=screen")
     return {"done": False, "fallback": True, "no": no, "total": total}
 
 
@@ -201,7 +213,7 @@ async def ask_q5(cond: Conditions) -> dict:
     deadline = time.monotonic() + config.QUESTION_AI_TIMEOUT - 0.15
     o = cond.origin
     await asyncio.to_thread(weather.current, o.lat, o.lng)
-    items = flow.today_items(cond) or []
+    items = flow.narrowed_items(cond, flow.today_items(cond)) or []
     crit = preferences.criteria([it["place"] for it in items], _skip_criteria(cond, items))
     if not crit:
         return {"done": False, "fallback": True}
