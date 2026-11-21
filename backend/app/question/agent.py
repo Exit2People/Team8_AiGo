@@ -87,6 +87,8 @@ def look_bank(cond: Conditions, items: list[dict]) -> dict:
             continue
         if qid == "budget" and want_of(cond) != "맛있는 것":
             continue
+        if not flow.bank_fits_want(cond, qid):
+            continue
         counts = flow.bank_counts(qid, items)
         out[b["question"]] = {c: (counts[c] if counts and c in counts else "셀 수 없음")
                               for c in flow.live_choices(qid, items)}
@@ -141,6 +143,15 @@ def choice_count(choice: str, cond: Conditions, items: list[dict]) -> int | None
     return False
 
 
+def bank_id_of(q: str, choices: list[str]) -> str | None:
+    """은행 질문과 글이 같거나 선택지가 2개 이상 겹치면 그 은행 질문으로 봐요."""
+    new = {_norm(c) for c in choices}
+    for qid, b in flow.BANK.items():
+        if _norm(q) == _norm(b["question"]) or len(new & {_norm(c) for c in b["choices"]}) >= 2:
+            return qid
+    return None
+
+
 def same_as_asked(cond: Conditions, choices: list[str]) -> bool:
     """글은 달라도 선택지가 앞 질문과 거의 같으면 같은 질문이에요 (예: '어디로 갈까요?' → '어디서 타고 싶으세요?')."""
     new = {_norm(c) for c in choices}
@@ -179,6 +190,9 @@ def check_question(cond: Conditions, items: list[dict], sub: dict) -> dict | Non
     if len(choices) < 2:
         return None
     if same_as_asked(cond, choices):
+        return None
+    qid = bank_id_of(q, choices)
+    if qid and not flow.bank_fits_want(cond, qid):
         return None
     counted = [c for c in choices if counts[c] is not None]
     if counted and len(counted) < 2:

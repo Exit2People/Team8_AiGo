@@ -58,6 +58,18 @@ Q4_POOL = {
     "조용히 쉬기": ["inout", "rest", "nature"],
     None: ["inout", "sight", "nature", "show"],
 }
+# 어느 '하고 싶은 것'에서든 물어도 되는 은행 질문
+ANY_WANT = ("walk", "inout", "fee")
+
+
+def bank_fits_want(cond: Conditions, qid: str) -> bool:
+    """'하고 싶은 것'과 맞는 은행 질문인지. 맛있는 것을 골랐는데 궁 · 한옥 구경을 묻지 않게 해요."""
+    want = want_of(cond)
+    if want is None:
+        return True
+    return qid in ANY_WANT or qid in Q4_POOL.get(want, Q4_POOL[None])
+
+
 Q5_FALLBACK = {"바람 쐬기": "scenery", "구경하기": "fee", "맛있는 것": "walk", "조용히 쉬기": "walk", None: "walk"}
 
 
@@ -171,7 +183,7 @@ def best_bank(cond: Conditions, items: list[dict] | None) -> str | None:
     asked = asked_ids(cond)
     best, score = None, -1.0
     for qid in BANK:
-        if qid == "budget" or qid in asked or skipped(cond, qid):
+        if qid == "budget" or qid in asked or skipped(cond, qid) or not bank_fits_want(cond, qid):
             continue
         counts = bank_counts(qid, items)
         if counts is None or not _splits(qid, items):
