@@ -68,7 +68,7 @@ export function NearbyScreen({ f, list, widened }: { f: FlowApi; list: NearDong[
       <Progress on={1} text="1 / 4" />
       <Title y={112}>{"어디서\n출발하세요?"}</Title>
       <Sub y={196}>{`지금 위치에서\n${km}km 안의 동이에요`}</Sub>
-      <div className="list" style={{ top: 266, height: 380 }}>
+      <div className="list" style={{ top: 280, height: 366 }}>
         {list.length ? (
           list.map((d) => <DongRow key={d.id} d={d} onClick={() => f.setOriginDong(d)} />)
         ) : (
@@ -118,7 +118,7 @@ export function DongScreen({ f, gu }: { f: FlowApi; gu: string }) {
       <Progress on={1} text="1 / 4" />
       <Title y={112}>{"어느 동에서\n출발하세요?"}</Title>
       <Sub y={196}>{`${gu}에 있는\n동이에요`}</Sub>
-      <div ref={ref} className="grid2" style={{ top: 266, height: 440, paddingBottom: 12 }}>
+      <div ref={ref} className="grid2" style={{ top: 280, height: 426, paddingBottom: 12 }}>
         {list.map((d) => (
           <button key={d.id} className="pick" style={{ fontSize: `calc(${d.name.length > 6 ? 15 : 18}px * var(--fs))` }} onClick={() => f.setOriginDong(d)}>
             {d.name}
