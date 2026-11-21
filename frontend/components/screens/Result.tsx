@@ -7,6 +7,7 @@ import { Caption, Secondary } from "../ui";
 import { lastLeg, linesText, placeNameSize } from "@/lib/format";
 import { wideIll } from "@/lib/illust";
 import type { Candidate } from "@/lib/types";
+import { later } from "@/lib/pause";
 
 /** 티켓 한 장 (8.2) — 313×584 */
 export function Ticket({ c, i, n, closed, expected }: { c: Candidate; i: number; n: number; closed: boolean; expected: number }) {
@@ -145,18 +146,19 @@ export default function Result({ f }: { f: FlowApi }) {
     setPhase("wait");
     // 담고가 한 손으로 프린터 단추를 누르고(press) → 티켓이 나오기 시작하면 사라져요(s4)
     f.setPoseOv("press");
-    const t1 = setTimeout(() => {
+    // 배지 축하 화면이 떠 있으면 티켓 출력도 그 자리에 멈춰요(later)
+    const t1 = later(900, () => {
       setPhase("up");
       f.setPoseOv("s4");
-    }, 900);
-    const t2 = setTimeout(() => {
+    });
+    const t2 = later(900 + 3000, () => {
       setPhase("done");
       f.set((p) => ({ printed: { ...p.printed, [key]: true } }));
       f.setPoseOv(null);
-    }, 900 + 3000);
+    });
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
+      t1();
+      t2();
       f.setPoseOv(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

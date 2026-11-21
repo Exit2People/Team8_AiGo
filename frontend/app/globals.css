@@ -395,6 +395,16 @@ html.ios .viewport {
   color: var(--white);
   white-space: nowrap;
 }
+/* 첫 화면 위쪽 버튼(마이메뉴 · 글씨 크기): 둘이 같은 크기 · 높이로 나란히. 글씨 크기 설정과 상관없이 늘 같은 크기 */
+.chip.chip-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  font-size: 14px;
+  line-height: 1;
+}
 .chip-soft {
   background: var(--soft);
   color: var(--ink);
@@ -471,6 +481,75 @@ html.ios .viewport {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+}
+/* 질문 화면: 담고 아래로 (들은 말 상자) → 선택지 → 잘 모르겠어요 → 안내를 차례로 쌓아요 (Question.tsx) */
+.qStack {
+  position: absolute;
+  left: 24px;
+  width: 345px;
+  display: flex;
+  flex-direction: column;
+}
+.qStack .tiles {
+  position: relative;
+  left: 0;
+  width: 100%;
+}
+.btn.qDk {
+  position: relative;
+  width: 100%;
+  margin-top: 20px;
+}
+.qCaption {
+  margin-top: 34px;
+  text-align: center;
+}
+.qCaption.withDk {
+  margin-top: 20px;
+}
+/* 들은 말 상자 + 4지선다 + 잘 모르겠어요가 모두 있으면 화면 아래가 빠듯해서 간격을 줄여요 */
+.qStack.tight .heardBox {
+  margin-bottom: 10px;
+}
+.qStack.tight .btn.qDk {
+  margin-top: 12px;
+}
+.qStack.tight .qCaption.withDk {
+  margin-top: 12px;
+}
+/* 이렇게 들었어요: 살짝 회색 상자 하나에 설명 + 지울 수 있는 칩 */
+.heardBox {
+  margin-bottom: 14px;
+  padding: 12px 14px 14px;
+  border-radius: 18px;
+  background: #efedea;
+  box-shadow: inset 0 0 0 1px rgba(17, 17, 17, 0.05);
+}
+.heardLabel {
+  font-size: calc(13px * var(--fs));
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--mute);
+}
+.heardChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.chip.heardChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  background: var(--white);
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(17, 17, 17, 0.08);
+}
+.chip.heardChip span {
+  font-size: 0.85em;
+  color: var(--mute);
 }
 .tile {
   position: relative;
@@ -590,7 +669,11 @@ html.ios .viewport {
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
+.grid2::-webkit-scrollbar {
+  display: none;
+}
 .grid2 {
+  scrollbar-width: none;
   position: absolute;
   left: 24px;
   width: 345px;
@@ -854,6 +937,22 @@ html.ios .textbox {
 .srOnly { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .linkBtn { align-self: center; min-height: 44px; margin-top: 6px; padding: 0 12px; background: none; font-size: calc(13.5px * var(--fs)); font-weight: 600; color: var(--sub); }
 .linkBtn.under { margin-top: 14px; color: var(--mute); text-decoration: underline; text-underline-offset: 3px; font-size: calc(15px * var(--fs)); font-weight: 700; }
+
+/* 마이메뉴 줄 사이 구분선: 상자 안쪽으로 들여 그리고, 마지막 줄 밑에는 그리지 않아요
+   (예전엔 줄마다 밑줄이 상자 폭 끝까지 그어져, 마지막 밑줄이 둥근 상자 아래 모서리에 겹쳐 보였어요) */
+.myLine {
+  position: relative;
+}
+.myLine + .myLine::before {
+  content: "";
+  position: absolute;
+  left: 20px;
+  right: 16px;
+  top: 0;
+  height: 1.5px;
+  background: var(--soft);
+  pointer-events: none;
+}
 
 /* 내 정보 카드 (업적 · 게임) */
 .profileText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; word-break: keep-all; }
@@ -1265,4 +1364,271 @@ html.ios .textbox {
 }
 .cal-grid {
   animation: fadeIn 0.25s ease both;
+}
+
+/* 배지 축하 화면이 떠 있는 동안 뒤 화면(담고 · 티켓 · 가방 등)의 애니메이션을 그 자리에 멈춰요. 축하 화면 자체는 그대로 움직여요 */
+.app.paused .canvas > :not(.celebrateDim),
+.app.paused .canvas > :not(.celebrateDim) *,
+.app.paused .canvas > :not(.celebrateDim)::before,
+.app.paused .canvas > :not(.celebrateDim)::after,
+.app.paused .canvas > :not(.celebrateDim) *::before,
+.app.paused .canvas > :not(.celebrateDim) *::after {
+  animation-play-state: paused !important;
+}
+
+/* ==========================================================
+   넓은 화면(PC 웹): 내 정보 옆 패널 · 가운데 창 (components/WideLayers.tsx)
+   여는 움직임은 @starting-style, 닫는 움직임은 .leaving으로 같은 transition을 되돌려요.
+   그래서 열리는 도중에 닫아도(또는 반대로) 그 자리에서 자연스럽게 방향만 바뀌어요.
+   ========================================================== */
+/* 패널 · 창 안에서는 --bleed를 0으로 덮어써서, 바깥(화면 옆 빈자리) 폭은 여기서 미리 받아 둬요 */
+.canvas {
+  --ly-bleed: var(--bleed);
+}
+.lyDim,
+.lyDrawer,
+.lyModal {
+  --ly-in: cubic-bezier(0.22, 1, 0.36, 1);
+  --ly-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 뒤 화면: 살짝 흐리게 + 어둡게 (둘을 섞어야 글자가 비쳐 산만하지 않고, 앱 색은 은은하게 남아요) */
+.lyDim {
+  position: absolute;
+  z-index: 70;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--bleed) * -1);
+  right: calc(var(--bleed) * -1);
+  background: rgba(17, 17, 17, 0.42);
+  -webkit-backdrop-filter: blur(7px) saturate(0.9);
+  backdrop-filter: blur(7px) saturate(0.9);
+  opacity: 1;
+  transition: opacity 420ms var(--ly-in);
+  cursor: pointer;
+}
+.lyDim.leaving {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms var(--ly-out);
+}
+@starting-style {
+  .lyDim {
+    opacity: 0;
+  }
+}
+
+/* 왼쪽에서 밀려 나오는 내 정보 패널 */
+.lyDrawer {
+  --bleed: 0px; /* 안의 화면 · 작은 확인 창이 패널 폭에 맞게 */
+  position: absolute;
+  z-index: 72;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--ly-bleed, 0px) * -1);
+  /* PC는 400, 폰은 오른쪽에 흐린 뒤 화면이 44만큼 보이게 (거기를 누르면 닫혀요) */
+  width: min(400px, calc(393px + var(--ly-bleed, 0px) * 2 - 44px));
+  overflow: hidden;
+  background: var(--g-paper);
+  border-radius: 0 30px 30px 0;
+  box-shadow: 14px 0 44px rgba(17, 17, 17, 0.28), 2px 0 0 rgba(255, 255, 255, 0.5) inset;
+  transform: none;
+  transition: transform 520ms var(--ly-in), box-shadow 520ms var(--ly-in);
+  will-change: transform;
+}
+.lyDrawer.leaving {
+  transform: translateX(calc(-100% - 60px));
+  box-shadow: none;
+  pointer-events: none;
+  transition: transform 340ms var(--ly-out), box-shadow 340ms var(--ly-out);
+}
+@starting-style {
+  .lyDrawer {
+    transform: translateX(calc(-100% - 60px));
+    box-shadow: none;
+  }
+}
+.lyDrawer .content {
+  z-index: 2;
+}
+/* 패널 안 카드가 위에서부터 차례로 살짝 떠올라요 */
+.lyDrawer .content > .scroll > * {
+  animation: lyItem 560ms var(--ly-in) both;
+}
+.lyDrawer .content > .scroll > :nth-child(1) { animation-delay: 90ms; }
+.lyDrawer .content > .scroll > :nth-child(2) { animation-delay: 130ms; }
+.lyDrawer .content > .scroll > :nth-child(3) { animation-delay: 170ms; }
+.lyDrawer .content > .scroll > :nth-child(4) { animation-delay: 210ms; }
+.lyDrawer .content > .scroll > :nth-child(5) { animation-delay: 250ms; }
+.lyDrawer .content > .scroll > :nth-child(6) { animation-delay: 290ms; }
+.lyDrawer .content > .scroll > :nth-child(n + 7) { animation-delay: 330ms; }
+@keyframes lyItem {
+  from { opacity: 0; transform: translateX(-18px); }
+  to { opacity: 1; transform: none; }
+}
+.lyTitle {
+  position: absolute;
+  z-index: 3;
+  left: 24px;
+  top: 50px;
+  animation: lyItem 520ms var(--ly-in) 60ms both;
+}
+/* 동그란 X 닫기 (패널 · 창 오른쪽 위) */
+.lyX {
+  position: absolute;
+  z-index: 45;
+  right: 18px;
+  top: 50px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--white);
+  box-shadow: 0 4px 12px rgba(17, 17, 17, 0.22);
+  transition: transform 0.18s var(--ly-in), background-color 0.18s ease;
+}
+.lyX:active {
+  transform: scale(0.92);
+}
+@media (hover: hover) {
+  .lyX:hover {
+    transform: scale(1.06);
+  }
+}
+/* 폰: 창이 패널을 덮는 동안 패널은 살짝 어둡게, 누르면 뒤(흐린 막)로 넘어가 창이 닫혀요 */
+.lyDrawer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background: rgba(17, 17, 17, 0.32);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 360ms var(--ly-in);
+}
+.lyDrawer.under {
+  pointer-events: none;
+}
+.lyDrawer.under::after {
+  opacity: 1;
+}
+/* 지금 창으로 열린 항목 */
+.lyDrawer .myCardWrap {
+  border-radius: 24px;
+  transition: box-shadow 240ms ease;
+}
+.lyDrawer [data-on] {
+  box-shadow: 0 0 0 3px var(--ink), var(--sh-row) !important;
+}
+.lyDrawer .myLine {
+  transition: background-color 200ms ease;
+}
+.lyDrawer .myLine[aria-current] {
+  background: var(--soft);
+}
+.lyDrawer .myLine:first-child {
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+}
+.lyDrawer .myLine:last-child {
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+}
+@media (hover: hover) {
+  .lyDrawer .myLine:hover:not(:disabled) {
+    background: var(--soft);
+  }
+  .lyDrawer .badgeCard,
+  .lyDrawer .gameCard,
+  .lyDrawer .content > .scroll > button {
+    transition: transform 200ms var(--ly-in), box-shadow 200ms ease;
+  }
+  .lyDrawer .badgeCard:hover,
+  .lyDrawer .gameCard:hover,
+  .lyDrawer .content > .scroll > button:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+}
+
+/* 앱 색 띠 (폰 화면의 .bg-coral과 같은 모양) */
+.lyBg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1200px;
+  background: var(--g-coral-fade);
+  pointer-events: none;
+  transition: transform 600ms var(--ly-in), opacity 600ms var(--ly-in);
+}
+.lyBg.deep {
+  height: 852px;
+  background: var(--g-coral-deep-fade);
+}
+
+/* 가운데 창: 폰 화면(393 × 852)을 90%로 줄여 화면 가운데에 띄워요 */
+.lyModal {
+  --bleed: 0px;
+  --ms: 0.9; /* 창 크기 (폰 화면 393 × 852 대비) */
+  position: absolute;
+  z-index: 74;
+  /* 키 큰 폰은 무대가 852보다 길어서, 창을 위아래 가운데에 둬요 */
+  top: calc((var(--canvas-h, 852px) - 852px) / 2);
+  left: 0;
+  width: 393px;
+  height: 852px;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--g-paper);
+  border-radius: 34px;
+  box-shadow: 0 30px 80px rgba(17, 17, 17, 0.38), 0 6px 18px rgba(17, 17, 17, 0.18);
+  transform-origin: 50% 50%;
+  transform: scale(var(--ms));
+  opacity: 1;
+  transition: transform 520ms var(--ly-in), opacity 360ms var(--ly-in), left 520ms var(--ly-in);
+  will-change: transform, opacity;
+}
+/* 패널이 있어도 창은 화면 가운데(left 0)에 둬요.
+   다만 화면이 좁아 패널과 겹치면, 패널 오른쪽 끝에서 24만큼 떨어지도록 필요한 만큼만 오른쪽으로 비켜요.
+   (창은 90%로 줄어 왼쪽에 19.65만큼 여백이 생겨요: 400 − 옆 빈자리 + 24 − 19.65 ≈ 405 − 옆 빈자리) */
+.lyModal.side {
+  left: max(0px, calc(405px - var(--ly-bleed, 0px)));
+}
+/* 폰: 글씨가 너무 작아지지 않게 조금만 줄여요 */
+.lyModal.narrow {
+  --ms: 0.94;
+}
+.lyModal.leaving {
+  transform: translateY(18px) scale(calc(var(--ms) - 0.03));
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 280ms var(--ly-out), opacity 240ms var(--ly-out);
+}
+@starting-style {
+  .lyModal {
+    transform: translateY(36px) scale(calc(var(--ms) - 0.04));
+    opacity: 0;
+  }
+}
+/* 창 안에서 화면이 바뀌면(게임 → 랭킹, 업적 → 게임) 새 화면이 부드럽게 떠올라요 */
+.lyModal > .content {
+  animation: lySwap 420ms var(--ly-in) both;
+}
+@keyframes lySwap {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* 패널 · 창이 떠 있을 때 알림은 아래쪽, 창 가운데에 */
+.toast.lyToast {
+  top: auto;
+  bottom: 28px;
+  z-index: 80;
+}
+.toast.lyToast.side {
+  left: calc(max(0px, calc(405px - var(--ly-bleed, 0px))) + 24px);
+  right: auto;
+  width: 345px;
 }

@@ -23,12 +23,14 @@ function Group({ y, children }: { y?: number; children: ReactNode }) {
   );
 }
 
-function Line({ label, value, onClick, danger, disabled }: { label: string; value?: string; onClick?: () => void; danger?: boolean; disabled?: boolean }) {
+function Line({ label, value, onClick, danger, disabled, on }: { label: string; value?: string; onClick?: () => void; danger?: boolean; disabled?: boolean; on?: boolean }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      style={{ display: "flex", width: "100%", alignItems: "center", minHeight: 54, padding: "0 16px 0 20px", gap: 8, borderBottom: "1.5px solid var(--soft)", textAlign: "left" }}
+      className="myLine"
+      aria-current={on || undefined}
+      style={{ display: "flex", width: "100%", alignItems: "center", minHeight: 54, padding: "0 16px 0 20px", gap: 8, textAlign: "left" }}
     >
       <span className="t-answer" style={{ flex: 1, color: danger ? "var(--coral-deep)" : undefined, fontSize: "calc(17px * var(--fs))" }}>
         {label}
@@ -47,9 +49,11 @@ export function gameBest(uid?: string | null): number {
   return loadBest(uid);
 }
 
-/** 내 정보 (4.5 my) */
-export function My({ f }: { f: FlowApi }) {
+/** 내 정보 (4.5 my). active: PC 옆 패널에서 지금 창으로 열린 항목 (WideLayers) */
+export function My({ f, active }: { f: FlowApi; active?: string }) {
   const u = f.s.user;
+  // PC 옆 패널은 창을 여닫는 동안 그대로 떠 있어서, 화면이 바뀔 때마다 숫자(최고 기록 · 우표 · 배지)를 다시 읽어요
+  const depth = f.s.stack.length;
   const [ask, setAsk] = useState(false);
   const [askOut, setAskOut] = useState(false); // 로그아웃 한 번 더 묻기
   const [busy, setBusy] = useState(false);
@@ -60,7 +64,7 @@ export function My({ f }: { f: FlowApi }) {
     const vs = readVisits();
     setStats({ stamps: Object.keys(st).length, visits: vs.length, blocked: readBlocked().length, best: gameBest(u?.id) });
     setBadges(u ? badgeStates(u.id, !!u.homeDong1) : []);
-  }, [u]);
+  }, [u, depth]);
   const theme = THEMES.find((t) => t.color === f.s.coral)?.name ?? "코랄";
   const unrecorded = Math.max(0, stats.visits - stats.stamps);
 
@@ -96,6 +100,8 @@ export function My({ f }: { f: FlowApi }) {
         <button
           style={{ display: "flex", width: "100%", alignItems: "center", gap: 14, background: "var(--ink)", color: "#fff", borderRadius: 24, padding: "20px 16px", marginTop: 14, textAlign: "left" }}
           onClick={() => f.go({ k: "mine" })}
+          data-on={active === "mine" || undefined}
+          aria-current={active === "mine" || undefined}
         >
           <span style={{ flex: 1 }}>
             <span className="t-answer" style={{ display: "block" }}>
@@ -110,7 +116,7 @@ export function My({ f }: { f: FlowApi }) {
           </span>
         </button>
 
-        <div style={{ marginTop: 14 }}>
+        <div className="myCardWrap" style={{ marginTop: 14 }} data-on={active === "badges" || undefined}>
           {u ? (
             <BadgeCard states={badges} onOpen={() => f.go({ k: "badges" })} />
           ) : (
@@ -127,26 +133,21 @@ export function My({ f }: { f: FlowApi }) {
             </button>
           )}
         </div>
-        <div style={{ marginTop: 14 }}>
+        <div className="myCardWrap" style={{ marginTop: 14 }} data-on={active === "game" || active === "rank" || undefined}>
           <GameCard best={stats.best} onOpen={() => f.go({ k: "game" })} />
         </div>
 
         {u && (
           <Group>
-            <Line label="닉네임" value={u.nickname || "아직 없어요"} onClick={() => f.go({ k: "myedit", field: "nickname" })} />
-            <Line label="나이" value={u.age ? `${u.age}세` : "아직 없어요"} onClick={() => f.go({ k: "myedit", field: "age" })} />
-            {u.provider === "email" && (
-              <>
-                <Line label="이메일" value={u.email} disabled />
-                <Line label="비밀번호 바꾸기" onClick={() => f.note("비밀번호 바꾸기는 아직 준비 중이에요")} />
-              </>
-            )}
+            <Line label="닉네임" value={u.nickname || "아직 없어요"} onClick={() => f.go({ k: "myedit", field: "nickname" })} on={active === "myedit-nickname"} />
+            <Line label="나이" value={u.age ? `${u.age}세` : "아직 없어요"} onClick={() => f.go({ k: "myedit", field: "age" })} on={active === "myedit-age"} />
+            {u.provider === "email" && <Line label="이메일" value={u.email} disabled />}
           </Group>
         )}
         <Group>
-          {u && <Line label="사는 곳" value={u.homeDong1 || "아직 없어요"} onClick={() => f.go({ k: "myedit", field: "home1" })} />}
-          <Line label="테마 색" value={theme} onClick={() => f.go({ k: "theme" })} />
-          <Line label="차단한 사람" value={stats.blocked ? `${stats.blocked}명` : "없어요"} onClick={() => f.go({ k: "blocked" })} />
+          {u && <Line label="사는 곳" value={u.homeDong1 || "아직 없어요"} onClick={() => f.go({ k: "myedit", field: "home1" })} on={active === "myedit-home1"} />}
+          <Line label="테마 색" value={theme} onClick={() => f.go({ k: "theme" })} on={active === "theme"} />
+          <Line label="차단한 사람" value={stats.blocked ? `${stats.blocked}명` : "없어요"} onClick={() => f.go({ k: "blocked" })} on={active === "blocked"} />
         </Group>
         {u && (
           <Group>
@@ -319,8 +320,6 @@ export function MyEdit({ f, field }: { f: FlowApi; field: keyof typeof FIELDS })
 
 /** 테마 색 (4.5 theme, 13절) */
 export function Theme({ f }: { f: FlowApi }) {
-  const [n, setN] = useState(0);
-  useEffect(() => setN(readVisits().length), []);
   return (
     <div className="content">
       <Title y={112}>테마 색</Title>
@@ -352,15 +351,6 @@ export function Theme({ f }: { f: FlowApi }) {
           })}
         </div>
       </div>
-      <div className="card" style={{ top: 470 }}>
-        <p className="t-answer">다녀온 곳 {n}곳</p>
-        <p className="t-caption c-mute" style={{ marginTop: 6, lineHeight: 1.45 }}>
-          이 기기에만 30일 동안 기억해요. 같은 곳을 또 추천하지 않으려고요.
-        </p>
-      </div>
-      <Caption y={760} dark>
-        이름 · 전화번호 · 위치는 남기지 않아요
-      </Caption>
     </div>
   );
 }
