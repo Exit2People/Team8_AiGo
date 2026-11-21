@@ -17,6 +17,8 @@ anyio==4.16.0
     #   langsmith
     #   starlette
     #   watchfiles
+better-profanity==0.7.0
+    # via korcen
 certifi==2026.11.20
     # via
     #   httpcore
@@ -27,6 +29,8 @@ charset-normalizer==3.5.2
     # via requests
 click==8.5.1
     # via uvicorn
+colorama==0.4.6
+    # via korcen
 distro==1.9.0
     # via langsmith
 docstring-parser==0.18.0
@@ -67,6 +71,8 @@ jsonpatch==1.48
     # via langchain-core
 jsonpointer==3.12
     # via jsonpatch
+korcen==1.0.3
+    # via aigo-backend
 langchain-anthropic==1.7.12
     # via aigo-backend
 langchain-core==1.8.4

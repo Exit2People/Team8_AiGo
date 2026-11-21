@@ -29,8 +29,11 @@ MSG = {
 
 _STAFF = ("운영자", "관리자", "운영진", "관리인", "admin", "aigo", "아이고공식", "공식계정")
 _EN_SEXUAL = {"pussy", "penis", "vagina", "boobs", "tits", "nipple", "porn", "nude", "naked", "sexy", "milf", "horny", "slut", "whore"}
-# 톡방에서는 평범한 말(시발점 · 시발역)이지만 닉네임으로는 우회 표현이라 막아요
-_NICK_SWEAR = ("시발", "씨발", "시빨")
+# 톡방에서는 평범한 말(시발점 · 시발역)이지만 닉네임으로는 우회 표현이라 막아요. 사전 · korcen 둘 다 놓치는 낮춤말도 여기에
+_NICK_SWEAR = ("시발", "씨발", "시빨", "등신", "찐따", "애미", "애비", "니미")
+# korcen(오픈소스, Apache-2.0) 갈래 → 우리 이유 갈래
+_KORCEN_GROUP = {"sexual": "성적", "politics": "정치", "general": "욕설", "minor": "욕설", "belittle": "욕설",
+                 "race": "욕설", "parent": "욕설"}
 _JAMO = re.compile(r"[ㄱ-ㅎㅏ-ㅣ]")
 _OK_CHARS = re.compile(r"[가-힣A-Za-z0-9]+")
 
@@ -83,9 +86,43 @@ def check_rules(nickname: str | None) -> tuple[str, str] | None:
     if chat_safety.has_banned_word(t) or any(w in t for w in _NICK_SWEAR):
         g = _group(t)
         return g, MSG[g]
+    k = _korcen_group(t)
+    if k:
+        return k, MSG[k]
     if any(w in t.lower() for w in _STAFF):
         return "staff", MSG["staff"]
     return None
+
+
+def _korcen_group(t: str) -> str | None:
+    """우리 사전이 놓친 것을 korcen으로 한 번 더 봐요 (보지털 · 자지왕 · 개년 …). 없거나 오류면 건너뛰어요."""
+    k = _korcen()
+    if k is None:
+        return None
+    for level, group in _KORCEN_GROUP.items():
+        try:
+            if getattr(k, level)(t):
+                return group
+        except Exception:
+            return None
+    return None
+
+
+_KORCEN: list = []
+
+
+def _korcen():
+    if not _KORCEN:
+        try:
+            import warnings
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")  # 라이브러리 안의 정규식 경고 숨기기
+                from korcen import korcen as k
+            _KORCEN.append(k)
+        except Exception:
+            _KORCEN.append(None)
+    return _KORCEN[0]
 
 
 def check_sync(nickname: str | None) -> tuple[str, str] | None:
