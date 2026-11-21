@@ -338,8 +338,20 @@ def check_question(cond: Conditions, items: list[dict], sub: dict) -> dict | Non
         live = flow.live_choices(bank_id, items)
         # 은행 질문(또는 그 다른 말투)은 은행 선택지로. 에이전트가 고른 순서를 따르고 나머지는 뒤에
         mine = [c for c in choices if c in live]
-        return {"done": False, "question": q, "choices": mine + [c for c in live if c not in mine],
-                "slot": flow.BANK[bank_id]["slot"]}
+        out = mine + [c for c in live if c not in mine]
+        # 같은 선택지 묶음을 다른 말투로 이미 물었으면 되풀이예요 (asked_ids 는 은행 문장 그대로일 때만 알아봐요)
+        sig = {_norm(c) for c in out if c != "잘 모르겠어요"}
+        if any(sig == {_norm(c) for c in x.choices if c != "잘 모르겠어요"} for x in cond.ai):
+            return None
+        # 오늘 갈 곳이 0곳인 선택지는 빼요. 고를 만한 선택지('잘 모르겠어요' 빼고)가 2개 미만이면 묻지 않아요
+        # (live_choices 는 나눌 수 없으면 원래 선택지를 그대로 돌려줘서 0곳 선택지가 섞여요.
+        #  요금처럼 셀 수 있는 선택지가 하나뿐인 은행 질문도 있어서, 셀 수 없는 선택지는 그대로 둬요)
+        counts = flow.bank_counts(bank_id, items) if items is not None else None
+        if counts is not None:
+            out = [c for c in out if counts.get(c, 1) > 0]
+            if sum(1 for c in out if c != "잘 모르겠어요") < 2:
+                return None
+        return {"done": False, "question": q, "choices": out, "slot": flow.BANK[bank_id]["slot"]}
     if not 2 <= len(choices) <= 4 or any(len(c) > 14 for c in choices):
         return None
     if len({_norm(c) for c in choices}) != len(choices):
