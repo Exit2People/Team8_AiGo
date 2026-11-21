@@ -31,3 +31,4 @@
 1. 키 · DB 주소 · 비밀번호를 출력 · 커밋하지 않아요. 값은 `PROMPTS/SHARED/config/secrets.env`에서 `backend/.env` · Vercel 환경 변수로만 옮겨요 (`.env*`는 `.gitignore`).
 2. 화면 글은 한국어 존댓말 "~요", 짧은 문장, 쉬운 말 (어르신 UX, `PROMPTS/SHARED/01_PRODUCT.md` 2절).
 3. Next.js는 16이에요. 화면 코드를 쓰기 전에 `frontend/node_modules/next/dist/docs/`의 안내를 먼저 읽어요 (`frontend/AGENTS.md`).
+4. **브랜치 (2026-11-21 사용자 결정):** `main` = 김상진 · BE팀 (서버 · 배포). `FE`와 그 뒤 생기는 화면 브랜치 = FE팀. 사용자가 "FE 반영해줘"처럼 지시하면 그 브랜치를 `main`에 합치고 화면 · 서버를 다시 배포해요 (`PROMPTS/SHARED/08_DEPLOY.md` 4 · 7절). `main`에서는 `frontend/`를 고치지 않아요.
