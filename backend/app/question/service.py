@@ -1,6 +1,6 @@
 """AI가 끼는 질문: 조건 묶음만 온 /questions/next, /questions/ai (질문 5).
 
-질문 에이전트(LangGraph)는 오늘 만들지 않았어요 → "에이전트를 못 쓰면" 경로(발전 질문 → Claude 한 번 → 은행)를 써요.
+순서: 질문 에이전트(켜져 있고 오늘 후보가 있으면, 6초) → 발전 질문 → (에이전트를 못 썼을 때만) Claude 한 번 → 은행 → fallback.
 """
 
 import asyncio
@@ -107,10 +107,20 @@ async def next_ai(cond: Conditions) -> dict:
     if len(cond.ai) >= config.MAX_AI_QUESTIONS:
         return {"done": True}
     items = flow.today_items(cond)
+    tried_agent = False
+    if config.question_agent_on() and config.has_ai() and items:
+        from app.question.agent import ask_agent
+
+        tried_agent = True
+        r = await ask_agent(cond, items)
+        if r is not None:
+            return {"done": True} if r.get("done") else r
     lead = lead_question(cond, items or [])
     if lead:
         return lead
-    v = await ask_json(AI_QUESTION_SYSTEM, strip_for_ai(cond), QUESTION_SCHEMA, config.QUESTION_AI_TIMEOUT)
+    v = None
+    if not tried_agent:
+        v = await ask_json(AI_QUESTION_SYSTEM, strip_for_ai(cond), QUESTION_SCHEMA, config.QUESTION_AI_TIMEOUT)
     if v is not None:
         if v.get("done") is True:
             return {"done": True}
@@ -186,6 +196,14 @@ async def ask_q5(cond: Conditions) -> dict:
 async def ask_ai(cond: Conditions) -> dict:
     if cond.fallback:
         return {"done": False, "fallback": True}
+    if config.question_agent_on() and config.has_ai():
+        from app.question.agent import ask_agent
+
+        items = flow.today_items(cond)
+        if items:
+            r = await ask_agent(cond, items)
+            if r is not None:
+                return {"done": True, "no": 5, "source": "agent"} if r.get("done") else {**r, "no": 5}
     if config.question_mode() == "single":
         r = await next_ai(cond)
         if r.get("question"):
