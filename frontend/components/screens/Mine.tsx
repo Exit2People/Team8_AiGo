@@ -248,7 +248,7 @@ export function Cut({ f, stepKey }: { f: FlowApi; stepKey: string }) {
       const ok =
         !!v &&
         !!pending.photo &&
-        saveStamp({ id: v.id, name: v.name, date: v.date, photo: pending.photo, text: "", tags: [], at: Date.now() });
+        saveStamp({ id: v.id, name: v.name, date: v.date, photo: pending.photo, text: pending.text.trim().slice(0, 60), tags: [], at: Date.now() });
       if (!ok) {
         f.note("우표를 저장하지 못했어요. 사진을 다시 골라 주세요.");
         f.back();
