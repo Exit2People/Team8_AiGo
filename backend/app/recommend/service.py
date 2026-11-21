@@ -215,8 +215,6 @@ async def recommend(cond: Conditions, visited: list[str], shown: list[str] | Non
             verified = await confirm_by_jev(verify_picks(picks, seen), left(0.5))
             if verified:
                 by = "agent"
-                # 에이전트의 relax_travel은 곳마다 relaxed를 달아요 (cond는 그대로)
-                relaxed = any(v["item"].get("relaxed") for v in verified)
         if by != "agent":
             log.info("추천 에이전트를 못 써서 코드 길로 가요")
 
@@ -317,8 +315,10 @@ async def recommend(cond: Conditions, visited: list[str], shown: list[str] | Non
         return done({"candidates": [], "notFound": True, "why": "none"})
 
     shown = limit_revisits(shown, work_cond)  # 다녀온 곳은 1곳까지, 맨 앞은 새로운 곳
-    if by == "agent":
-        relaxed = relaxed and any(v["item"].get("relaxed") for v in shown)
+    # 넓혀 찾은 곳이 하나라도 보이면 화면이 "조금 더 먼 곳까지 찾았어요"를 띄워요.
+    # 코드 길 _relax 는 cond 자체를 넓혀서 relaxed 가 이미 True, 에이전트 relax_travel 은 곳마다 relaxed 를 달아요
+    # (에이전트가 넓혀 찾은 곳을 코드 길 · 규칙 채우기가 골라도 여기서 잡혀요)
+    relaxed = relaxed or any(v["item"].get("relaxed") for v in shown)
     shown = _fix_wish_reasons(shown, work_cond)
     wish_later = _wish_later(work_cond, shown, now)
     cands = [_candidate(v) for v in shown]

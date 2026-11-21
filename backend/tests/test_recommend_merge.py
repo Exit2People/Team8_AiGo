@@ -84,3 +84,34 @@ def test_agent_found_places_survive_code_path(monkeypatch):
     r = client.post("/recommend", json={"conditions": cond(one_way=5), "visited": []})
     assert r.status_code == 200
     assert "kakao:t1" in got.get("ids", [])
+
+
+def test_relaxed_shown_even_when_agent_picks_fail(monkeypatch):
+    # 에이전트가 범위를 넓혀 찾은 곳(relaxed)을 코드 길이 골라도 화면에 넓혀 찾았다고 알려요
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
+    monkeypatch.setenv("AIGO_AGENT", "1")
+    far = {"place": {"id": "far:1", "name": "조금 먼 공원", "kind": "공원", "mood": ["산책"], "lat": 37.6, "lng": 127.1},
+           "route": {"totalMin": 60, "transfers": 0, "legs": [], "source": "tmap"}, "relaxed": True}
+
+    async def fake_agent(pool, c, visited, now, weather, timeout, everything, info=None):
+        return [], [far]
+
+    async def pick_far(pool, c, timeout):
+        return [{"id": "far:1", "reason": "산책하기 좋아요"}]
+
+    from app.recommend.agent import graph
+
+    monkeypatch.setattr(graph, "pick_by_agent", fake_agent)
+    monkeypatch.setattr(svc, "pick_by_ai", pick_far)
+    monkeypatch.setattr(svc, "confirm_by_jev", lambda v, t=None: asyncio.sleep(0, v))
+    r = client.post("/recommend", json={"conditions": cond(), "visited": []}).json()
+    assert any(c["place"]["id"] == "far:1" for c in r["candidates"])
+    assert r.get("relaxed") is True
+
+
+def test_pick_ai_sees_relaxed_mark():
+    from app.recommend.pick import for_ai
+
+    item = {"place": {"id": "x", "name": "먼 곳", "kind": "공원"}, "route": {"totalMin": 60, "transfers": 0, "legs": []},
+            "relaxed": True}
+    assert "이동 범위" in for_ai(item)

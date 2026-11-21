@@ -191,6 +191,9 @@ def for_ai(item: dict) -> dict:
         d["다녀온 곳"] = "최근 30일 안에 다녀왔어요"
     elif item.get("shownRecent"):
         d["최근에 보여 준 곳"] = "며칠 안에 추천했지만 고르지 않았어요"
+    if item.get("relaxed"):
+        # 에이전트가 범위를 넓혀 찾은 곳이 한 번 호출(PICK)로 넘어올 때도 멀다는 걸 알려요
+        d["이동 범위"] = "고른 범위보다 멀어요. 이유에 걸리는 시간을 꼭 적어요"
     if measured:
         rides = [lg.get("line") for lg in r.get("legs") or [] if lg.get("kind") != "하차" and lg.get("line")]
         if rides:
