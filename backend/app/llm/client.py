@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import time
 import logging
 
 from app import config
@@ -29,6 +30,12 @@ def _get_client():
 async def ask_json(system: str, payload, schema: dict, timeout: float, max_tokens: int = 2000) -> dict | None:
     if not config.has_ai() or timeout <= 0:
         return None
+    from app.llm import warm
+
+    t0 = time.monotonic()
+    if not await warm.ready(timeout - 0.5):
+        return None
+    timeout -= time.monotonic() - t0
     import anthropic
 
     try:

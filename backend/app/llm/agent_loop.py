@@ -6,6 +6,7 @@
 
 import asyncio
 import json
+import time
 import logging
 from typing import Annotated, Any, Awaitable, Callable, TypedDict
 
@@ -34,6 +35,12 @@ async def run(system: str, first: dict, tools: dict[str, Tool], schemas: list[di
     """제출 도구의 인자를 돌려줘요. {"submitted": args 또는 None, "rounds": n}. 실패 · 늦음은 None."""
     if not config.has_ai() or timeout <= 0:
         return None
+    from app.llm import warm
+
+    t0 = time.monotonic()
+    if not await warm.ready(timeout - 0.5):
+        return None
+    timeout -= time.monotonic() - t0
     from langchain_core.messages import AnyMessage, HumanMessage, SystemMessage, ToolMessage
     from langgraph.graph import END, StateGraph
     from langgraph.graph.message import add_messages

@@ -53,6 +53,11 @@ QUESTION_AGENT_TIMEOUT = 6.0
 QUESTION_AGENT_ROUNDS = 2
 QUESTION_JEV_NATURAL_MIN = 0.6
 QUESTION_JEV_FIT_MIN = 0.35
+QUESTION_FIXED = 3  # 첫 말(no 0) · 몸(no 1) · 시간(no 2)
+QUESTION_MAX_LEN = 32  # 이어 받는 질문이 조금 길어져도 되게 (예전 25자)
+QUESTION_SCREEN = 8.0  # 화면 Q_FALLBACK (04_CONSTANTS 3절). 질문 하나는 이 안에 답해요
+QUESTION_SCREEN_MARGIN = 1.5  # 에이전트가 늦으면 발전 질문 · 은행으로 갈 자리
+EXTRA_MIN_LEFT = 8  # 1개 더(no 7)는 답으로 좁힌 뒤에도 이만큼 남았을 때만
 JEV_TIMEOUT = 2.0
 JEV_MIN_YES = 0.5
 MIN_PER_TRANSFER = 5
@@ -119,7 +124,17 @@ def question_start() -> str:
 
 
 def agent_on() -> bool:
-    return env("AIGO_AGENT") == "1"
+    # exp/agent-full: 이 브랜치에서는 추천 에이전트가 기본으로 켜져요 (끄려면 AIGO_AGENT=0)
+    return (env("AIGO_AGENT", "1") or "1") == "1"
+
+
+def question_total() -> int:
+    """질문 수 고정 (첫 말 · 몸 · 시간 포함). AIGO_QUESTION_TOTAL, 기본 7."""
+    try:
+        n = int(env("AIGO_QUESTION_TOTAL", "7") or "7")
+    except ValueError:
+        n = 7
+    return max(QUESTION_FIXED + 1, min(n, 12))
 
 
 def question_agent_on() -> bool:

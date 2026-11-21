@@ -1,0 +1,2570 @@
+{
+ "health": {
+  "ai": true,
+  "jev": false,
+  "agent": true,
+  "question": "graph"
+ },
+ "results": [
+  {
+   "text": "손주랑 자전거 타고 싶어",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "손주랑 자전거 타고 싶어",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "손주랑 자전거는 어디서 타고 싶으세요?",
+     "choices": [
+      "서울숲",
+      "뚝섬한강공원",
+      "여의도한강공원",
+      "망원한강공원"
+     ],
+     "answer": "서울숲",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.17,
+     "follows": "자전거 타기"
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "서울숲에서 손주랑 무엇을 더 하고 싶으세요?",
+     "choices": [
+      "숲길 걷기",
+      "물가 구경",
+      "만들기 체험"
+     ],
+     "answer": "숲길 걷기",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.41,
+     "follows": "서울숲"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "손주랑 걷는 숲길은 어디가 좋으세요?",
+     "choices": [
+      "서울숲 안쪽 길",
+      "경춘선숲길",
+      "경의선숲길"
+     ],
+     "answer": "서울숲 안쪽 길",
+     "source": "agent",
+     "slot": null,
+     "sec": 6.3,
+     "follows": "숲길 걷기"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "손주랑 자전거는 어떤 곳에서 타고 싶으세요?",
+     "choices": [
+      "뚝섬한강공원",
+      "여의도한강공원",
+      "망원한강공원"
+     ],
+     "answer": "뚝섬한강공원",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.44,
+     "follows": "자전거 타기"
+    }
+   ],
+   "errors": [],
+   "openSec": 2.48,
+   "heard": [
+    "손주랑",
+    "자전거 타기",
+    "바깥"
+   ],
+   "doneSec": 4.27,
+   "recommendSec": 17.59,
+   "by": "ai",
+   "notFound": false,
+   "places": [
+    {
+     "name": "서울숲",
+     "reason": "손주랑 서울숲 안쪽 길 걷기 좋아요",
+     "min": 28
+    },
+    {
+     "name": "뚝섬한강공원",
+     "reason": "손주랑 바람 쐬며 자전거 탈 곳이에요",
+     "min": 35
+    },
+    {
+     "name": "응봉공원 (대현산배수지공원)",
+     "reason": "바람 쐬기 좋은 곳이에요. 역에서 바로 걸어가요",
+     "min": 15
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 7,
+    "free": 4,
+    "followed": 4,
+    "agent": 4,
+    "extra": false,
+    "reasked": [],
+    "maxQuestionSec": 6.3
+   }
+  },
+  {
+   "text": "무릎이 아파서 많이 못 걸어",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "무릎이 아파서 많이 못 걸어",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "오늘은 어떤 구경이 끌리세요?",
+     "choices": [
+      "전시 · 작품",
+      "시장 · 거리",
+      "공원 · 숲",
+      "궁 · 한옥"
+     ],
+     "answer": "전시 · 작품",
+     "source": "agent",
+     "slot": null,
+     "sec": 5.91
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "전시는 어떤 걸 보고 싶으세요?",
+     "choices": [
+      "공공미술 작품",
+      "궁 · 한옥 전시",
+      "공예 전시",
+      "미술관 그림"
+     ],
+     "answer": "공공미술 작품",
+     "source": "agent",
+     "slot": null,
+     "sec": 6.41,
+     "follows": "전시 · 작품"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "어떤 풍경이 좋으세요?",
+     "choices": [
+      "물가",
+      "숲길",
+      "탁 트인 광장"
+     ],
+     "answer": "물가",
+     "source": "fixed",
+     "slot": null,
+     "sec": 6.09,
+     "id": "scenery"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "물가는 어디로 가 보고 싶으세요?",
+     "choices": [
+      "여의도한강공원",
+      "GTX연신849광장",
+      "진관근린공원"
+     ],
+     "answer": "여의도한강공원",
+     "source": "agent",
+     "slot": null,
+     "sec": 5.5,
+     "follows": "물가"
+    }
+   ],
+   "errors": [],
+   "openSec": 1.48,
+   "heard": [
+    "몸 무거움",
+    "조금만 걷기"
+   ],
+   "doneSec": 7.03,
+   "recommendSec": 14.14,
+   "by": "agent",
+   "notFound": false,
+   "places": [
+    {
+     "name": "여의도한강공원",
+     "reason": "한강 물가 산책, 35분에 갈아타지 않아요",
+     "min": 35
+    },
+    {
+     "name": "세종문화회관 미술관",
+     "reason": "전시 보기 좋고 갈아타지 않아요",
+     "min": 24
+    },
+    {
+     "name": "일민미술관",
+     "reason": "실내 전시, 26분에 갈아타지 않아요",
+     "min": 26
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 6,
+    "free": 4,
+    "followed": 2,
+    "agent": 3,
+    "extra": false,
+    "reasked": [],
+    "maxQuestionSec": 6.41
+   }
+  },
+  {
+   "text": "손주랑 공룡 보러 가고 싶어",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "손주랑 공룡 보러 가고 싶어",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "어떤 걸 보고 싶으세요?",
+     "choices": [
+      "그림 · 사진",
+      "음악 공연",
+      "연극 · 영화",
+      "만들기 체험"
+     ],
+     "answer": "그림 · 사진",
+     "source": "fixed",
+     "slot": null,
+     "sec": 6.17,
+     "id": "show"
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "손주랑 그림 · 사진은 어떻게 보고 싶으세요?",
+     "choices": [
+      "사진 전시",
+      "그림책 구경",
+      "만들기 체험"
+     ],
+     "answer": "사진 전시",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.48,
+     "follows": "그림 · 사진"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "북적이는 축제도 좋으세요?",
+     "choices": [
+      "축제 좋아요",
+      "조용한 곳이 좋아요",
+      "잘 모르겠어요"
+     ],
+     "answer": "축제 좋아요",
+     "source": "fixed",
+     "slot": null,
+     "sec": 8.98,
+     "id": "festa"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "손주랑 어떤 구경이 더 좋으세요?",
+     "choices": [
+      "사진 전시장",
+      "만들기 체험",
+      "축제 구경"
+     ],
+     "answer": "사진 전시장",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.44,
+     "follows": "손주"
+    },
+    {
+     "no": 7,
+     "total": 8,
+     "question": "손주랑 볼 사진 전시, 어디가 끌리세요?",
+     "choices": [
+      "서울시립 사진미술관",
+      "포토 디스커버리 프로젝트",
+      "운현궁 기획전시"
+     ],
+     "answer": "서울시립 사진미술관",
+     "source": "agent",
+     "slot": null,
+     "sec": 6.75,
+     "follows": "사진 전시장",
+     "extra": true,
+     "why": "사진 전시장 후보가 91곳으로 많아 구체적인 곳으로 좁혀야 함"
+    }
+   ],
+   "errors": [],
+   "openSec": 1.52,
+   "heard": [
+    "손주랑",
+    "공룡 구경",
+    "실내"
+   ],
+   "doneSec": 0.0,
+   "recommendSec": 18.84,
+   "by": "rule",
+   "notFound": false,
+   "places": [
+    {
+     "name": "서울시립 사진미술관",
+     "reason": "구경하기 좋은 곳이에요. 한 번만 갈아타고 49분이면 가요",
+     "min": 49
+    },
+    {
+     "name": "[서울디자인재단] 현대카드 컬처프로젝트 31 웨인 티보 전 [The Order of Things]",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 23분이면 가요",
+     "min": 23
+    },
+    {
+     "name": "대한민국역사박물관",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 27분이면 가요",
+     "min": 27
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 8,
+    "free": 5,
+    "followed": 3,
+    "agent": 3,
+    "extra": true,
+    "reasked": [],
+    "maxQuestionSec": 8.98
+   }
+  },
+  {
+   "text": "조용히 책 읽을 데",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "조용히 책 읽을 데",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "책 읽으며 조용히 쉬려면 어디가 좋으세요?",
+     "choices": [
+      "조용한 전시장",
+      "숲 그늘",
+      "물가",
+      "음악 들으며"
+     ],
+     "answer": "조용한 전시장",
+     "source": "agent",
+     "slot": null,
+     "sec": 6.44
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "전시장에서 어떤 걸 조용히 보고 싶으세요?",
+     "choices": [
+      "그림 · 사진",
+      "옛 궁 전시",
+      "공예 작품",
+      "책 있는 전시"
+     ],
+     "answer": "그림 · 사진",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.55,
+     "follows": "조용한 전시장"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "어떤 풍경이 좋으세요?",
+     "choices": [
+      "물가",
+      "숲길",
+      "높은 곳 전망",
+      "탁 트인 광장"
+     ],
+     "answer": "물가",
+     "source": "fixed",
+     "slot": null,
+     "sec": 3.41,
+     "id": "scenery"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "자연은 어디가 좋으세요?",
+     "choices": [
+      "숲 · 산",
+      "물가",
+      "꽃 · 정원",
+      "아무 공원이나"
+     ],
+     "answer": "숲 · 산",
+     "source": "fixed",
+     "slot": null,
+     "sec": 6.42,
+     "id": "nature"
+    }
+   ],
+   "errors": [],
+   "openSec": 2.47,
+   "heard": [
+    "책 읽기",
+    "조용히 쉬기"
+   ],
+   "doneSec": 6.23,
+   "recommendSec": 17.67,
+   "by": "ai",
+   "notFound": false,
+   "places": [
+    {
+     "name": "서울시립미술관 서소문본관",
+     "reason": "무료 시립미술관이라 조용히 그림 보기 좋아요",
+     "min": 43
+    },
+    {
+     "name": "국립현대미술관 서울",
+     "reason": "국립 미술관이라 그림 · 사진 보며 쉬기 좋아요",
+     "min": 44
+    },
+    {
+     "name": "서울숲",
+     "reason": "숲에서 조용히 쉬며 책 읽기 좋아요",
+     "min": 43
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 7,
+    "free": 4,
+    "followed": 1,
+    "agent": 2,
+    "extra": false,
+    "reasked": [],
+    "maxQuestionSec": 6.44
+   }
+  },
+  {
+   "text": "맛있는 거 먹고 싶어",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "맛있는 거 먹고 싶어",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "맛있는 걸 드시러 어떤 곳이 좋으세요?",
+     "choices": [
+      "시장 · 거리",
+      "궁 · 한옥 근처",
+      "공원 근처",
+      "전시장 근처"
+     ],
+     "answer": "시장 · 거리",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.55
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "시장에서 어떤 걸 드시고 싶으세요?",
+     "choices": [
+      "남성사계시장",
+      "중부시장",
+      "동부시장"
+     ],
+     "answer": "남성사계시장",
+     "source": "agent",
+     "slot": null,
+     "sec": 5.33,
+     "follows": "시장 · 거리"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "걷는 건 괜찮으세요?",
+     "choices": [
+      "많이 걸어요",
+      "보통이에요",
+      "조금만요"
+     ],
+     "answer": "많이 걸어요",
+     "source": "agent",
+     "slot": "walk",
+     "sec": 2.52,
+     "id": "walk"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "어떤 풍경이 좋으세요?",
+     "choices": [
+      "물가",
+      "숲길",
+      "높은 곳 전망",
+      "탁 트인 광장"
+     ],
+     "answer": "물가",
+     "source": "fixed",
+     "slot": null,
+     "sec": 2.92,
+     "id": "scenery"
+    },
+    {
+     "no": 7,
+     "total": 8,
+     "question": "물가에서는 어디가 끌리세요?",
+     "choices": [
+      "뚝섬한강공원",
+      "여의도한강공원",
+      "용마폭포공원",
+      "송파나루근린공원"
+     ],
+     "answer": "뚝섬한강공원",
+     "source": "agent",
+     "slot": null,
+     "sec": 6.89,
+     "follows": "물가",
+     "extra": true,
+     "why": "물가 후보 8곳, 133곳이 남아 한 곳으로 좁히려고 물어요."
+    }
+   ],
+   "errors": [],
+   "openSec": 1.47,
+   "heard": [
+    "맛있는 것"
+   ],
+   "doneSec": 0.0,
+   "recommendSec": 11.55,
+   "by": "agent",
+   "notFound": false,
+   "places": [
+    {
+     "name": "뚝섬한강공원",
+     "reason": "뚝섬한강공원에서 물가 걷기 좋아요",
+     "min": 52
+    },
+    {
+     "name": "동부시장",
+     "reason": "시장 안팎에 먹을 곳이 많아요. 갈아타지 않고 28분이면 가요",
+     "min": 28
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 8,
+    "free": 5,
+    "followed": 2,
+    "agent": 4,
+    "extra": true,
+    "reasked": [],
+    "maxQuestionSec": 6.89
+   }
+  },
+  {
+   "text": "잘 모르겠어",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "잘 모르겠어",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "오늘은 어떤 구경이 끌리세요?",
+     "choices": [
+      "전시 · 작품",
+      "시장 · 거리",
+      "공원 · 숲",
+      "궁 · 한옥"
+     ],
+     "answer": "전시 · 작품",
+     "source": "agent",
+     "slot": null,
+     "sec": 6.41
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "전시는 어떤 걸 보고 싶으세요?",
+     "choices": [
+      "공공미술 작품",
+      "기록 전시",
+      "궁 · 한옥 전시",
+      "공예 전시"
+     ],
+     "answer": "공공미술 작품",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.95,
+     "follows": "전시 · 작품"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "어떤 풍경이 좋으세요?",
+     "choices": [
+      "물가",
+      "숲길",
+      "높은 곳 전망",
+      "탁 트인 광장"
+     ],
+     "answer": "물가",
+     "source": "fixed",
+     "slot": null,
+     "sec": 3.41,
+     "id": "scenery"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "자연은 어디가 좋으세요?",
+     "choices": [
+      "숲 · 산",
+      "물가",
+      "꽃 · 정원",
+      "아무 공원이나"
+     ],
+     "answer": "숲 · 산",
+     "source": "fixed",
+     "slot": null,
+     "sec": 5.17,
+     "id": "nature"
+    },
+    {
+     "no": 7,
+     "total": 8,
+     "question": "숲 · 산은 어떤 곳이 좋으세요?",
+     "choices": [
+      "서울숲",
+      "경춘선숲길",
+      "낙산근린공원",
+      "도산근린공원"
+     ],
+     "answer": "서울숲",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.53,
+     "follows": "숲 · 산",
+     "extra": true,
+     "why": "후보가 213곳으로 많아 숲 · 산 안에서 한 곳으로 좁히려고"
+    }
+   ],
+   "errors": [],
+   "openSec": 1.33,
+   "heard": [],
+   "doneSec": 0.02,
+   "recommendSec": 7.38,
+   "by": "agent",
+   "notFound": false,
+   "places": [
+    {
+     "name": "서울숲",
+     "reason": "바람 쐬기 좋은 곳이에요. 한 번만 갈아타고 43분이면 가요",
+     "min": 43
+    },
+    {
+     "name": "뚝섬한강공원",
+     "reason": "바람 쐬기 좋은 곳이에요. 한 번만 갈아타고 52분이면 가요",
+     "min": 52
+    },
+    {
+     "name": "[서울시립과학관] 2026년 기관협력 특별전 [가장 긴, 시작 The Longest Beginning]",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 41분이면 가요",
+     "min": 41
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 8,
+    "free": 5,
+    "followed": 2,
+    "agent": 3,
+    "extra": true,
+    "reasked": [],
+    "maxQuestionSec": 6.41
+   }
+  },
+  {
+   "text": "요새 허리가 안 좋아서 오래 앉아 있긴 힘들어",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "요새 허리가 안 좋아서 오래 앉아 있긴 힘들어",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "어떤 구경이 좋으세요?",
+     "choices": [
+      "궁 · 한옥",
+      "전시 · 작품",
+      "시장 · 거리",
+      "공원 · 숲"
+     ],
+     "answer": "궁 · 한옥",
+     "source": "agent",
+     "slot": null,
+     "sec": 5.22,
+     "id": "sight"
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "궁이나 한옥은 어떻게 둘러보고 싶으세요?",
+     "choices": [
+      "운현궁 전시",
+      "덕수궁 미술관",
+      "남산골 한옥 마을"
+     ],
+     "answer": "운현궁 전시",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.49,
+     "follows": "궁 · 한옥"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "운현궁 전시는 어느 쪽이 더 끌리세요?",
+     "choices": [
+      "운현궁 기획전시",
+      "하우스뮤지엄 개인전",
+      "세종문화회관 미술관"
+     ],
+     "answer": "운현궁 기획전시",
+     "source": "agent",
+     "slot": null,
+     "sec": 5.19,
+     "follows": "운현궁 전시"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "전시 보고 나서 어디서 쉬고 싶으세요?",
+     "choices": [
+      "조용한 전시장",
+      "물가",
+      "음악 들으며"
+     ],
+     "answer": "조용한 전시장",
+     "source": "agent",
+     "slot": null,
+     "sec": 5.61
+    },
+    {
+     "no": 7,
+     "total": 8,
+     "question": "조용한 전시장은 어떤 곳이 끌리세요?",
+     "choices": [
+      "공공미술 작품전시",
+      "공예협력전시",
+      "공평도시유적전시관",
+      "서울도시건축전시관"
+     ],
+     "answer": "공공미술 작품전시",
+     "source": "agent",
+     "slot": null,
+     "sec": 6.41,
+     "follows": "조용한 전시장",
+     "extra": true,
+     "why": "후보 38곳이 남아 전시장 하나로 못 좁혀 마지막으로 이름을 골라요."
+    }
+   ],
+   "errors": [],
+   "openSec": 1.62,
+   "heard": [
+    "몸 무거움"
+   ],
+   "doneSec": 0.02,
+   "recommendSec": 9.59,
+   "by": "agent",
+   "notFound": false,
+   "places": [
+    {
+     "name": "세종문화회관 미술관",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 30분이면 가요",
+     "min": 30
+    },
+    {
+     "name": "[교보아트스페이스] 동양화에 기운 Hearts Inclined to Ink",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 34분이면 가요",
+     "min": 34
+    },
+    {
+     "name": "탑골근린공원",
+     "reason": "바람 쐬기 좋은 곳이에요. 갈아타지 않고 37분이면 가요",
+     "min": 37
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 7,
+    "free": 5,
+    "followed": 3,
+    "agent": 5,
+    "extra": true,
+    "reasked": [],
+    "maxQuestionSec": 6.41
+   }
+  },
+  {
+   "text": "우리 손녀딸이 초등학생인데 맘껏 뛸 곳이 있을까",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "우리 손녀딸이 초등학생인데 맘껏 뛸 곳이 있을까",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "손주랑 어디서 맘껏 뛰어놀면 좋으세요?",
+     "choices": [
+      "넓은 공원",
+      "숲길",
+      "물가",
+      "자전거 타기"
+     ],
+     "answer": "넓은 공원",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.66,
+     "follows": "맘껏 뛰어놀기"
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "손주랑 공원에서 어떤 곳이 좋으세요?",
+     "choices": [
+      "물가",
+      "숲길",
+      "자전거",
+      "아무 공원이나"
+     ],
+     "answer": "물가",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.0,
+     "follows": "넓은 공원"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "물가 공원은 어디가 끌리세요?",
+     "choices": [
+      "뚝섬한강공원",
+      "여의도한강공원",
+      "용마폭포공원"
+     ],
+     "answer": "뚝섬한강공원",
+     "source": "agent",
+     "slot": null,
+     "sec": 6.77,
+     "follows": "물가"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "어떤 걸 보고 싶으세요?",
+     "choices": [
+      "그림 · 사진",
+      "만들기 체험"
+     ],
+     "answer": "그림 · 사진",
+     "source": "fixed",
+     "slot": null,
+     "sec": 2.64,
+     "id": "show"
+    }
+   ],
+   "errors": [],
+   "openSec": 1.61,
+   "heard": [
+    "손주랑",
+    "맘껏 뛰어놀기",
+    "바깥"
+   ],
+   "doneSec": 3.28,
+   "recommendSec": 8.11,
+   "by": "agent",
+   "notFound": false,
+   "places": [
+    {
+     "name": "뚝섬한강공원",
+     "reason": "물가 공원이에요. 52분, 한 번 갈아타요",
+     "min": 52
+    },
+    {
+     "name": "여의도한강공원",
+     "reason": "한강 물가예요. 48분, 갈아타지 않아요",
+     "min": 48
+    },
+    {
+     "name": "응봉공원 (대현산배수지공원)",
+     "reason": "바람 쐬기 좋은 곳이에요. 갈아타지 않고 16분이면 가요",
+     "min": 16
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 7,
+    "free": 4,
+    "followed": 3,
+    "agent": 3,
+    "extra": false,
+    "reasked": [],
+    "maxQuestionSec": 6.77
+   }
+  },
+  {
+   "text": "비도 오는데 따뜻한 국물이나 파전 먹으러 갈까",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "비도 오는데 따뜻한 국물이나 파전 먹으러 갈까",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "파전 드시고 어떤 구경을 하고 싶으세요?",
+     "choices": [
+      "시장 · 거리",
+      "궁 · 한옥",
+      "전시 · 작품"
+     ],
+     "answer": "시장 · 거리",
+     "source": "agent",
+     "slot": null,
+     "sec": 6.28,
+     "follows": "파전 먹기"
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "어떤 걸 보고 싶으세요?",
+     "choices": [
+      "그림 · 사진",
+      "음악 공연",
+      "연극 · 영화",
+      "만들기 체험"
+     ],
+     "answer": "그림 · 사진",
+     "source": "fixed",
+     "slot": null,
+     "sec": 2.38,
+     "id": "show"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "그림이나 사진은 어떤 곳에서 보고 싶으세요?",
+     "choices": [
+      "서울시립 사진미술관",
+      "그림책 작업실",
+      "포토 디스커버리"
+     ],
+     "answer": "서울시립 사진미술관",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.66,
+     "follows": "그림 · 사진"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "북적이는 축제도 좋으세요?",
+     "choices": [
+      "축제 좋아요",
+      "조용한 곳이 좋아요",
+      "잘 모르겠어요"
+     ],
+     "answer": "축제 좋아요",
+     "source": "fixed",
+     "slot": null,
+     "sec": 6.19,
+     "id": "festa"
+    }
+   ],
+   "errors": [],
+   "openSec": 2.55,
+   "heard": [
+    "파전 먹기",
+    "맛있는 것",
+    "실내"
+   ],
+   "doneSec": 3.91,
+   "recommendSec": 7.2,
+   "by": "agent",
+   "notFound": false,
+   "places": [
+    {
+     "name": "광장시장",
+     "reason": "먹거리 많아 파전 찾기 좋고 갈아타지 않아요",
+     "min": 37
+    },
+    {
+     "name": "서울시립 사진미술관",
+     "reason": "바라신 사진미술관, 49분에 한 번 갈아타요",
+     "min": 49
+    },
+    {
+     "name": "경동시장",
+     "reason": "실내 시장이고 33분, 갈아타지 않아요",
+     "min": 33
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 7,
+    "free": 4,
+    "followed": 2,
+    "agent": 2,
+    "extra": false,
+    "reasked": [],
+    "maxQuestionSec": 6.28
+   }
+  },
+  {
+   "text": "사람 많은 데는 정신사나워. 좀 한적한 공원 같은 데가 좋아",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "사람 많은 데는 정신사나워. 좀 한적한 공원 같은 데가 좋아",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "공원에서는 어떤 풍경이 좋으세요?",
+     "choices": [
+      "물가",
+      "숲길",
+      "탁 트인 광장"
+     ],
+     "answer": "물가",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.08,
+     "follows": "공원"
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "공원 쪽, 어디가 끌리세요?",
+     "choices": [
+      "응봉공원",
+      "훈련원근린공원",
+      "탑골근린공원"
+     ],
+     "answer": "응봉공원",
+     "source": "lead",
+     "slot": null,
+     "sec": 2.74,
+     "id": "lead"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "응봉공원에서는 무엇을 하고 싶으세요?",
+     "choices": [
+      "물가 산책",
+      "숲길 걷기",
+      "자전거 타기"
+     ],
+     "answer": "물가 산책",
+     "source": "agent",
+     "slot": null,
+     "sec": 5.38,
+     "follows": "응봉공원"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "물가 산책은 어디가 끌리세요?",
+     "choices": [
+      "뚝섬한강공원",
+      "여의도한강공원",
+      "용마폭포공원"
+     ],
+     "answer": "뚝섬한강공원",
+     "source": "agent",
+     "slot": null,
+     "sec": 7.23,
+     "follows": "물가 산책"
+    }
+   ],
+   "errors": [],
+   "openSec": 1.56,
+   "heard": [
+    "공원"
+   ],
+   "doneSec": 3.45,
+   "recommendSec": 7.81,
+   "by": "agent",
+   "notFound": false,
+   "places": [
+    {
+     "name": "응봉공원 (대현산배수지공원)",
+     "reason": "응봉공원이에요. 16분이고 갈아타지 않아요",
+     "min": 16
+    },
+    {
+     "name": "뚝섬한강공원",
+     "reason": "물가 산책하기 좋아요. 52분, 한 번 갈아타요",
+     "min": 52
+    },
+    {
+     "name": "여의도한강공원",
+     "reason": "말씀하신 공원 쪽이에요. 갈아타지 않고 48분이면 가요",
+     "min": 48
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 7,
+    "free": 4,
+    "followed": 4,
+    "agent": 3,
+    "extra": false,
+    "reasked": [],
+    "maxQuestionSec": 7.23
+   }
+  },
+  {
+   "text": "남산타워 쪽으로 한번 가보고 싶은데",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "남산타워 쪽으로 한번 가보고 싶은데",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "남산타워에서는 무엇을 하고 싶으세요?",
+     "choices": [
+      "높은 곳 전망",
+      "숲길 걷기",
+      "공연 보기",
+      "전시 보기"
+     ],
+     "answer": "높은 곳 전망",
+     "source": "agent",
+     "slot": null,
+     "sec": 5.45,
+     "follows": "남산타워"
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "남산타워 전망 말고 다른 곳도 괜찮으세요?",
+     "choices": [
+      "남산골 한옥마을",
+      "국악당 공연",
+      "탁 트인 광장",
+      "물가 산책"
+     ],
+     "answer": "남산골 한옥마을",
+     "source": "agent",
+     "slot": null,
+     "sec": 5.02,
+     "follows": "높은 곳 전망"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "한옥마을에서는 어떤 게 더 끌리세요?",
+     "choices": [
+      "한옥 구경",
+      "전시 · 작품",
+      "음악 공연"
+     ],
+     "answer": "한옥 구경",
+     "source": "agent",
+     "slot": null,
+     "sec": 5.28,
+     "follows": "남산골 한옥마을"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "한옥 구경은 어디가 끌리세요?",
+     "choices": [
+      "남산골 아트 프로젝트 세",
+      "운현궁 기획전시",
+      "경복궁 수정전",
+      "국립현대미술관 덕수궁"
+     ],
+     "answer": "남산골 아트 프로젝트 세",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.94,
+     "follows": "한옥 구경"
+    }
+   ],
+   "errors": [],
+   "openSec": 2.08,
+   "heard": [
+    "남산타워"
+   ],
+   "doneSec": 0.08,
+   "recommendSec": 6.88,
+   "by": "agent",
+   "notFound": false,
+   "places": [
+    {
+     "name": "[남산골한옥마을] 2026 남산골 아트 프로젝트 〈겹, Layer-層〉 세 번째 선정 전시 《축적된 손, 木手》",
+     "reason": "한옥 구경하고 무료예요. 한 번 갈아타요",
+     "min": 39
+    },
+    {
+     "name": "2026 제3회 아트노마드 아트페어(ARTNOMAD ARTFAIR)",
+     "reason": "한옥마을에서 열리는 무료 구경거리예요",
+     "min": 39
+    },
+    {
+     "name": "경희궁",
+     "reason": "구경하기 좋은 곳이에요. 한 번만 갈아타고 44분이면 가요",
+     "min": 44
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 7,
+    "free": 4,
+    "followed": 4,
+    "agent": 4,
+    "extra": false,
+    "reasked": [],
+    "maxQuestionSec": 5.45
+   }
+  },
+  {
+   "text": "오늘은 복권이라도 한 장 사야겠어",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "오늘은 복권이라도 한 장 사야겠어",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "어떤 구경이 좋으세요?",
+     "choices": [
+      "궁 · 한옥",
+      "전시 · 작품",
+      "시장 · 거리",
+      "공원 · 숲"
+     ],
+     "answer": "궁 · 한옥",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.64,
+     "id": "sight"
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "궁이나 한옥에서 무엇을 보고 싶으세요?",
+     "choices": [
+      "운현궁 전시",
+      "덕수궁 미술관",
+      "경복궁 수정전",
+      "남산골 한옥마을"
+     ],
+     "answer": "운현궁 전시",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.78,
+     "follows": "궁 · 한옥"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "운현궁 전시는 어떤 곳이 끌리세요?",
+     "choices": [
+      "운현궁 기획전시",
+      "하우스뮤지엄 개인전",
+      "서울기록원 전시"
+     ],
+     "answer": "운현궁 기획전시",
+     "source": "agent",
+     "slot": null,
+     "sec": 5.73,
+     "follows": "운현궁 전시"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "전시 보고 나서 어디를 더 들르고 싶으세요?",
+     "choices": [
+      "시장 · 거리",
+      "공원",
+      "박물관 · 기념관",
+      "바로 돌아가요"
+     ],
+     "answer": "시장 · 거리",
+     "source": "agent",
+     "slot": null,
+     "sec": 7.42
+    },
+    {
+     "no": 7,
+     "total": 8,
+     "question": "시장은 어디가 끌리세요?",
+     "choices": [
+      "남성사계시장",
+      "중부시장",
+      "동부시장",
+      "신중앙시장"
+     ],
+     "answer": "남성사계시장",
+     "source": "agent",
+     "slot": null,
+     "sec": 7.2,
+     "follows": "시장 · 거리",
+     "extra": true,
+     "why": "시장 후보가 125곳이라 한 곳으로 좁혀야 해요."
+    }
+   ],
+   "errors": [],
+   "openSec": 1.53,
+   "heard": [],
+   "doneSec": 0.02,
+   "recommendSec": 6.62,
+   "by": "agent",
+   "notFound": false,
+   "places": [
+    {
+     "name": "[운현궁] 2026 기획전시 [궁 ; Re-숨]",
+     "reason": "운현궁 기획전시예요. 갈아타지 않고 가요",
+     "min": 46
+    },
+    {
+     "name": "[운현궁] 2026 하우스뮤지엄 [월동의 규방-160년의 시간을 이은 위로] 홍준희 개인전",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 46분이면 가요",
+     "min": 46
+    },
+    {
+     "name": "경희궁",
+     "reason": "구경하기 좋은 곳이에요. 한 번만 갈아타고 44분이면 가요",
+     "min": 44
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 8,
+    "free": 5,
+    "followed": 3,
+    "agent": 5,
+    "extra": true,
+    "reasked": [],
+    "maxQuestionSec": 7.42
+   }
+  },
+  {
+   "text": "산책",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "산책",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "바람 쐬러 어떤 곳이 좋으세요?",
+     "choices": [
+      "공원 · 숲",
+      "시장 · 거리",
+      "물가",
+      "궁 · 한옥"
+     ],
+     "answer": "공원 · 숲",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.7
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "공원에서는 어떤 풍경이 좋으세요?",
+     "choices": [
+      "물가",
+      "숲길",
+      "탁 트인 광장"
+     ],
+     "answer": "물가",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.64,
+     "follows": "공원 · 숲"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "물가에서는 무엇을 하고 싶으세요?",
+     "choices": [
+      "자전거 타기",
+      "한강공원 걷기",
+      "폭포 구경"
+     ],
+     "answer": "자전거 타기",
+     "source": "agent",
+     "slot": null,
+     "sec": 5.06,
+     "follows": "물가"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "자전거는 어디서 타고 싶으세요?",
+     "choices": [
+      "서울숲",
+      "뚝섬한강공원",
+      "여의도한강공원",
+      "망원한강공원"
+     ],
+     "answer": "서울숲",
+     "source": "agent",
+     "slot": null,
+     "sec": 5.17,
+     "follows": "자전거 타기"
+    }
+   ],
+   "errors": [],
+   "openSec": 1.47,
+   "heard": [
+    "바람 쐬기"
+   ],
+   "doneSec": 3.88,
+   "recommendSec": 4.5,
+   "by": "agent",
+   "notFound": false,
+   "places": [
+    {
+     "name": "서울숲",
+     "reason": "서울숲이에요. 43분, 한 번 갈아타요",
+     "min": 43
+    },
+    {
+     "name": "뚝섬한강공원",
+     "reason": "바람 쐬기 좋은 곳이에요. 한 번만 갈아타고 52분이면 가요",
+     "min": 52
+    },
+    {
+     "name": "여의도한강공원",
+     "reason": "한강 보며 걷기 좋고 갈아타지 않아요",
+     "min": 48
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 7,
+    "free": 4,
+    "followed": 3,
+    "agent": 4,
+    "extra": false,
+    "reasked": [],
+    "maxQuestionSec": 5.17
+   }
+  },
+  {
+   "text": "햇볕 쐬면서 걷고 싶은데 바람은 좀 차네",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "햇볕 쐬면서 걷고 싶은데 바람은 좀 차네",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "바람 쐬러 가신다면 어떤 곳이 좋으세요?",
+     "choices": [
+      "공원 · 숲",
+      "물가",
+      "시장 · 거리",
+      "궁 · 한옥"
+     ],
+     "answer": "공원 · 숲",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.31
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "공원에서는 어떤 풍경이 좋으세요?",
+     "choices": [
+      "숲길",
+      "물가",
+      "탁 트인 광장"
+     ],
+     "answer": "숲길",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.92,
+     "follows": "공원 · 숲"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "숲길은 어느 쪽이 끌리세요?",
+     "choices": [
+      "경춘선숲길",
+      "경의선숲길",
+      "서울숲"
+     ],
+     "answer": "경춘선숲길",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.17,
+     "follows": "숲길"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "경춘선숲길 걷고 나서 어디를 들를까요?",
+     "choices": [
+      "시장 구경",
+      "전시 구경",
+      "숲길만 걸을래요"
+     ],
+     "answer": "시장 구경",
+     "source": "agent",
+     "slot": null,
+     "sec": 6.49,
+     "follows": "경춘선숲길"
+    }
+   ],
+   "errors": [],
+   "openSec": 1.59,
+   "heard": [
+    "바람 쐬기"
+   ],
+   "doneSec": 4.19,
+   "recommendSec": 5.67,
+   "by": "agent",
+   "notFound": false,
+   "places": [
+    {
+     "name": "동부시장",
+     "reason": "맛있는 것 좋은 곳이에요. 갈아타지 않고 28분이면 가요",
+     "min": 28
+    },
+    {
+     "name": "중부시장",
+     "reason": "맛있는 것 좋은 곳이에요. 갈아타지 않고 33분이면 가요",
+     "min": 33
+    },
+    {
+     "name": "응봉공원 (대현산배수지공원)",
+     "reason": "바람 쐬기 좋은 곳이에요. 갈아타지 않고 16분이면 가요",
+     "min": 16
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 7,
+    "free": 4,
+    "followed": 3,
+    "agent": 4,
+    "extra": false,
+    "reasked": [],
+    "maxQuestionSec": 6.49
+   }
+  },
+  {
+   "text": "동대문 시장 가서 구경이나 할까",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "동대문 시장 가서 구경이나 할까",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "동대문 시장에서 무엇을 구경하고 싶으세요?",
+     "choices": [
+      "시장 거리 구경",
+      "옛 역사 전시",
+      "다른 동네 시장"
+     ],
+     "answer": "시장 거리 구경",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.28,
+     "follows": "동대문 시장"
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "시장 거리는 어떤 곳이 좋으세요?",
+     "choices": [
+      "동대문 옛 역사 곳",
+      "남대문시장",
+      "동네 시장"
+     ],
+     "answer": "동대문 옛 역사 곳",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.5,
+     "follows": "시장 거리 구경"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "옛 역사 곳은 어디가 끌리세요?",
+     "choices": [
+      "동대문역사관",
+      "동대문운동장기념관",
+      "서대문형무소역사관",
+      "경희궁"
+     ],
+     "answer": "동대문역사관",
+     "source": "agent",
+     "slot": null,
+     "sec": 5.48,
+     "follows": "동대문 옛 역사 곳"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "역사관 말고 같이 볼 곳은 어디가 좋으세요?",
+     "choices": [
+      "동대문운동장기념관",
+      "남대문시장",
+      "남성사계시장"
+     ],
+     "answer": "동대문운동장기념관",
+     "source": "agent",
+     "slot": null,
+     "sec": 6.02,
+     "follows": "동대문 시장"
+    }
+   ],
+   "errors": [],
+   "openSec": 1.59,
+   "heard": [
+    "동대문 시장",
+    "시장 구경",
+    "구경하기"
+   ],
+   "doneSec": 5.42,
+   "recommendSec": 6.67,
+   "by": "agent",
+   "notFound": false,
+   "places": [
+    {
+     "name": "동대문역사관",
+     "reason": "동대문 옛 역사 보기 좋고 한 번 갈아타요",
+     "min": 42
+    },
+    {
+     "name": "동대문운동장기념관",
+     "reason": "역사관과 함께 보기 좋아요, 한 번 갈아타요",
+     "min": 44
+    },
+    {
+     "name": "신중부시장",
+     "reason": "시장 구경에 어울리는 곳이에요. 갈아타지 않고 31분이면 가요",
+     "min": 31
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 7,
+    "free": 4,
+    "followed": 4,
+    "agent": 4,
+    "extra": false,
+    "reasked": [],
+    "maxQuestionSec": 6.02
+   }
+  },
+  {
+   "text": "손주 녀석 돈가스 사주고 싶어",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "손주 녀석 돈가스 사주고 싶어",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "손주랑 맛있는 걸 먹고 뭘 더 하고 싶으세요?",
+     "choices": [
+      "시장 먹거리",
+      "만들기 체험",
+      "공원 나들이"
+     ],
+     "answer": "시장 먹거리",
+     "source": "agent",
+     "slot": null,
+     "sec": 6.06,
+     "follows": "손주"
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "시장에서 손주랑 어떤 걸 드시고 싶으세요?",
+     "choices": [
+      "남성사계시장",
+      "중부시장",
+      "동부시장"
+     ],
+     "answer": "남성사계시장",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.78,
+     "follows": "시장 먹거리"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "어떤 풍경이 좋으세요?",
+     "choices": [
+      "물가",
+      "숲길",
+      "높은 곳 전망",
+      "탁 트인 광장"
+     ],
+     "answer": "물가",
+     "source": "fixed",
+     "slot": null,
+     "sec": 3.0,
+     "id": "scenery"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "손주랑 물가는 어느 곳이 좋으세요?",
+     "choices": [
+      "뚝섬한강공원",
+      "여의도한강공원",
+      "용마폭포공원",
+      "송파나루근린공원"
+     ],
+     "answer": "뚝섬한강공원",
+     "source": "agent",
+     "slot": null,
+     "sec": 5.28,
+     "follows": "물가"
+    }
+   ],
+   "errors": [],
+   "openSec": 1.55,
+   "heard": [
+    "손주랑",
+    "맛있는 것"
+   ],
+   "doneSec": 3.92,
+   "recommendSec": 5.34,
+   "by": "agent",
+   "notFound": false,
+   "places": [
+    {
+     "name": "남성사계시장(남성시장)",
+     "reason": "손주와 시장 먹거리, 한 번 갈아타 40분이에요",
+     "min": 40
+    },
+    {
+     "name": "뚝섬한강공원",
+     "reason": "한강 물가 산책, 한 번 갈아타고 52분 걸려요",
+     "min": 52
+    },
+    {
+     "name": "광장시장",
+     "reason": "시장 안팎에 먹을 곳이 많아요. 갈아타지 않고 37분이면 가요",
+     "min": 37
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 7,
+    "free": 4,
+    "followed": 3,
+    "agent": 3,
+    "extra": false,
+    "reasked": [],
+    "maxQuestionSec": 6.06
+   }
+  },
+  {
+   "text": "절 같은 데 가서 가만히 앉아 있고 싶네",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "절 같은 데 가서 가만히 앉아 있고 싶네",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "절처럼 조용히 쉬려면 어디가 좋으세요?",
+     "choices": [
+      "숲 그늘",
+      "물가",
+      "조용한 전시장",
+      "궁 · 한옥"
+     ],
+     "answer": "숲 그늘",
+     "source": "agent",
+     "slot": null,
+     "sec": 6.88
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "숲 그늘에서는 어디를 걷고 싶으세요?",
+     "choices": [
+      "서울숲",
+      "낙산근린공원",
+      "경춘선숲길",
+      "중랑캠핑숲"
+     ],
+     "answer": "서울숲",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.89,
+     "follows": "숲 그늘"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "어떤 풍경이 좋으세요?",
+     "choices": [
+      "물가",
+      "숲길",
+      "높은 곳 전망",
+      "탁 트인 광장"
+     ],
+     "answer": "물가",
+     "source": "fixed",
+     "slot": null,
+     "sec": 2.89,
+     "id": "scenery"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "물가에서는 어디서 쉬고 싶으세요?",
+     "choices": [
+      "뚝섬한강공원",
+      "용마폭포공원",
+      "송파나루근린공원",
+      "여의도한강공원"
+     ],
+     "answer": "뚝섬한강공원",
+     "source": "agent",
+     "slot": null,
+     "sec": 6.28,
+     "follows": "물가"
+    }
+   ],
+   "errors": [],
+   "openSec": 1.67,
+   "heard": [
+    "절",
+    "조용히 쉬기"
+   ],
+   "doneSec": 4.49,
+   "recommendSec": 8.89,
+   "by": "agent",
+   "notFound": false,
+   "places": [
+    {
+     "name": "서울숲",
+     "reason": "숲 그늘에서 조용히 쉬기 좋고 한 번 갈아타요",
+     "min": 43
+    },
+    {
+     "name": "뚝섬한강공원",
+     "reason": "물가에서 쉬기 좋아요, 52분 걸리고 한 번 갈아타요",
+     "min": 52
+    },
+    {
+     "name": "여의도한강공원",
+     "reason": "조용히 쉬기 좋은 곳이에요. 갈아타지 않고 48분이면 가요",
+     "min": 48
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 7,
+    "free": 4,
+    "followed": 2,
+    "agent": 3,
+    "extra": false,
+    "reasked": [],
+    "maxQuestionSec": 6.88
+   }
+  },
+  {
+   "text": "요즘은 테레비에 나오는 트로트가 참 재밌어",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "요즘은 테레비에 나오는 트로트가 참 재밌어",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "트로트 공연은 어떤 곳에서 보고 싶으세요?",
+     "choices": [
+      "본동어울마당 아트홀",
+      "상도어울마당 아트홀",
+      "까망돌어울마당 아트홀",
+      "서울남산국악당"
+     ],
+     "answer": "본동어울마당 아트홀",
+     "source": "agent",
+     "slot": null,
+     "sec": 5.0,
+     "follows": "트로트 공연"
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "트로트 공연은 어디가 좋으세요?",
+     "choices": [
+      "SJF at the",
+      "서울남산국악당 불세출",
+      "브런치콘서트 - 비바"
+     ],
+     "answer": "SJF at the",
+     "source": "lead",
+     "slot": null,
+     "sec": 2.56,
+     "id": "lead"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "어떤 걸 보고 싶으세요?",
+     "choices": [
+      "그림 · 사진",
+      "음악 공연",
+      "연극 · 영화",
+      "만들기 체험"
+     ],
+     "answer": "그림 · 사진",
+     "source": "fixed",
+     "slot": null,
+     "sec": 2.55,
+     "id": "show"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "북적이는 축제도 좋으세요?",
+     "choices": [
+      "축제 좋아요",
+      "조용한 곳이 좋아요",
+      "잘 모르겠어요"
+     ],
+     "answer": "축제 좋아요",
+     "source": "fixed",
+     "slot": null,
+     "sec": 2.67,
+     "id": "festa"
+    },
+    {
+     "no": 7,
+     "total": 8,
+     "question": "축제 중에서는 어디가 끌리세요?",
+     "choices": [
+      "마포 M 클래식 축제",
+      "서울어텀페스타",
+      "동작사육신 충효예술한마당"
+     ],
+     "answer": "마포 M 클래식 축제",
+     "source": "agent",
+     "slot": null,
+     "sec": 7.08,
+     "follows": "축제 좋아요",
+     "extra": true,
+     "why": "트로트·그림·축제 답이 갈려 후보 91곳, 축제 이름으로 핵심을 좁힘"
+    }
+   ],
+   "errors": [],
+   "openSec": 1.52,
+   "heard": [
+    "트로트 공연",
+    "실내"
+   ],
+   "doneSec": 0.02,
+   "recommendSec": 8.14,
+   "by": "agent",
+   "notFound": false,
+   "places": [
+    {
+     "name": "[마포문화재단] 제11회 마포 M 클래식 축제",
+     "reason": "마포 M 클래식 축제, 53분에 한 번 갈아타요",
+     "min": 53
+    },
+    {
+     "name": "세종문화회관 미술관",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 30분이면 가요",
+     "min": 30
+    },
+    {
+     "name": "국립현대미술관 서울",
+     "reason": "큰 국립미술관, 44분에 한 번 갈아타요",
+     "min": 44
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 8,
+    "free": 5,
+    "followed": 3,
+    "agent": 2,
+    "extra": true,
+    "reasked": [],
+    "maxQuestionSec": 7.08
+   }
+  },
+  {
+   "text": "카페",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "카페",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "카페에서 쉬면서 무엇을 하고 싶으세요?",
+     "choices": [
+      "그림 · 사진 보기",
+      "음악 들으며",
+      "만들기 체험"
+     ],
+     "answer": "그림 · 사진 보기",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.91,
+     "follows": "카페 가기"
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "그림이나 사진은 어떤 곳에서 보고 싶으세요?",
+     "choices": [
+      "서울시립 사진미술관",
+      "포토 디스커버리 프로젝트",
+      "그림책 작업실"
+     ],
+     "answer": "서울시립 사진미술관",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.83,
+     "follows": "그림 · 사진 보기"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "사진미술관 말고 어떤 전시가 더 끌리세요?",
+     "choices": [
+      "사진 전시",
+      "그림 전시",
+      "체험 전시"
+     ],
+     "answer": "사진 전시",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.77,
+     "follows": "서울시립 사진미술관"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "사진 전시는 어느 쪽이 더 끌리세요?",
+     "choices": [
+      "돈 안 드는 전시",
+      "궁 · 한옥 전시",
+      "유료 전시"
+     ],
+     "answer": "돈 안 드는 전시",
+     "source": "agent",
+     "slot": null,
+     "sec": 5.52,
+     "follows": "사진 전시"
+    },
+    {
+     "no": 7,
+     "total": 8,
+     "question": "돈 안 드는 전시 중 어디가 끌리세요?",
+     "choices": [
+      "서울기록원 전시",
+      "운현궁 기획전시",
+      "공예협력전시"
+     ],
+     "answer": "서울기록원 전시",
+     "source": "agent",
+     "slot": null,
+     "sec": 5.94,
+     "follows": "돈 안 드는 전시",
+     "extra": true,
+     "why": "후보가 280곳으로 많아 무료 전시 중 한 곳으로 좁혀야 함"
+    }
+   ],
+   "errors": [],
+   "openSec": 1.66,
+   "heard": [
+    "카페 가기",
+    "실내"
+   ],
+   "doneSec": 0.01,
+   "recommendSec": 7.88,
+   "by": "agent",
+   "notFound": false,
+   "places": [
+    {
+     "name": "경인미술관",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 45분이면 가요",
+     "min": 45
+    },
+    {
+     "name": "대한민국역사박물관",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 40분이면 가요",
+     "min": 40
+    },
+    {
+     "name": "국립현대미술관 덕수궁",
+     "reason": "구경하기 좋은 곳이에요. 한 번만 갈아타고 50분이면 가요",
+     "min": 50
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 8,
+    "free": 5,
+    "followed": 5,
+    "agent": 5,
+    "extra": true,
+    "reasked": [],
+    "maxQuestionSec": 5.94
+   }
+  },
+  {
+   "text": "눈이 침침해서 너무 밝은 곳은 피하고 싶어",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "눈이 침침해서 너무 밝은 곳은 피하고 싶어",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "오늘은 어떤 구경이 좋으세요?",
+     "choices": [
+      "궁 · 한옥",
+      "전시 · 작품",
+      "시장 · 거리",
+      "공원 · 숲"
+     ],
+     "answer": "궁 · 한옥",
+     "source": "agent",
+     "slot": null,
+     "sec": 3.88
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "궁이나 한옥은 어떻게 보고 싶으세요?",
+     "choices": [
+      "궁 안 전시",
+      "한옥 산책",
+      "미술관 전시"
+     ],
+     "answer": "궁 안 전시",
+     "source": "agent",
+     "slot": null,
+     "sec": 3.98,
+     "follows": "궁 · 한옥"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "궁 안 전시는 어떤 곳이 끌리세요?",
+     "choices": [
+      "운현궁 기획전시",
+      "서울기록원 전시",
+      "공예협력전시"
+     ],
+     "answer": "운현궁 기획전시",
+     "source": "agent",
+     "slot": null,
+     "sec": 4.02,
+     "follows": "궁 안 전시"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "운현궁 전시 보고 또 뭘 하고 싶으세요?",
+     "choices": [
+      "시장 · 거리 구경",
+      "공원 산책",
+      "만들기 체험",
+      "조용한 전시장"
+     ],
+     "answer": "시장 · 거리 구경",
+     "source": "agent",
+     "slot": null,
+     "sec": 6.27,
+     "follows": "운현궁 기획전시"
+    },
+    {
+     "no": 7,
+     "total": 8,
+     "question": "시장은 어느 쪽이 끌리세요?",
+     "choices": [
+      "남성사계시장",
+      "중부시장",
+      "동부시장"
+     ],
+     "answer": "남성사계시장",
+     "source": "agent",
+     "slot": null,
+     "sec": 6.72,
+     "follows": "시장 · 거리 구경",
+     "extra": true,
+     "why": "시장 후보가 125곳이라 갈 시장을 하나로 좁혀야 함"
+    }
+   ],
+   "errors": [],
+   "openSec": 1.55,
+   "heard": [],
+   "doneSec": 0.0,
+   "recommendSec": 5.53,
+   "by": "agent",
+   "notFound": false,
+   "places": [
+    {
+     "name": "[운현궁] 2026 기획전시 [궁 ; Re-숨]",
+     "reason": "운현궁 기획전시예요. 무료, 갈아타지 않아요",
+     "min": 46
+    },
+    {
+     "name": "[운현궁] 2026 하우스뮤지엄 [월동의 규방-160년의 시간을 이은 위로] 홍준희 개인전",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 46분이면 가요",
+     "min": 46
+    },
+    {
+     "name": "경희궁",
+     "reason": "구경하기 좋은 곳이에요. 한 번만 갈아타고 44분이면 가요",
+     "min": 44
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 8,
+    "free": 5,
+    "followed": 4,
+    "agent": 5,
+    "extra": true,
+    "reasked": [],
+    "maxQuestionSec": 6.72
+   }
+  }
+ ]
+}

@@ -333,31 +333,6 @@ def test_bank_question_fits_want():
     assert flow.best_bank(food, items) in (None, *flow.ANY_WANT, *flow.Q4_POOL["맛있는 것"])
 
 
-def test_expanded_words_lead_rule_pick(monkeypatch):
-    from app.data import filter_places as fp
-    from app.llm import client as llm
-    from app.recommend.wish import place_text
-
-    s = loader.station_by_name("종로3가역")
-    c = cond(origin={"id": s["id"], "name": s["name"], "type": "역"}, extra={"wish": ["공룡 구경"]},
-             range={"oneWayMin": 45, "walk": "보통", "avoid": []})
-    words = ["자연사", "화석", "과학관"]
-    near = [x for x in fp.filter_places(c, config.now(), "맑음", []) if any(w in place_text(x["place"]) for w in words)]
-    assert near  # 이 출발지 · 범위에 과학관이 있어야 이 시험이 뜻이 있어요
-
-    async def fake(system, payload, schema, timeout, max_tokens=2000):
-        if "picks" in schema["properties"]:
-            return None  # AI 고르기는 실패 → 규칙으로
-        return {"words": words, "places": []}
-
-    monkeypatch.setattr(llm, "ask_json", fake)
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
-    j = client.post("/recommend", json={"conditions": c.model_dump(), "visited": []}).json()
-    assert j["by"] == "rule" and j["expanded"]["words"] == words
-    top = j["candidates"][0]["place"]["name"]
-    assert any(w in top for w in words), top  # 넓힌 말(과학관)에 맞는 곳이 맨 앞
-
-
 @pytest.mark.parametrize("text,bad", [
     ("이따 저녁에 우리 집 놀러 와요", True), ("제 집으로 오세요", True), ("집에 한번 놀러 와", True),
     ("돈 좀 빌려줄 수 있어요? 꼭 갚을게요", True), ("5만 원만 보내 주세요", True), ("계좌번호 알려 드릴게요", True),

@@ -1,0 +1,1140 @@
+{
+ "health": {
+  "ai": false,
+  "jev": false,
+  "agent": true,
+  "question": "graph"
+ },
+ "variety": {
+  "손주랑 자전거 타고 싶어": {
+   "runs": 3,
+   "questions": 12,
+   "distinct": 9,
+   "perRun": [
+    4,
+    4,
+    4
+   ]
+  },
+  "손주랑 공룡 보러 가고 싶어": {
+   "runs": 3,
+   "questions": 12,
+   "distinct": 10,
+   "perRun": [
+    4,
+    4,
+    4
+   ]
+  },
+  "잘 모르겠어": {
+   "runs": 3,
+   "questions": 12,
+   "distinct": 10,
+   "perRun": [
+    4,
+    4,
+    4
+   ]
+  }
+ },
+ "results": [
+  {
+   "text": "손주랑 자전거 타고 싶어",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "손주랑 자전거 타고 싶어",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "어떤 풍경이 좋으세요?",
+     "choices": [
+      "숲길",
+      "물가",
+      "탁 트인 광장",
+      "높은 곳 전망"
+     ],
+     "answer": "숲길",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.16,
+     "id": "scenery"
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "자연 속이라면 어디가 좋으세요?",
+     "choices": [
+      "물가",
+      "아무 공원이나",
+      "숲 · 산",
+      "꽃 · 정원"
+     ],
+     "answer": "물가",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.17,
+     "id": "nature"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "어디서 쉬고 싶으세요?",
+     "choices": [
+      "음악 들으며",
+      "숲 그늘",
+      "조용한 전시장",
+      "물가"
+     ],
+     "answer": "음악 들으며",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.33,
+     "id": "rest"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "어떤 걸 보러 가고 싶으세요?",
+     "choices": [
+      "음악 공연",
+      "만들기 체험",
+      "그림 · 사진",
+      "연극 · 영화"
+     ],
+     "answer": "음악 공연",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.22,
+     "id": "show"
+    }
+   ],
+   "errors": [],
+   "openSec": 0.0,
+   "heard": [],
+   "doneSec": 0.08,
+   "recommendSec": 8.52,
+   "by": "rule",
+   "notFound": false,
+   "places": [
+    {
+     "name": "SJF at the Theater 2026 - 백예린X윤석철",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 25분이면 가요",
+     "min": 25
+    },
+    {
+     "name": "대한민국역사박물관",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 27분이면 가요",
+     "min": 27
+    },
+    {
+     "name": "여의도한강공원",
+     "reason": "바람 쐬기 좋은 곳이에요. 갈아타지 않고 35분이면 가요",
+     "min": 35
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 7,
+    "free": 4,
+    "followed": 0,
+    "agent": 0,
+    "extra": false,
+    "reasked": [],
+    "maxQuestionSec": 0.33
+   }
+  },
+  {
+   "text": "손주랑 자전거 타고 싶어",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "손주랑 자전거 타고 싶어",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "어떤 경치를 보고 싶으세요?",
+     "choices": [
+      "물가",
+      "숲길",
+      "탁 트인 광장",
+      "높은 곳 전망"
+     ],
+     "answer": "물가",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.14,
+     "id": "scenery"
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "어떤 자연이 좋으세요?",
+     "choices": [
+      "꽃 · 정원",
+      "숲 · 산",
+      "아무 공원이나",
+      "물가"
+     ],
+     "answer": "꽃 · 정원",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.14,
+     "id": "nature"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "쉬기 좋은 곳은 어디가 끌리세요?",
+     "choices": [
+      "음악 들으며",
+      "숲 그늘",
+      "조용한 전시장",
+      "물가"
+     ],
+     "answer": "음악 들으며",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.16,
+     "id": "rest"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "어떤 걸 보고 싶으세요?",
+     "choices": [
+      "음악 공연",
+      "그림 · 사진",
+      "연극 · 영화",
+      "만들기 체험"
+     ],
+     "answer": "음악 공연",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.11,
+     "id": "show"
+    }
+   ],
+   "errors": [],
+   "openSec": 0.02,
+   "heard": [],
+   "doneSec": 0.08,
+   "recommendSec": 7.92,
+   "by": "rule",
+   "notFound": false,
+   "places": [
+    {
+     "name": "SJF at the Theater 2026 - 백예린X윤석철",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 25분이면 가요",
+     "min": 25
+    },
+    {
+     "name": "대한민국역사박물관",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 27분이면 가요",
+     "min": 27
+    },
+    {
+     "name": "여의도한강공원",
+     "reason": "바람 쐬기 좋은 곳이에요. 갈아타지 않고 35분이면 가요",
+     "min": 35
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 7,
+    "free": 4,
+    "followed": 0,
+    "agent": 0,
+    "extra": false,
+    "reasked": [],
+    "maxQuestionSec": 0.16
+   }
+  },
+  {
+   "text": "손주랑 자전거 타고 싶어",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "손주랑 자전거 타고 싶어",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "어떤 풍경이 좋으세요?",
+     "choices": [
+      "물가",
+      "탁 트인 광장",
+      "높은 곳 전망",
+      "숲길"
+     ],
+     "answer": "물가",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.17,
+     "id": "scenery"
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "어떤 자연이 좋으세요?",
+     "choices": [
+      "꽃 · 정원",
+      "아무 공원이나",
+      "물가",
+      "숲 · 산"
+     ],
+     "answer": "꽃 · 정원",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.2,
+     "id": "nature"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "쉬기 좋은 곳은 어디가 끌리세요?",
+     "choices": [
+      "물가",
+      "숲 그늘",
+      "음악 들으며",
+      "조용한 전시장"
+     ],
+     "answer": "물가",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.14,
+     "id": "rest"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "보고 싶은 게 있으세요?",
+     "choices": [
+      "그림 · 사진",
+      "음악 공연",
+      "만들기 체험",
+      "연극 · 영화"
+     ],
+     "answer": "그림 · 사진",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.11,
+     "id": "show"
+    }
+   ],
+   "errors": [],
+   "openSec": 0.0,
+   "heard": [],
+   "doneSec": 0.06,
+   "recommendSec": 8.03,
+   "by": "rule",
+   "notFound": false,
+   "places": [
+    {
+     "name": "국립현대미술관 덕수궁",
+     "reason": "구경하기 좋은 곳이에요. 한 번만 갈아타고 32분이면 가요",
+     "min": 32
+    },
+    {
+     "name": "[서울디자인재단] 현대카드 컬처프로젝트 31 웨인 티보 전 [The Order of Things]",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 23분이면 가요",
+     "min": 23
+    },
+    {
+     "name": "대한민국역사박물관",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 27분이면 가요",
+     "min": 27
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 7,
+    "free": 4,
+    "followed": 0,
+    "agent": 0,
+    "extra": false,
+    "reasked": [],
+    "maxQuestionSec": 0.2
+   }
+  },
+  {
+   "text": "손주랑 공룡 보러 가고 싶어",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "손주랑 공룡 보러 가고 싶어",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "어떤 풍경이 좋으세요?",
+     "choices": [
+      "물가",
+      "탁 트인 광장",
+      "숲길",
+      "높은 곳 전망"
+     ],
+     "answer": "물가",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.16,
+     "id": "scenery"
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "자연 속이라면 어디가 좋으세요?",
+     "choices": [
+      "숲 · 산",
+      "꽃 · 정원",
+      "물가",
+      "아무 공원이나"
+     ],
+     "answer": "숲 · 산",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.16,
+     "id": "nature"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "어떤 곳에서 쉬고 싶으세요?",
+     "choices": [
+      "물가",
+      "음악 들으며",
+      "조용한 전시장",
+      "숲 그늘"
+     ],
+     "answer": "물가",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.12,
+     "id": "rest"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "어떤 걸 보러 가고 싶으세요?",
+     "choices": [
+      "만들기 체험",
+      "그림 · 사진",
+      "음악 공연",
+      "연극 · 영화"
+     ],
+     "answer": "만들기 체험",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.12,
+     "id": "show"
+    }
+   ],
+   "errors": [],
+   "openSec": 0.0,
+   "heard": [],
+   "doneSec": 0.06,
+   "recommendSec": 8.11,
+   "by": "rule",
+   "notFound": false,
+   "places": [
+    {
+     "name": "DDP 건축투어 2026",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 23분이면 가요",
+     "min": 23
+    },
+    {
+     "name": "대한민국역사박물관",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 27분이면 가요",
+     "min": 27
+    },
+    {
+     "name": "여의도한강공원",
+     "reason": "바람 쐬기 좋은 곳이에요. 갈아타지 않고 35분이면 가요",
+     "min": 35
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 7,
+    "free": 4,
+    "followed": 0,
+    "agent": 0,
+    "extra": false,
+    "reasked": [],
+    "maxQuestionSec": 0.16
+   }
+  },
+  {
+   "text": "손주랑 공룡 보러 가고 싶어",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "손주랑 공룡 보러 가고 싶어",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "보고 싶은 풍경이 있으세요?",
+     "choices": [
+      "탁 트인 광장",
+      "숲길",
+      "물가",
+      "높은 곳 전망"
+     ],
+     "answer": "탁 트인 광장",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.14,
+     "id": "scenery"
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "자연은 어디가 좋으세요?",
+     "choices": [
+      "숲 · 산",
+      "물가",
+      "아무 공원이나",
+      "꽃 · 정원"
+     ],
+     "answer": "숲 · 산",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.16,
+     "id": "nature"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "쉬기 좋은 곳은 어디가 끌리세요?",
+     "choices": [
+      "조용한 전시장",
+      "음악 들으며",
+      "숲 그늘",
+      "물가"
+     ],
+     "answer": "조용한 전시장",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.12,
+     "id": "rest"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "어떤 걸 보고 싶으세요?",
+     "choices": [
+      "연극 · 영화",
+      "음악 공연",
+      "만들기 체험",
+      "그림 · 사진"
+     ],
+     "answer": "연극 · 영화",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.12,
+     "id": "show"
+    }
+   ],
+   "errors": [],
+   "openSec": 0.02,
+   "heard": [],
+   "doneSec": 0.08,
+   "recommendSec": 8.77,
+   "by": "rule",
+   "notFound": false,
+   "places": [
+    {
+     "name": "국립현대미술관 덕수궁",
+     "reason": "구경하기 좋은 곳이에요. 한 번만 갈아타고 32분이면 가요",
+     "min": 32
+    },
+    {
+     "name": "[서울디자인재단] 현대카드 컬처프로젝트 31 웨인 티보 전 [The Order of Things]",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 23분이면 가요",
+     "min": 23
+    },
+    {
+     "name": "대한민국역사박물관",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 27분이면 가요",
+     "min": 27
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 7,
+    "free": 4,
+    "followed": 0,
+    "agent": 0,
+    "extra": false,
+    "reasked": [],
+    "maxQuestionSec": 0.16
+   }
+  },
+  {
+   "text": "손주랑 공룡 보러 가고 싶어",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "손주랑 공룡 보러 가고 싶어",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "보고 싶은 풍경이 있으세요?",
+     "choices": [
+      "탁 트인 광장",
+      "물가",
+      "높은 곳 전망",
+      "숲길"
+     ],
+     "answer": "탁 트인 광장",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.16,
+     "id": "scenery"
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "어떤 자연이 좋으세요?",
+     "choices": [
+      "숲 · 산",
+      "물가",
+      "꽃 · 정원",
+      "아무 공원이나"
+     ],
+     "answer": "숲 · 산",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.16,
+     "id": "nature"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "어디서 쉬고 싶으세요?",
+     "choices": [
+      "숲 그늘",
+      "물가",
+      "음악 들으며",
+      "조용한 전시장"
+     ],
+     "answer": "숲 그늘",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.14,
+     "id": "rest"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "어떤 걸 보러 가고 싶으세요?",
+     "choices": [
+      "연극 · 영화",
+      "만들기 체험",
+      "음악 공연",
+      "그림 · 사진"
+     ],
+     "answer": "연극 · 영화",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.12,
+     "id": "show"
+    }
+   ],
+   "errors": [],
+   "openSec": 0.0,
+   "heard": [],
+   "doneSec": 0.08,
+   "recommendSec": 8.03,
+   "by": "rule",
+   "notFound": false,
+   "places": [
+    {
+     "name": "[서울역사박물관] 2026 제12회 유럽영화제 - 과거의 기억, 미래의 비전",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 34분이면 가요",
+     "min": 34
+    },
+    {
+     "name": "대한민국역사박물관",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 27분이면 가요",
+     "min": 27
+    },
+    {
+     "name": "광장시장",
+     "reason": "맛있는 것 좋은 곳이에요. 한 번만 갈아타고 28분이면 가요",
+     "min": 28
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 7,
+    "free": 4,
+    "followed": 0,
+    "agent": 0,
+    "extra": false,
+    "reasked": [],
+    "maxQuestionSec": 0.16
+   }
+  },
+  {
+   "text": "잘 모르겠어",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "잘 모르겠어",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "어떤 경치를 보고 싶으세요?",
+     "choices": [
+      "숲길",
+      "높은 곳 전망",
+      "물가",
+      "탁 트인 광장"
+     ],
+     "answer": "숲길",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.19,
+     "id": "scenery"
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "자연 속이라면 어디가 좋으세요?",
+     "choices": [
+      "꽃 · 정원",
+      "아무 공원이나",
+      "물가",
+      "숲 · 산"
+     ],
+     "answer": "꽃 · 정원",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.23,
+     "id": "nature"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "어떤 곳에서 쉬고 싶으세요?",
+     "choices": [
+      "조용한 전시장",
+      "물가",
+      "숲 그늘",
+      "음악 들으며"
+     ],
+     "answer": "조용한 전시장",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.14,
+     "id": "rest"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "어떤 걸 보러 가고 싶으세요?",
+     "choices": [
+      "음악 공연",
+      "연극 · 영화",
+      "만들기 체험",
+      "그림 · 사진"
+     ],
+     "answer": "음악 공연",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.12,
+     "id": "show"
+    }
+   ],
+   "errors": [],
+   "openSec": 0.0,
+   "heard": [],
+   "doneSec": 0.08,
+   "recommendSec": 8.3,
+   "by": "rule",
+   "notFound": false,
+   "places": [
+    {
+     "name": "국립현대미술관 덕수궁",
+     "reason": "구경하기 좋은 곳이에요. 한 번만 갈아타고 32분이면 가요",
+     "min": 32
+    },
+    {
+     "name": "[서울디자인재단] 현대카드 컬처프로젝트 31 웨인 티보 전 [The Order of Things]",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 23분이면 가요",
+     "min": 23
+    },
+    {
+     "name": "대한민국역사박물관",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 27분이면 가요",
+     "min": 27
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 7,
+    "free": 4,
+    "followed": 0,
+    "agent": 0,
+    "extra": false,
+    "reasked": [],
+    "maxQuestionSec": 0.23
+   }
+  },
+  {
+   "text": "잘 모르겠어",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "잘 모르겠어",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "보고 싶은 풍경이 있으세요?",
+     "choices": [
+      "높은 곳 전망",
+      "숲길",
+      "물가",
+      "탁 트인 광장"
+     ],
+     "answer": "높은 곳 전망",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.19,
+     "id": "scenery"
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "자연은 어디가 좋으세요?",
+     "choices": [
+      "숲 · 산",
+      "아무 공원이나",
+      "물가",
+      "꽃 · 정원"
+     ],
+     "answer": "숲 · 산",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.14,
+     "id": "nature"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "쉬기 좋은 곳은 어디가 끌리세요?",
+     "choices": [
+      "물가",
+      "조용한 전시장",
+      "음악 들으며",
+      "숲 그늘"
+     ],
+     "answer": "물가",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.12,
+     "id": "rest"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "보고 싶은 게 있으세요?",
+     "choices": [
+      "만들기 체험",
+      "음악 공연",
+      "그림 · 사진",
+      "연극 · 영화"
+     ],
+     "answer": "만들기 체험",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.12,
+     "id": "show"
+    }
+   ],
+   "errors": [],
+   "openSec": 0.0,
+   "heard": [],
+   "doneSec": 0.06,
+   "recommendSec": 8.39,
+   "by": "rule",
+   "notFound": false,
+   "places": [
+    {
+     "name": "DDP 건축투어 2026",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 23분이면 가요",
+     "min": 23
+    },
+    {
+     "name": "대한민국역사박물관",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 27분이면 가요",
+     "min": 27
+    },
+    {
+     "name": "여의도한강공원",
+     "reason": "바람 쐬기 좋은 곳이에요. 갈아타지 않고 35분이면 가요",
+     "min": 35
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 7,
+    "free": 4,
+    "followed": 0,
+    "agent": 0,
+    "extra": false,
+    "reasked": [],
+    "maxQuestionSec": 0.19
+   }
+  },
+  {
+   "text": "잘 모르겠어",
+   "questions": [
+    {
+     "no": 0,
+     "question": "오늘 어떤 하루 보내고 싶으세요?",
+     "answer": "잘 모르겠어",
+     "source": "fixed"
+    },
+    {
+     "no": 1,
+     "question": "컨디션은 어떠세요?",
+     "answer": "보통이에요",
+     "source": "fixed"
+    },
+    {
+     "no": 2,
+     "question": "얼마나 나가 계실 건가요?",
+     "answer": "한나절",
+     "source": "fixed"
+    },
+    {
+     "no": 3,
+     "total": 7,
+     "question": "어떤 풍경이 좋으세요?",
+     "choices": [
+      "숲길",
+      "물가",
+      "높은 곳 전망",
+      "탁 트인 광장"
+     ],
+     "answer": "숲길",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.17,
+     "id": "scenery"
+    },
+    {
+     "no": 4,
+     "total": 7,
+     "question": "어떤 자연이 좋으세요?",
+     "choices": [
+      "숲 · 산",
+      "물가",
+      "아무 공원이나",
+      "꽃 · 정원"
+     ],
+     "answer": "숲 · 산",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.14,
+     "id": "nature"
+    },
+    {
+     "no": 5,
+     "total": 7,
+     "question": "쉬기 좋은 곳은 어디가 끌리세요?",
+     "choices": [
+      "음악 들으며",
+      "숲 그늘",
+      "조용한 전시장",
+      "물가"
+     ],
+     "answer": "음악 들으며",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.11,
+     "id": "rest"
+    },
+    {
+     "no": 6,
+     "total": 7,
+     "question": "보고 싶은 게 있으세요?",
+     "choices": [
+      "만들기 체험",
+      "그림 · 사진",
+      "연극 · 영화",
+      "음악 공연"
+     ],
+     "answer": "만들기 체험",
+     "source": "fixed",
+     "slot": null,
+     "sec": 0.12,
+     "id": "show"
+    }
+   ],
+   "errors": [],
+   "openSec": 0.0,
+   "heard": [],
+   "doneSec": 0.08,
+   "recommendSec": 8.17,
+   "by": "rule",
+   "notFound": false,
+   "places": [
+    {
+     "name": "DDP 건축투어 2026",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 23분이면 가요",
+     "min": 23
+    },
+    {
+     "name": "대한민국역사박물관",
+     "reason": "구경하기 좋은 곳이에요. 갈아타지 않고 27분이면 가요",
+     "min": 27
+    },
+    {
+     "name": "서울숲",
+     "reason": "바람 쐬기 좋은 곳이에요. 한 번만 갈아타고 28분이면 가요",
+     "min": 28
+    }
+   ],
+   "relaxed": false,
+   "expanded": null,
+   "summary": {
+    "questionsTotal": 7,
+    "free": 4,
+    "followed": 0,
+    "agent": 0,
+    "extra": false,
+    "reasked": [],
+    "maxQuestionSec": 0.17
+   }
+  }
+ ]
+}
