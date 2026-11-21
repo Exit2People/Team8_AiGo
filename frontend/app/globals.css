@@ -966,6 +966,254 @@ html.ios .textbox {
 @keyframes cbPop { 0% { transform: scale(0.2) rotate(-25deg); opacity: 0; } 60% { transform: scale(1.12) rotate(6deg); opacity: 1; } 100% { transform: none; } }
 @keyframes cbSpin { to { transform: rotate(360deg); } }
 
+/* ---------- 방명록 노트 (Social.tsx Guestbook · figma-plugin notebook / gbEntry) ---------- */
+/* 노트가 아래에서 올라와 자리 잡아요 (0.6초 · Gentle) */
+.nb {
+  position: absolute;
+  inset: 0;
+  animation: nbRise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes nbRise {
+  from { transform: translateY(700px); }
+  to { transform: none; }
+}
+/* 가죽 표지 (16, 92, 361 × 656) · 바느질 */
+.nb-cover {
+  position: absolute;
+  left: 16px;
+  top: 92px;
+  width: 361px;
+  height: 656px;
+  border-radius: 18px;
+  background: var(--g-printer);
+  box-shadow: var(--sh-printer);
+}
+.nb-stitch {
+  position: absolute;
+  inset: 9px;
+  border: 1.5px dashed rgba(222, 222, 222, 0.35);
+  border-radius: 12px;
+}
+/* 종이 두께: 아래 장 두 장이 3.5 · 7px씩 비쳐요 */
+.nb-thick {
+  position: absolute;
+  height: 612px;
+  border-radius: 4px;
+}
+.nb-thick-2 { left: 31px; top: 127px; width: 331px; background: var(--gray); }
+.nb-thick-1 { left: 28px; top: 123.5px; width: 337px; background: var(--soft); }
+/* 종이 (26, 120, 341 × 612) */
+.nb-page {
+  position: absolute;
+  left: 26px;
+  top: 120px;
+  width: 341px;
+  height: 612px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--g-paper);
+  box-shadow: 0 2px 6px rgba(89, 20, 15, 0.18);
+}
+.nb-page-in {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 341px;
+  height: 612px;
+}
+/* 줄: 첫 줄 56부터 28px 간격 (아래 쪽 단추 자리 위까지) · 코랄 여백선 */
+.nb-rules {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 56px;
+  height: 482px;
+  background: repeating-linear-gradient(to bottom, rgba(222, 222, 222, 0.6) 0 1.5px, transparent 1.5px 28px);
+}
+.nb-margin {
+  position: absolute;
+  left: 40px;
+  top: 0;
+  width: 1.5px;
+  height: 100%;
+  background: var(--coral);
+  opacity: 0.45;
+}
+.nb-hole {
+  position: absolute;
+  top: 9px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink);
+  opacity: 0.85;
+}
+.nb-ring {
+  position: absolute;
+  top: 104px;
+  width: 6px;
+  height: 32px;
+  border-radius: 3px;
+  background: var(--ink);
+  z-index: 2;
+}
+.nb-ring::after {
+  content: "";
+  position: absolute;
+  left: 1.5px;
+  top: 4px;
+  width: 1.5px;
+  height: 18px;
+  border-radius: 1px;
+  background: #fff;
+  opacity: 0.4;
+}
+/* 한 사람 칸 (112) */
+.nb-entry {
+  position: absolute;
+  left: 0;
+  width: 341px;
+  height: 112px;
+}
+.nb-text {
+  position: absolute;
+  left: 52px;
+  top: 0;
+  width: 200px;
+  font-size: calc(18px * var(--fs));
+  font-weight: 800;
+  line-height: 28px;
+  letter-spacing: -0.02em;
+  word-break: keep-all;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.nb-tag,
+.nb-by,
+.nb-report {
+  position: absolute;
+  top: 56px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 28px;
+  white-space: nowrap;
+}
+.nb-tag {
+  left: 52px;
+  max-width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--coral-deep);
+}
+.nb-by {
+  right: 92px;
+  max-width: 104px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nb-report {
+  top: 80px;
+  right: 14px;
+  color: var(--mute);
+  height: 28px;
+}
+/* 사진 우표 (54 × 66) + 종이테이프 */
+.nb-stamp {
+  position: absolute;
+  left: 264px;
+  width: 54px;
+  height: 66px;
+  padding: 3px;
+  background: #fff;
+  border-radius: 2px;
+  outline: 2px dotted rgba(17, 17, 17, 0.15);
+  outline-offset: -2px;
+  box-shadow: var(--sh-ticket);
+}
+.nb-stamp img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.nb-tape {
+  position: absolute;
+  left: 274px;
+  width: 34px;
+  height: 12px;
+  border-radius: 1px;
+  background: #fff;
+  opacity: 0.7;
+}
+.nb-stamp-slot {
+  position: absolute;
+  left: 264px;
+  top: 6px;
+  width: 54px;
+  height: 66px;
+  border: 1.5px dashed var(--coral);
+  border-radius: 3px;
+  background: #fff;
+}
+/* 쪽 단추 (아래 58) */
+.nb-foot {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 554px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nb-pill {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 20px;
+  background: var(--ink);
+  color: #fff;
+  font-size: calc(18px * var(--fs));
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.nb-pill:disabled {
+  opacity: 0.25;
+}
+/* 쪽 넘기기: 위 장이 스프링 쪽으로 접혀 올라가요(높이 612 → 168, 뒷면 그늘 짙어짐, 글자 흐려짐) · 이전 쪽은 거꾸로 */
+.nb-shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(17, 17, 17, 0.04), rgba(17, 17, 17, 0.16) 60%, rgba(17, 17, 17, 0.34));
+  opacity: 0;
+}
+.nb-turn-up {
+  z-index: 1;
+  animation: nbUp 0.34s cubic-bezier(0.55, 0, 0.45, 1) forwards;
+}
+.nb-turn-up .nb-shade { animation: nbShadeIn 0.22s ease forwards; }
+.nb-turn-up .nb-page-in { animation: nbFadeOut 0.18s ease forwards; }
+@keyframes nbUp {
+  0% { height: 612px; opacity: 1; }
+  65% { height: 168px; opacity: 1; }
+  100% { height: 120px; opacity: 0; }
+}
+.nb-turn-down {
+  z-index: 1;
+  animation: nbDown 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.nb-turn-down .nb-shade { animation: nbShadeOut 0.34s ease both; }
+.nb-turn-down .nb-page-in { animation: fadeIn 0.3s ease 0.06s both; }
+@keyframes nbDown {
+  from { height: 168px; }
+  to { height: 612px; }
+}
+@keyframes nbShadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes nbShadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes nbFadeOut { from { opacity: 1; } to { opacity: 0; } }
+
 /* ---------- 우표 (figma-plugin stamp): 흰 종이 · 가장자리 톱니 · 안쪽 여백에 사진 · 그림자 ---------- */
 /* 톱니: 가장자리에 반원 구멍(지름 6 · 간격 7)을 줄지어 뚫고, 안쪽(content-box)은 그대로 둬요 */
 .stamp-paper {

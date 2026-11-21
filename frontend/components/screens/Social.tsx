@@ -8,16 +8,87 @@ import * as api from "@/lib/api";
 import { photoIll } from "@/lib/illust";
 import type { ReviewsResp } from "@/lib/types";
 
-const TILT = [-6, 5, -4, 6];
 
 /** 방명록 노트 (9.2) */
+/* ---- 방명록 노트 (figma-plugin notebook · gbEntry · 17-0 방명록) ----
+ * 가죽 표지(프린터 가죽 · 바느질) 위에 종이가 여러 장 겹쳐 있고(아래로 두께가 비쳐요), 위에는 금속 스프링이 종이 구멍을 꿰어요.
+ * 종이: 28px 간격 줄 · 코랄 여백선. 한 쪽에 4명, 한 사람 칸(112): 한 줄 2줄 → #고른 것 · — 닉네임 · 날짜 → 신고, 오른쪽에 사진 우표를 테이프로.
+ * 쪽 넘기기: 위 장이 스프링 쪽으로 접혀 올라가며(높이가 줄고 뒷면 그늘이 짙어져요) 아래 장이 드러나요. 이전 쪽은 거꾸로. */
+const NB = { x: 26, y: 120, w: 341, h: 612 };
+const NB_TOP = 56; // 첫 줄
+const NB_ENTRY = 112; // 한 사람 칸 (줄 4개)
+const STAMP_ROT = [-6, 5, -3, 7];
+const STAMP_DY = [-2, 4, 0, 2];
+
+type GbPage = { items: ReviewsResp["items"] | null; err: boolean; page: number; total: number };
+
+function NotePage({ f, c, pg, onTurn, h, cls }: { f: FlowApi; c: NonNullable<FlowApi["s"]["cands"][number]>; pg: GbPage; onTurn: (d: number) => void; h?: number; cls?: string }) {
+  const msg = pg.err ? "방명록을 받지 못했어요\n인터넷 연결을 확인해 주세요" : !pg.items ? "방명록을 펼치고 있어요…" : pg.items.length === 0 ? "아직 빈 방명록이에요\n다녀와서 첫 줄을 남겨 주세요" : "";
+  return (
+    <div className={`nb-page${cls ? ` ${cls}` : ""}`} style={h != null ? { height: h } : undefined}>
+      <div className="nb-page-in">
+        <div className="nb-rules" />
+        <div className="nb-margin" />
+        {Array.from({ length: 11 }, (_, i) => (
+          <i key={i} className="nb-hole" style={{ left: 16 + i * 30 }} />
+        ))}
+        {msg ? (
+          <div className="nb-entry" style={{ top: NB_TOP - 24 }}>
+            <p className="nb-text pre c-mute">{msg}</p>
+            {pg.items && pg.items.length === 0 && <span className="nb-stamp-slot" />}
+          </div>
+        ) : (
+          pg.items!.map((r, k) => (
+            <div key={r.id} className="nb-entry" style={{ top: NB_TOP - 24 + k * NB_ENTRY }}>
+              <p className="nb-text">{r.text}</p>
+              {r.tag && <span className="nb-tag">#{r.tag}</span>}
+              <span className="nb-by">
+                — {r.nick} · {r.date}
+              </span>
+              <span className="nb-stamp" style={{ top: 6 + STAMP_DY[k % 4], transform: `rotate(${STAMP_ROT[k % 4]}deg)` }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={k % 2 === 1 ? photoIll(c.place.kind, c.place.name) : "/aigo/ill/photo_forest.svg"}
+                  alt=""
+                  onError={(e) => (e.currentTarget.src = "/aigo/ill/photo_forest.svg")}
+                />
+              </span>
+              <i className="nb-tape" style={{ top: 4 + STAMP_DY[k % 4], transform: `rotate(${STAMP_ROT[k % 4] - 8}deg)` }} />
+              <button
+                className="nb-report"
+                aria-label={`${r.nick} 님의 한 줄 신고`}
+                onClick={() => f.note(`${r.nick} 님의 한 줄을 신고했어요. 운영자가 살펴볼게요.`)}
+              >
+                신고
+              </button>
+            </div>
+          ))
+        )}
+        <div className="nb-foot">
+          <button className="nb-pill" disabled={pg.page <= 1} onClick={() => onTurn(-1)}>
+            ‹ 이전 쪽
+          </button>
+          <span className="t-count c-mute">
+            {pg.page} / {pg.total}쪽
+          </span>
+          <button className="nb-pill" disabled={pg.page >= pg.total} onClick={() => onTurn(1)}>
+            다음 쪽 ›
+          </button>
+        </div>
+      </div>
+      <div className="nb-shade" />
+    </div>
+  );
+}
+
 export function Guestbook({ f }: { f: FlowApi }) {
   const c = f.s.cands[f.s.idx];
   const pid = c?.place.id ?? "";
   const [pages, setPages] = useState<Record<number, ReviewsResp>>({});
   const [page, setPage] = useState(1);
   const [err, setErr] = useState(false);
-  const [flip, setFlip] = useState(false);
+  // 넘기는 중: dir 1 = 다음 쪽(위 장이 접혀 올라가요), -1 = 이전 쪽(접혀 있던 장이 내려와요). from = 넘기기 전 쪽
+  const [flip, setFlip] = useState<{ dir: 1 | -1; from: number } | null>(null);
   const loading = useRef(new Set<number>());
   const drag = useRef<{ x: number; y: number } | null>(null);
 
@@ -43,16 +114,20 @@ export function Guestbook({ f }: { f: FlowApi }) {
   }, [pid, page, pages[page]?.pages]);
 
   if (!c) return null;
-  const cur = pages[page];
-  const total = cur?.pages ?? 1;
+  const total = pages[page]?.pages ?? pages[1]?.pages ?? 1;
+  const pg = (n: number): GbPage => ({ items: pages[n]?.items ?? null, err: err && !pages[n], page: n, total });
   const turn = (d: number) => {
     if (flip) return;
     const n = page + d;
     if (n < 1 || n > total) return;
-    setFlip(true);
+    setFlip({ dir: d > 0 ? 1 : -1, from: page });
     setPage(n);
-    f.later(520, () => setFlip(false));
+    f.later(f.still ? 0 : 340, () => setFlip(null));
   };
+
+  // 넘기는 동안: 아래 장 = 다음 쪽이면 새 쪽, 이전 쪽이면 지금 쪽 / 위 장 = 다음 쪽이면 지금 쪽(접혀 올라감), 이전 쪽이면 새 쪽(내려옴)
+  const under = flip ? (flip.dir > 0 ? page : flip.from) : page;
+  const over = flip ? (flip.dir > 0 ? flip.from : page) : null;
 
   return (
     <div className="content">
@@ -60,22 +135,8 @@ export function Guestbook({ f }: { f: FlowApi }) {
         {c.place.name} 방명록
       </h1>
       <div
-        className="abs"
-        style={{
-          left: 24,
-          top: 104,
-          width: 345,
-          height: 548,
-          background: "var(--g-paper)",
-          borderRadius: 24,
-          boxShadow: "var(--sh-ticket)",
-          padding: "20px 20px 16px",
-          backgroundImage: "repeating-linear-gradient(to bottom, transparent 0 39px, rgba(201,195,186,.5) 39px 40px)",
-          backgroundColor: "#FFFEFB",
-          transition: "transform .52s ease",
-          transform: flip ? "rotateX(6deg)" : "none",
-          touchAction: "pan-x pan-y",
-        }}
+        className="nb"
+        style={{ touchAction: "pan-x pan-y" }}
         onPointerDown={(e) => (drag.current = { x: e.clientX, y: e.clientY })}
         onPointerUp={(e) => {
           const d = drag.current;
@@ -88,71 +149,24 @@ export function Guestbook({ f }: { f: FlowApi }) {
           else turn(-1);
         }}
       >
-        <p className="t-mono c-tgray">AI GO · GUEST BOOK</p>
-        <p className="t-tile" style={{ marginTop: 8 }}>
-          다녀온 사람들의 방명록
-        </p>
-        {err ? (
-          <p className="t-sub c-sub" style={{ marginTop: 24 }}>
-            방명록을 받지 못했어요. 인터넷 연결을 확인해 주세요.
-          </p>
-        ) : !cur ? (
-          <p className="t-sub c-mute" style={{ marginTop: 24 }}>
-            불러오고 있어요…
-          </p>
-        ) : cur.items.length === 0 ? (
-          <p className="t-sub c-mute" style={{ marginTop: 24 }}>
-            아직 남긴 글이 없어요
-          </p>
-        ) : (
-          <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
-            {cur.items.map((r, i) => (
-              <div key={r.id} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={i % 2 === 1 ? photoIll(c.place.kind, c.place.name) : "/aigo/ill/photo_forest.svg"}
-                  alt=""
-                  width={52}
-                  height={62}
-                  onError={(e) => (e.currentTarget.src = "/aigo/ill/photo_forest.svg")}
-                  style={{ flex: "none", transform: `rotate(${TILT[i % 4]}deg)`, border: "3px solid #fff", boxShadow: "var(--sh-row)", objectFit: "cover" }}
-                />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p className="t-answer" style={{ lineHeight: 1.3, wordBreak: "keep-all" }}>
-                    {r.text}
-                  </p>
-                  <p className="t-item c-mute" style={{ marginTop: 6, lineHeight: 1.3 }}>
-                    {r.tag ? `#${r.tag} ` : ""}— {r.nick} · {r.date}
-                  </p>
-                </div>
-                <button
-                  className="t-item c-mute"
-                  style={{ flex: "none", padding: "4px 2px", textDecoration: "underline" }}
-                  aria-label={`${r.nick} 님의 한 줄 신고`}
-                  onClick={() => f.note(`${r.nick} 님의 한 줄을 신고했어요. 운영자가 살펴볼게요.`)}
-                >
-                  신고
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-        <div style={{ position: "absolute", left: 16, right: 16, bottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <button className="chip chip-soft" disabled={page <= 1} style={{ opacity: page <= 1 ? 0.4 : 1 }} onClick={() => turn(-1)}>
-            ‹ 이전 쪽
-          </button>
-          <span className="t-count">
-            {page} / {total}쪽
-          </span>
-          <button className="chip chip-soft" disabled={page >= total} style={{ opacity: page >= total ? 0.4 : 1 }} onClick={() => turn(1)}>
-            다음 쪽 ›
-          </button>
+        {/* 가죽 표지: 티켓(화면 y 100 ~ 684)을 완전히 덮어요 */}
+        <div className="nb-cover">
+          <div className="nb-stitch" />
         </div>
+        {/* 종이 두께: 아래 장들이 비쳐 보여요 */}
+        <div className="nb-thick nb-thick-2" />
+        <div className="nb-thick nb-thick-1" />
+        <NotePage f={f} c={c} pg={pg(under)} onTurn={turn} />
+        {over != null && <NotePage f={f} c={c} pg={pg(over)} onTurn={turn} cls={flip!.dir > 0 ? "nb-turn-up" : "nb-turn-down"} />}
+        {/* 금속 스프링: 검정 고리에 흰 빛 한 줄 (종이 위로 걸쳐요) */}
+        {Array.from({ length: 11 }, (_, i) => (
+          <i key={i} className="nb-ring" style={{ left: NB.x + 18 + i * 30 }} />
+        ))}
       </div>
-      <Secondary y={672} w={166} white onClick={f.back}>
+      <Secondary y={756} w={166} white onClick={f.back}>
         티켓 다시 보기
       </Secondary>
-      <button className="btn btn-primary" style={{ left: 203, top: 672, width: 166, justifyContent: "center" }} onClick={() => f.choose(true)}>
+      <button className="btn btn-primary" style={{ left: 203, top: 756, width: 166, justifyContent: "center" }} onClick={() => f.choose(true)}>
         여기로 갈게요
       </button>
     </div>
