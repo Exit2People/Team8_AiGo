@@ -84,6 +84,8 @@ export type RecommendResp = {
   weather?: { weather: string; temperature: number | null } | null;
   dataAsOf?: string;
   expanded?: { from: string[]; words: string[]; places: string[]; found: number } | null;
+  /** 범위 안에 0곳이라 편도 상한을 넓혀 찾았을 때만 true */
+  relaxed?: boolean;
 };
 
 export type Social = { expectedToday: number; reviewCount: number; topTags: [string, number][] };

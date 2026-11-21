@@ -518,8 +518,12 @@ function useFlow() {
           seen: Array.from(new Set([...(keepSeen ? q.seen : []), ...ids])),
           weather: r.weather?.weather ?? "",
         }));
+        // note()는 앞 안내를 덮어써서 두 안내를 한 줄로 합쳐요
+        const told: string[] = [];
         if (r.expanded?.from?.length && r.expanded.words?.length)
-          setTimeout(() => note(`${r.expanded!.from.join(" · ")} → ${r.expanded!.words.join(" · ")}으로 넓혀 찾았어요`), 60);
+          told.push(`${r.expanded.from.join(" · ")} → ${r.expanded.words.join(" · ")}으로 넓혀 찾았어요`);
+        if (r.relaxed) told.push("가까운 곳이 없어서 조금 더 먼 곳까지 찾았어요");
+        if (told.length) setTimeout(() => note(told.join(" · ")), 60);
         window.dispatchEvent(new CustomEvent("aigo:badge", { detail: { ev: "recommend" } }));
         if (how === "push" || top().k !== "result") go({ k: "result" });
       } catch (e) {
