@@ -290,3 +290,95 @@ def test_recommend_accepts_shown_and_changes_list():
     ids = [x["place"]["id"] for x in first]
     again = client.post("/recommend", json={"conditions": c.model_dump(), "visited": [], "shown": ids}).json()["candidates"]
     assert again and [x["place"]["id"] for x in again] != ids  # 어제 보여 준 곳이 그대로 반복되지 않아요
+
+
+def test_paraphrased_question_is_rejected():
+    from app.question.agent import same_as_asked
+
+    c = cond(ai=[{"q": "손주와 자전거 타러 어디로 갈까요?", "choices": ["서울숲", "뚝섬한강공원", "여의도한강공원"], "a": "서울숲"}])
+    assert same_as_asked(c, ["서울숲", "뚝섬한강공원", "여의도한강공원"])  # 글만 바꾼 같은 질문
+    assert same_as_asked(c, ["서울숲", "여의도한강공원"])
+    assert not same_as_asked(c, ["숲길", "물가", "탁 트인 광장"])  # 다른 질문
+    assert not same_as_asked(c, ["서울숲", "숲길", "물가"])  # 하나만 겹치면 괜찮아요
+
+
+def test_dont_know_slot_question_not_asked_again():
+    from app.question import flow
+
+    walk_q = flow.BANK["walk"]
+    # 화면은 '잘 모르겠어요'로 답한 걷기 질문을 a=None 기록으로 보내요
+    c = cond(ai=[{"q": walk_q["question"], "choices": walk_q["choices"], "a": None}])
+    assert "walk" in flow.asked_ids(c)
+    for _ in range(3):
+        q = client.post("/questions/next", json=c.model_dump()).json()
+        if q.get("done") or q.get("fallback"):
+            break
+        assert q.get("question") != walk_q["question"]
+        c = cond(ai=[*[x.model_dump() for x in c.ai], {"q": q["question"], "choices": q.get("choices") or [], "a": None}])
+
+
+def test_bank_question_fits_want():
+    from app.question import agent, flow
+
+    food = cond(basic={"want": "맛있는 것"})
+    assert not flow.bank_fits_want(food, "sight") and flow.bank_fits_want(food, "walk") and flow.bank_fits_want(food, "budget")
+    assert flow.bank_fits_want(cond(), "sight")  # 하고 싶은 것을 모르면 다 돼요
+    # 에이전트가 맞지 않는 은행 질문(구경)을 내면 걸러요
+    sight = flow.BANK["sight"]
+    assert agent.bank_id_of("어떤 구경이 좋으세요?", ["궁 · 한옥", "시장 · 거리"]) == "sight"
+    assert agent.check_question(food, [], {"question": sight["question"], "choices": sight["choices"]}) is None
+    assert sight["question"] not in agent.look_bank(food, [])
+    # 은행 질문으로 갈 때도 맞는 질문만
+    items = flow.today_items(food) or []
+    assert flow.best_bank(food, items) in (None, *flow.ANY_WANT, *flow.Q4_POOL["맛있는 것"])
+
+
+@pytest.mark.parametrize("text,bad", [
+    ("이따 저녁에 우리 집 놀러 와요", True), ("제 집으로 오세요", True), ("집에 한번 놀러 와", True),
+    ("돈 좀 빌려줄 수 있어요? 꼭 갚을게요", True), ("5만 원만 보내 주세요", True), ("계좌번호 알려 드릴게요", True),
+    ("송금 좀 부탁해요", True),
+    ("집에 가서 좀 쉬어야겠어요", False), ("우리 집 근처예요", False), ("돈 아끼려고 걸어왔어요", False),
+    ("교통비가 많이 들어요", False), ("책 빌려 주세요", False), ("집이 어디세요? 저는 성수동이에요", False),
+])
+def test_chat_blocks_home_invite_and_money(text, bad):
+    assert chat_safety.has_banned_word(text) is bad
+
+
+def test_kakao_place_inout_guess_and_filter(monkeypatch):
+    from app.recommend import map_candidates as mc
+
+    assert mc.guess_inout("문화,예술 > 문화시설 > 박물관") == "실내"
+    assert mc.guess_inout("여행 > 공원 > 도시근린공원") == "바깥"
+    assert mc.guess_inout("음식점 > 한식") is None
+    indoor = cond(basic={"inout": "실내가 좋아요"})
+    assert mc.can_resolve(indoor, "맑음") and mc.can_resolve(cond(), "비")  # 예전에는 둘 다 막았어요
+    assert mc.keep_inout({"inout": "실내"}, indoor, "맑음") and not mc.keep_inout({"inout": "바깥"}, indoor, "맑음")
+    assert not mc.keep_inout({"inout": None}, indoor, "맑음")  # 모르면 조건이 있을 때 빼요
+    assert not mc.keep_inout({"inout": "바깥"}, cond(), "비") and mc.keep_inout({"inout": None}, cond(), "맑음")
+
+    museum = {"id": "777", "place_name": "테스트자연사박물관", "x": "126.9726", "y": "37.5559",
+              "address_name": "서울 중구 봉래동2가", "road_address_name": "서울 중구 한강대로 405",
+              "category_name": "문화,예술 > 문화시설 > 박물관"}
+
+    async def fake(c, name):
+        return museum
+
+    monkeypatch.setattr(mc, "_lookup", fake)
+    monkeypatch.setenv("KAKAO_REST_API_KEY", "k")
+    got = asyncio.run(mc.resolve(["테스트자연사박물관"], indoor, config.now(), "맑음", 3.0))
+    assert [x["place"]["inout"] for x in got] == ["실내"]
+    out = asyncio.run(mc.resolve(["테스트자연사박물관"], cond(basic={"inout": "바깥이 좋아요"}), config.now(), "맑음", 3.0))
+    assert out == []
+
+
+# 톡방 은어 (고추 은어 쓰임 포함) · 은어와 글자가 겹치는 평범한 문장
+CHAT_SLANG_CASES = ['고추', '고추!!', '고추ㅋㅋ', '고1추', 'rhcn', '내 고추 보여줄까', '니 고추', '고추가 섰어', '고추 만져볼래요', '꼬추', '빨통 크네', '육변기 같은', '딸딸이 치냐', '섹파 구해요', '섹시하시네요', '야짤 보내줄게', '꼴리네', '따먹고 싶다', '보지털', '오르가즘', '졸라 짜증나', '씨팔 진짜', '개년아', '찐따같이', '등신 같은 소리', '싸가지 없네', '애미 없냐', '니미럴', '개소리 하지마', '한남들은', '한녀 특', '늙다리가 왜 나와', '짱깨 식당', '쪽바리 놈들', '잼민이 같은', '개독 교회', '정신병자냐', '히로뽕 있어요']
+CHAT_EVERYDAY = ['교통 정액권 끊었어요', '고추 사러 가요', '시장에서 고추 샀어요', '청양고추 넣으면 맛있어요', '고추장 비빔밥', '고추잠자리 날아요', '고추 말리는 중이에요', '고추 따러 밭에 가요', '불이 꺼져 있어요', '장애인 화장실 어디예요', '마약김밥 맛있어요', '홍어삼합 좋아해요', '미친듯이 좋았어요', '노인네들이라고 무시하지 마세요', '한남동 쪽이에요', '한남대교 건너요', '등신대 사진 찍었어요', '자위대 뉴스 봤어요', '졸라맨 기억나요', '오늘 날씨 좋네요', '18번 출구 앞이에요', '시발점이 어디예요', '버스 번호 알려주세요', '따로 앉을게요', '바보같이 길을 잃었어요', '엿 먹어 보세요 맛있어요', '섹션 C 입구에서 봬요', '대통령 기념관 가요', '도박 중독 예방 캠페인 하네요', '애국가 들려요', '화장실이 어디예요', '작대기 하나 그려요', '게이트볼 치러 가요']
+
+
+def test_chat_slang_blocked():
+    assert [x for x in CHAT_SLANG_CASES if not chat_safety.has_banned_word(x)] == []
+
+
+def test_chat_everyday_sentences_pass():
+    assert [x for x in CHAT_EVERYDAY if chat_safety.has_banned_word(x)] == []

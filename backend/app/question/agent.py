@@ -113,6 +113,8 @@ def look_bank(cond: Conditions, items: list[dict]) -> dict:
             continue
         if qid == "budget" and want_of(cond) != "맛있는 것":
             continue
+        if not flow.bank_fits_want(cond, qid):
+            continue
         counts = flow.bank_counts(qid, items)
         out[b["question"]] = {c: (counts[c] if counts and c in counts else "셀 수 없음")
                               for c in flow.live_choices(qid, items)}
@@ -312,6 +314,26 @@ def asks_filled(cond: Conditions, q: str) -> bool:
     return False
 
 
+def bank_id_of(q: str, choices: list[str]) -> str | None:
+    """은행 질문과 글이 같거나 선택지가 2개 이상 겹치면 그 은행 질문으로 봐요."""
+    new = {_norm(c) for c in choices}
+    for qid, b in flow.BANK.items():
+        if _norm(q) == _norm(b["question"]) or len(new & {_norm(c) for c in b["choices"]}) >= 2:
+            return qid
+    return None
+
+
+def same_as_asked(cond: Conditions, choices: list[str]) -> bool:
+    """글은 달라도 선택지가 앞 질문과 거의 같으면 같은 질문이에요 (예: '어디로 갈까요?' → '어디서 타고 싶으세요?')."""
+    new = {_norm(c) for c in choices}
+    for x in cond.ai:
+        old = {_norm(c) for c in x.choices}
+        same = len(new & old)
+        if same >= 2 and same >= len(new) - 1:
+            return True
+    return False
+
+
 def check_question(cond: Conditions, items: list[dict], sub: dict) -> dict | None:
     if sub.get("done") is True:
         return {"done": True}
@@ -333,8 +355,8 @@ def check_question(cond: Conditions, items: list[dict], sub: dict) -> dict | Non
     # 은행 질문을 그대로 골랐으면 은행 선택지(오늘 남는 것만)를 써요. 은행 질문은 미리 검사한 거예요
     bank_id = flow.bank_id_of(q)
     if bank_id and bank_id not in ("walk", "inout"):
-        if bank_id in flow.asked_ids(cond) or flow.skipped(cond, bank_id):
-            return None
+        if bank_id in flow.asked_ids(cond) or flow.skipped(cond, bank_id) or not flow.bank_fits_want(cond, bank_id):
+            return None  # '하고 싶은 것'과 맞지 않는 은행 질문도 거르기 (맛있는 것인데 궁 · 한옥 구경)
         live = flow.live_choices(bank_id, items)
         # 은행 질문(또는 그 다른 말투)은 은행 선택지로. 에이전트가 고른 순서를 따르고 나머지는 뒤에
         mine = [c for c in choices if c in live]
@@ -371,6 +393,11 @@ def check_question(cond: Conditions, items: list[dict], sub: dict) -> dict | Non
         counts[ch] = n
     choices = [c for c in choices if counts[c] != 0]
     if len(choices) < 2:
+        return None
+    if same_as_asked(cond, choices):
+        return None
+    qid = bank_id_of(q, choices)
+    if qid and not flow.bank_fits_want(cond, qid):
         return None
     counted = [c for c in choices if counts[c] is not None]
     if counted and len(counted) < 2:

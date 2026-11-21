@@ -127,3 +127,16 @@ def test_slang_nicknames_blocked():
                                         "도박왕": "범죄", "몰카": "범죄", "대통령": "정치", "일베": "정치", "싸가지": "욕설", "한남충": "비하", "김치녀": "비하", "틀딱": "비하"}.items())
 def test_slang_reason_group(nick, code):
     assert nickname.check_rules(nick)[0] == code
+
+
+def test_reason_from_chat_slang_group():
+    # 톡방 은어 표에만 있는 말도 그 갈래로 이유를 알려요 (작대기 · 떨액 = 마약 은어 → 범죄)
+    assert nickname.check_rules("작대기왕")[0] == "범죄"
+    assert nickname.check_rules("떨액")[0] == "범죄"
+    assert nickname.check_rules("쪽바리")[0] == "비하"
+
+
+def test_flat_rate_words_pass_like_chat():
+    # 톡방에서 예외인 요금 말은 닉네임에서도 통과해요
+    assert nickname.check_rules("정액권") is None
+    assert nickname.check_rules("정액") is not None
