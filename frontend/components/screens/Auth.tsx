@@ -305,7 +305,7 @@ export function Elogin({ f }: { f: FlowApi }) {
 const STEPS = [
   { name: "이메일", desc: "로그인할 때 써요" },
   { name: "비밀번호", desc: "8자 이상, 글자와 숫자를 섞어요" },
-  { name: "이메일 확인", desc: "메일로 보낸 숫자 6자리를 넣어 주세요\n(데모: 아무 숫자 6자리나 돼요)" },
+  { name: "이메일 확인", desc: "메일로 보낸 숫자 6자리를 넣어 주세요\n(메일이 안 보이면 스팸함도 봐 주세요)" },
   { name: "이름", desc: "실제 이름을 적어 주세요" },
   { name: "닉네임", desc: "우표 · 한 줄 · 톡방에서 보이는 이름이에요" },
   { name: "나이", desc: "숫자만 적어 주세요" },
@@ -329,6 +329,22 @@ export function Signup({ f, i }: { f: FlowApi; i: number }) {
     if (i === 4) draft.nick = x;
     if (i === 5) draft.age = x;
     if (i === 6) draft.home = x;
+  }
+
+  /** 확인 숫자 다시 받기: 서버에 다시 보내 달라고 해요 */
+  async function resend() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await api.emailStart(draft.email.trim(), draft.pw);
+      draft.code = "";
+      setV("");
+      f.note("숫자를 다시 보냈어요");
+    } catch (e) {
+      f.note(api.errText(e, "다시 보내지 못했어요"));
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function next() {
@@ -423,7 +439,7 @@ export function Signup({ f, i }: { f: FlowApi; i: number }) {
           </>
         )}
         {i === 2 && (
-          <button className="t-caption c-mute" style={{ marginTop: 10, textDecoration: "underline" }} onClick={() => f.note("숫자를 다시 보냈어요 (데모)")}>
+          <button className="t-caption c-mute" style={{ marginTop: 10, textDecoration: "underline" }} onClick={resend} disabled={busy}>
             다시 받기
           </button>
         )}
