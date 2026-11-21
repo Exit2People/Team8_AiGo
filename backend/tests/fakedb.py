@@ -104,3 +104,87 @@ class FakeDB:
 
     def h_report_add(self, sql, p, f):
         self.reports.append({"day": p[0], "place_id": p[1], "target_nick": p[2]})
+
+
+class FakeAuthDB(FakeDB):
+    """회원 · 세션 · 게임 · 이메일 확인 숫자까지."""
+
+    def __init__(self):
+        super().__init__()
+        self.users: dict[str, dict] = {}
+        self.sessions: dict[str, dict] = {}
+        self.consents: list[dict] = []
+        self.scores: dict[str, dict] = {}
+        self.codes: dict[str, dict] = {}
+
+    def add_user(self, **kw) -> dict:
+        import uuid
+
+        uid = kw.pop("id", None) or str(uuid.uuid4())
+        row = {"id": uid, "kakao_id": None, "email": None, "password_hash": None, "name": None, "nickname": None,
+               "age": None, "home_dong1_id": None, "home_dong2_id": None, "created_at": self.now(),
+               "last_login_at": self.now(), "deleted_at": None, "purge_after": None, "banned_at": None,
+               "banned_reason": None}
+        row.update(kw)
+        self.users[uid] = row
+        return row
+
+    def _rt(self):
+        return datetime.now(config.KST)
+
+    def h_session_add(self, sql, p, f):
+        self.sessions[p[0]] = {"user_id": p[1], "expires_at": p[2]}
+
+    def h_user_touch(self, sql, p, f):
+        self.users[p[0]]["last_login_at"] = self.now()
+
+    def h_session_user(self, sql, p, f):
+        s = self.sessions.get(p[0])
+        if not s or s["expires_at"] <= self._rt():
+            return None
+        u = self.users.get(s["user_id"])
+        if not u or u["deleted_at"] or u["banned_at"]:
+            return None
+        return dict(u)
+
+    def h_session_del(self, sql, p, f):
+        self.sessions.pop(p[0], None)
+
+    def h_purge(self, sql, p, f):
+        gone = [k for k, u in self.users.items() if u["purge_after"] and u["purge_after"] < self._rt()]
+        for k in gone:
+            self._delete_user(k)
+
+    def _delete_user(self, uid):
+        self.users.pop(uid, None)
+        self.sessions = {k: v for k, v in self.sessions.items() if v["user_id"] != uid}
+        self.consents = [c for c in self.consents if c["user_id"] != uid]
+        self.scores.pop(uid, None)
+
+    def _one(self, key, val):
+        for u in self.users.values():
+            if u.get(key) == val:
+                return dict(u)
+        return None
+
+    def h_user_by_kakao(self, sql, p, f):
+        return self._one("kakao_id", p[0])
+
+    def h_user_by_email(self, sql, p, f):
+        return self._one("email", p[0])
+
+    def h_user_by_id(self, sql, p, f):
+        u = self.users.get(str(p[0]))
+        return dict(u) if u else None
+
+    def h_user_add_kakao(self, sql, p, f):
+        return {"id": self.add_user(kakao_id=p[0], home_dong1_id=p[1], home_dong2_id=p[2])["id"]}
+
+    def h_consent_add(self, sql, p, f):
+        self.consents.append({"user_id": p[0], "doc_type": p[1], "doc_version": p[2]})
+
+    def h_user_update(self, sql, p, f):
+        cols = re.findall(r"(\w+) = %s", sql.split(" where ")[0])
+        u = self.users[str(p[-1])]
+        for c, v in zip(cols, p[:-1]):
+            u[c] = v
