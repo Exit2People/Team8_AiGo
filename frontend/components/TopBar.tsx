@@ -5,9 +5,9 @@ import type { Step } from "@/lib/flow";
 import { TextSizeButton } from "./TextSize";
 
 /** 상단 막대 (11_FRONTEND_SPEC 2.3) */
-export default function TopBar({ f, step }: { f: FlowApi; step: Step }) {
+export default function TopBar({ f, step, depth }: { f: FlowApi; step: Step; depth?: number }) {
   const { s } = f;
-  const n = s.stack.length;
+  const n = depth ?? s.stack.length;
   const c = s.cands[s.idx];
   const name = c?.place.name ?? "";
   const titles: Partial<Record<Step["k"], string>> = {

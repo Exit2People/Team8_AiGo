@@ -24,6 +24,7 @@ import { randomNick } from "@/lib/nick";
 import { applyTextSize, readTextSize } from "@/lib/textSize";
 import { TextSizeSheet } from "./TextSize";
 import { clockText } from "@/lib/format";
+import WideLayers, { layerOf, useWide } from "./WideLayers";
 
 const NICKS = ["봄나들이", "햇살마중", "솔바람", "도란도란", "꽃마중", "느림보", "새벽길", "산들바람"];
 
@@ -106,6 +107,24 @@ function useFlow() {
     history.back();
   }, []);
 
+  /** len칸만 남기고 그 위를 step 하나로 바꿔요 (PC 내 정보 패널에서 열린 창 바꾸기) */
+  const replaceFrom = useCallback(
+    (len: number, step: Step) => {
+      navDir.current = "replace";
+      set((p) => ({ stack: [...p.stack.slice(0, len), step] }));
+    },
+    [set],
+  );
+
+  /** 여러 칸을 한 번에 뒤로 (PC 창 · 패널 닫기). popstate 한 번에 len까지 줄여요 */
+  const popExtra = useRef(0);
+  const popTo = useCallback((len: number) => {
+    const n = sRef.current.stack.length - Math.max(1, len);
+    if (n <= 0) return;
+    popExtra.current = n - 1;
+    history.back();
+  }, []);
+
   const backWith = useCallback(
     (text: string) => {
       history.back();
@@ -156,6 +175,8 @@ function useFlow() {
   /* popstate (2.1) */
   useEffect(() => {
     function onPop() {
+      const extra = popExtra.current;
+      popExtra.current = 0;
       const r = req.current;
       if (r) {
         r.ctrl.abort();
@@ -186,7 +207,7 @@ function useFlow() {
       }
       if (noteTimer.current) clearTimeout(noteTimer.current);
       navDir.current = "back";
-      set((q) => ({ stack: q.stack.slice(0, -1), note: null, preparing: -1, qNotice: false }));
+      set((q) => ({ stack: q.stack.slice(0, Math.max(1, q.stack.length - 1 - extra)), note: null, preparing: -1, qNotice: false }));
     }
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -245,10 +266,10 @@ function useFlow() {
     };
   }, [set, note]);
 
-  /* 화면이 바뀌면 제목에 초점 (2.2) */
+  /* 화면이 바뀌면 제목에 초점 (2.2). PC에서 패널 · 창이 떠 있으면 맨 위 것의 제목으로 */
   const stepKey = `${s.stack.length}:${top()?.k}`;
   useEffect(() => {
-    const h = document.querySelector<HTMLElement>(".content h1");
+    const h = document.querySelector<HTMLElement>("[data-top] h1") ?? document.querySelector<HTMLElement>(".content h1");
     h?.focus({ preventScroll: true });
   }, [stepKey]);
 
@@ -696,6 +717,8 @@ function useFlow() {
     go,
     replaceTop,
     back,
+    popTo,
+    replaceFrom,
     backWith,
     home,
     landHome,
@@ -730,15 +753,20 @@ export default function Flow() {
   const { s } = f;
   const step = s.stack[s.stack.length - 1];
   const busy = s.busy && !s.busy.startsWith("질문") ? s.busy : null;
+  // PC처럼 넓은 화면: 내 정보 · 업적 · 게임은 뒤 화면을 흐리게 두고 옆 패널 · 가운데 창으로 띄워요 (WideLayers)
+  const wide = useWide();
+  const layer = busy ? null : layerOf(s.stack, wide);
+  const baseStep = layer ? s.stack[layer.baseAt - 1] : step;
   const poseKey = useMemo(() => {
     if (busy) return busy.startsWith("가까운") ? "kwait" : busy.startsWith("조금만") ? "wait" : "find";
     if (s.busy?.startsWith("질문 0")) return "ask";
     if (f.poseOv) return f.poseOv;
-    return poseOf(step, s);
-  }, [busy, s, step, f.poseOv]);
+    return poseOf(baseStep, s);
+  }, [busy, s, baseStep, f.poseOv]);
 
   const badges = useBadges(s.user);
-  const idle = useIdle(poseKey, !f.still && !busy && !f.poseOv && !s.busy);
+  // 패널 · 창이 떠 있으면 뒤의 담고는 가만히 둬요(흐림 처리를 매번 다시 그리지 않아 움직임이 부드러워요)
+  const idle = useIdle(poseKey, !f.still && !busy && !f.poseOv && !s.busy && !layer);
   const shownKey = idle.key;
   const isResult = poseKey === "s4" || poseKey === "s4p";
   const cele = badges.queue.length && canCelebrate(s) ? badges.queue[0] : null;
@@ -752,16 +780,17 @@ export default function Flow() {
       poseKey={poseKey}
       pose={getPose(shownKey)}
       blink={idle.blink}
-      wag={WAG.has(poseKey)}
+      wag={WAG.has(poseKey) && !layer}
       move={idle.key !== poseKey ? 0.45 : isResult ? 1 : 0.6}
       coral={s.coral}
       still={f.still}
-      inert={!!cele}
+      inert={!!cele || !!layer}
       paused={!!cele}
       overlay={
         <>
+          {wide && <WideLayers f={f} layer={layer} frozen={!!cele} />}
           {s.note ? (
-            <div className="toast" role="status">
+            <div className={`toast${layer ? " lyToast" : ""}${layer && layer.myAt >= 0 ? " side" : ""}`} role="status">
               {s.note}
             </div>
           ) : null}
@@ -784,8 +813,8 @@ export default function Flow() {
         <Busy text={busy} />
       ) : (
         <>
-          <Screen f={f} step={step} />
-          <TopBar f={f} step={step} />
+          <Screen f={f} step={baseStep} at={layer?.baseAt} />
+          <TopBar f={f} step={baseStep} depth={layer?.baseAt} />
         </>
       )}
     </Stage>
