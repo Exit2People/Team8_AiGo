@@ -32,9 +32,10 @@
 ## 실행
 
 ```
-cd backend && uv sync && uv run uvicorn app.main:app --port 8010
+cp backend/.env.example backend/.env   # 값은 비공개 설정에서 채워요
+cd backend && uv sync && uv run uvicorn app.main:app --port 8000
 cd backend && uv run pytest -q
-cd frontend && npm ci && npm run dev
+cd frontend && npm ci && npm run dev   # 서버 주소가 8000이 아니면 frontend/.env.local 에 NEXT_PUBLIC_API_BASE · API_ORIGIN
 ```
 
 결정 기록은 `docs/DECISIONS.md`에 있어요.
