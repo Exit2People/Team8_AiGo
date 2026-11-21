@@ -94,6 +94,14 @@ def test_capped_failure_has_safe_reason(caplog, failure, reason):
     assert "사용자 말" not in caplog.text and "key-secret" not in caplog.text
 
 
+def test_capped_does_not_add_hidden_time_allowance():
+    async def late():
+        await asyncio.sleep(0.1)
+        return {"question": "늦게 온 질문?"}
+
+    assert asyncio.run(service._capped(late(), 0.01)) is None
+
+
 def test_runtime_failure_has_safe_reason(monkeypatch, caplog):
     caplog.set_level(logging.INFO)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
