@@ -4,8 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { FlowApi } from "../Flow";
 import { ChevronIcon } from "../Icons";
 import Mic from "../Mic";
-import { TEXT_SIZES, useTextSize } from "@/lib/textSize";
-import { OPEN_TEXT_SIZE } from "../TextSize";
+import { TextSizeButton } from "../TextSize";
 import type { ChatMessage } from "@/lib/types";
 
 type Menu = null | "main" | "people" | "report" | "block";
@@ -71,7 +70,6 @@ export default function Chat({ f }: { f: FlowApi }) {
   const [menu, setMenu] = useState<Menu>(null);
   const [ask, setAsk] = useState(false);
   const [who, setWho] = useState<string | null>(null); // 이름을 눌러 연 사람
-  const [size] = useTextSize(); // 글씨 크기는 앱 전체 설정 하나로 움직여요
   const [unread, setUnread] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const listRef = useRef<HTMLDivElement>(null);
@@ -190,9 +188,9 @@ export default function Chat({ f }: { f: FlowApi }) {
             </span>
           </span>
         </button>
-        <button className="chip chip-soft" style={{ flex: "none", height: 34, fontSize: "calc(14px * var(--fs))" }} onClick={() => window.dispatchEvent(new CustomEvent(OPEN_TEXT_SIZE))} aria-label="글씨 크기 바꾸기">
-          가 {TEXT_SIZES.find((t) => t.id === size)?.name}
-        </button>
+        <span style={{ flex: "none" }}>
+          <TextSizeButton light />
+        </span>
       </div>
 
       {alert && (
