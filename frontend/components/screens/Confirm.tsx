@@ -109,7 +109,7 @@ export default function Confirm({ f, auto, step }: { f: FlowApi; auto?: string; 
         </p>
       </div>
       {more && !packing && (
-        <p className="abs center-x t-caption" aria-hidden="true" style={{ top: 622, pointerEvents: "none", color: "var(--ink)", fontWeight: 800 }}>
+        <p className="abs center-x t-caption" aria-hidden="true" style={{ top: 622, pointerEvents: "none", color: "var(--ink)", fontWeight: 800, background: "rgba(255,255,255,.95)", padding: "4px 14px", borderRadius: 999, boxShadow: "0 2px 8px rgba(0,0,0,.08)", whiteSpace: "nowrap" }}>
           아래로 밀면 더 있어요 ↓
         </p>
       )}
