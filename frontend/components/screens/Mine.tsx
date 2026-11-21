@@ -7,7 +7,8 @@ import Mic from "../Mic";
 import * as api from "@/lib/api";
 import { readStamps, readVisits, removeStamp, saveStamp, today, type Stamp, type Visit } from "@/lib/device";
 import { photoIll } from "@/lib/illust";
-import { BADGES, TIERS, badgeImg, progress, recOf, type BadgeDef } from "@/lib/badges";
+import { badgeStates, type BadgeState } from "@/lib/badges";
+import { BadgeBoard, BadgeSheet } from "../Badges";
 import type { ReviewsResp } from "@/lib/types";
 
 const TAGS = ["걷기 편해요", "경치가 좋아요", "쉴 곳이 많아요", "사람이 많아요"];
@@ -465,7 +466,7 @@ export function Sdetail({ f, stepKey }: { f: FlowApi; stepKey: string }) {
 /** 업적 (4.5 badges, 11.4) */
 export function Badges({ f }: { f: FlowApi }) {
   const u = f.s.user;
-  const [open, setOpen] = useState<BadgeDef | null>(null);
+  const [open, setOpen] = useState<BadgeState | null>(null);
   if (!u) {
     return (
       <div className="content">
@@ -477,92 +478,16 @@ export function Badges({ f }: { f: FlowApi }) {
       </div>
     );
   }
-  const r = recOf(u.id);
-  const has = !!u.homeDong1;
-  const gotN = BADGES.filter((b) => r.got[b.id]).length;
+  const states = badgeStates(u.id, !!u.homeDong1);
+  const gotN = states.filter((s) => s.earnedAt).length;
   return (
     <div className="content">
       <Title y={104}>업적</Title>
-      <Sub y={150}>{`30개 중 ${gotN}개를 모았어요`}</Sub>
-      <div className="abs scroll" style={{ left: 24, right: 24, top: 196, bottom: 20, paddingBottom: 30 }}>
-        {TIERS.map((t) => {
-          const list = BADGES.filter((b) => b.tier === t.tier);
-          return (
-            <div key={t.tier} className="card" style={{ position: "relative", left: 0, width: "100%", marginBottom: 14 }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span className="t-answer">
-                  {t.name} <span className="t-caption c-mute">{t.level}</span>
-                </span>
-                <span className="t-count">
-                  {list.filter((b) => r.got[b.id]).length} / {list.length}
-                </span>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginTop: 12 }}>
-                {list.map((b) => {
-                  const got = !!r.got[b.id];
-                  const cur = Math.min(progress(b.id, r, has), b.target);
-                  return (
-                    <button key={b.id} onClick={() => setOpen(b)} style={{ textAlign: "center" }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={badgeImg(b, got)} alt="" width={72} height={72} style={{ opacity: got ? 1 : 0.35, display: "block", margin: "0 auto" }} />
-                      <span className="t-item" style={{ display: "block", marginTop: 4, lineHeight: 1.25 }}>
-                        {b.hidden && !got ? "숨은 업적" : b.name}
-                      </span>
-                      {!got && !b.hidden && b.target > 1 && (
-                        <span style={{ display: "block", height: 5, borderRadius: 3, background: "var(--soft)", marginTop: 4, overflow: "hidden" }}>
-                          <span style={{ display: "block", height: "100%", width: `${(cur / b.target) * 100}%`, background: "var(--coral)" }} />
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+      <Sub y={150}>{`${states.length}개 중 ${gotN}개를 모았어요`}</Sub>
+      <div className="abs scroll" style={{ left: 24, right: 24, top: 196, bottom: 0, paddingBottom: 30 }}>
+        <BadgeBoard states={states} onPick={setOpen} />
       </div>
-      {open && (
-        <div className="modal-bg" onClick={() => setOpen(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" style={{ textAlign: "center" }}>
-            {(() => {
-              const got = r.got[open.id];
-              const t = TIERS.find((x) => x.tier === open.tier);
-              const cur = progress(open.id, r, has);
-              return (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={badgeImg(open, !!got)} alt="" width={140} height={140} style={{ opacity: got ? 1 : 0.4 }} />
-                  <p className="t-label c-deep" style={{ marginTop: 8 }}>
-                    {t?.name} · {t?.level}
-                  </p>
-                  <p className="t-title" style={{ marginTop: 6 }}>
-                    {open.hidden && !got ? "숨은 업적" : open.name}
-                  </p>
-                  <p className="t-sub c-mute pre" style={{ marginTop: 8 }}>
-                    {open.hidden && !got ? "어떻게 얻는지는 비밀이에요.\n나들이를 하다 보면 만날 거예요" : open.condition}
-                  </p>
-                  {got ? (
-                    <p className="t-answer" style={{ marginTop: 10 }}>
-                      {new Date(got).getFullYear()}년 {new Date(got).getMonth() + 1}월 {new Date(got).getDate()}일에 얻었어요
-                    </p>
-                  ) : open.target > 1 ? (
-                    <p className="t-answer" style={{ marginTop: 10 }}>
-                      {Math.min(cur, open.target)} / {open.target}
-                    </p>
-                  ) : (
-                    <p className="t-answer" style={{ marginTop: 10 }}>
-                      아직 얻지 못했어요
-                    </p>
-                  )}
-                  <button className="btn btn-secondary" onClick={() => setOpen(null)}>
-                    닫기
-                  </button>
-                </>
-              );
-            })()}
-          </div>
-        </div>
-      )}
+      {open && <BadgeSheet state={states.find((s) => s.def.id === open.def.id) ?? open} onClose={() => setOpen(null)} />}
     </div>
   );
 }

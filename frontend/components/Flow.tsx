@@ -18,6 +18,7 @@ import { THEMES } from "@/lib/theme";
 import { useChat, type ChatApi } from "./useChat";
 import Celebrate, { canCelebrate, useBadges } from "./Celebrate";
 import { WAG, useIdle } from "./useIdle";
+import { setPaused } from "@/lib/pause";
 import { clockText } from "@/lib/format";
 
 const NICKS = ["봄나들이", "햇살마중", "솔바람", "도란도란", "꽃마중", "느림보", "새벽길", "산들바람"];
@@ -697,6 +698,10 @@ export default function Flow() {
   const shownKey = idle.key;
   const isResult = poseKey === "s4" || poseKey === "s4p";
   const cele = badges.queue.length && canCelebrate(s) ? badges.queue[0] : null;
+  useEffect(() => {
+    setPaused(!!cele); // 축하 화면이 떠 있는 동안 게임을 그 자리에 멈춰요
+    return () => setPaused(false);
+  }, [cele]);
 
   return (
     <Stage
