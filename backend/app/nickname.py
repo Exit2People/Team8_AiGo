@@ -31,6 +31,11 @@ _STAFF = ("운영자", "관리자", "운영진", "관리인", "admin", "aigo", "
 _EN_SEXUAL = {"pussy", "penis", "vagina", "boobs", "tits", "nipple", "porn", "nude", "naked", "sexy", "milf", "horny", "slut", "whore"}
 # 톡방에서는 평범한 말(시발점 · 시발역)이지만 닉네임으로는 우회 표현이라 막아요. 사전 · korcen 둘 다 놓치는 낮춤말도 여기에
 _NICK_SWEAR = ("시발", "씨발", "시빨", "등신", "찐따", "애미", "애비", "니미")
+# 닉네임에서는 성적 은어로 읽히는 말 (톡방에서는 채소 · 음식 이야기라 막지 않아요)
+_NICK_SEXUAL = ("고추", "잠지", "꼬툭")
+# 위 말이 들어 있어도 분명히 평범한 낱말은 예외로 둬요
+_NICK_SEXUAL_OK = ("고추잠자리", "고추장", "고추밭", "고추꽃", "고춧가루", "풋고추", "청양고추", "홍고추", "꽈리고추",
+                   "오이고추", "고추전", "고추냉이")
 # korcen(오픈소스, Apache-2.0) 갈래 → 우리 이유 갈래
 _KORCEN_GROUP = {"sexual": "성적", "politics": "정치", "general": "욕설", "minor": "욕설", "belittle": "욕설",
                  "race": "욕설", "parent": "욕설"}
@@ -86,6 +91,11 @@ def check_rules(nickname: str | None) -> tuple[str, str] | None:
     if chat_safety.has_banned_word(t) or any(w in t for w in _NICK_SWEAR):
         g = _group(t)
         return g, MSG[g]
+    rest = t
+    for ok in _NICK_SEXUAL_OK:
+        rest = rest.replace(ok, "")
+    if any(w in rest for w in _NICK_SEXUAL):
+        return "성적", MSG["성적"]
     k = _korcen_group(t)
     if k:
         return k, MSG[k]
