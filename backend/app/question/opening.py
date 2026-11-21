@@ -3,6 +3,7 @@
 import re
 
 from app import config
+from app.guards import scrub_pii
 from app.question.flow import BODY_CHOICES, INOUT_CHOICES, TIME_CHOICES, WALK_CHOICES, WANT_CHOICES, WHO_CHOICES
 from app.schemas import Conditions, Range
 
@@ -148,7 +149,7 @@ def apply(cond: Conditions, v: dict) -> tuple[Conditions, list[str]]:
 async def parse_open(cond: Conditions, text: str) -> tuple[Conditions, list[str]]:
     from app.llm.client import ask_json
 
-    t = re.sub(r"\s+", " ", text or "").strip()[:200]
+    t = scrub_pii(re.sub(r"\s+", " ", text or "").strip())[:200]
     if not t or t == "잘 모르겠어요" or cond.fallback:
         return cond, []
     v = await ask_json(OPEN_SYSTEM, {"어르신의 말": t}, OPEN_SCHEMA, config.OPEN_AI_TIMEOUT)
