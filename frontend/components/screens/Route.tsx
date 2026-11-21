@@ -129,6 +129,7 @@ export default function Route({ f }: { f: FlowApi }) {
               style={{ marginTop: 18 }}
               onClick={() => {
                 setNudge(false);
+                f.backTo.current = [...f.s.stack]; // 로그인 · 가입이 끝나면 이 길 안내로 돌아와요
                 f.go({ k: "login" });
               }}
             >

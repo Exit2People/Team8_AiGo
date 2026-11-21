@@ -153,6 +153,8 @@ h1:focus,
   height: var(--canvas-h);
   zoom: var(--zoom);
   overflow: hidden;
+  /* 오른쪽에 걸친 큰 담고 그림 때문에 입력칸 · 버튼에 초점이 갈 때 화면이 옆으로 밀리지 않게, 스크롤 자체를 막아요 */
+  overflow: clip;
   background: var(--g-paper);
 }
 
