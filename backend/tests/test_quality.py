@@ -315,3 +315,55 @@ def test_dont_know_slot_question_not_asked_again():
             break
         assert q.get("question") != walk_q["question"]
         c = cond(ai=[*[x.model_dump() for x in c.ai], {"q": q["question"], "choices": q.get("choices") or [], "a": None}])
+
+
+def test_bank_question_fits_want():
+    from app.question import agent, flow
+
+    food = cond(basic={"want": "맛있는 것"})
+    assert not flow.bank_fits_want(food, "sight") and flow.bank_fits_want(food, "walk") and flow.bank_fits_want(food, "budget")
+    assert flow.bank_fits_want(cond(), "sight")  # 하고 싶은 것을 모르면 다 돼요
+    # 에이전트가 맞지 않는 은행 질문(구경)을 내면 걸러요
+    sight = flow.BANK["sight"]
+    assert agent.bank_id_of("어떤 구경이 좋으세요?", ["궁 · 한옥", "시장 · 거리"]) == "sight"
+    assert agent.check_question(food, [], {"question": sight["question"], "choices": sight["choices"]}) is None
+    assert sight["question"] not in agent.look_bank(food, [])
+    # 은행 질문으로 갈 때도 맞는 질문만
+    items = flow.today_items(food) or []
+    assert flow.best_bank(food, items) in (None, *flow.ANY_WANT, *flow.Q4_POOL["맛있는 것"])
+
+
+def test_expanded_words_lead_rule_pick(monkeypatch):
+    from app.data import filter_places as fp
+    from app.llm import client as llm
+    from app.recommend.wish import place_text
+
+    s = loader.station_by_name("종로3가역")
+    c = cond(origin={"id": s["id"], "name": s["name"], "type": "역"}, extra={"wish": ["공룡 구경"]},
+             range={"oneWayMin": 45, "walk": "보통", "avoid": []})
+    words = ["자연사", "화석", "과학관"]
+    near = [x for x in fp.filter_places(c, config.now(), "맑음", []) if any(w in place_text(x["place"]) for w in words)]
+    assert near  # 이 출발지 · 범위에 과학관이 있어야 이 시험이 뜻이 있어요
+
+    async def fake(system, payload, schema, timeout, max_tokens=2000):
+        if "picks" in schema["properties"]:
+            return None  # AI 고르기는 실패 → 규칙으로
+        return {"words": words, "places": []}
+
+    monkeypatch.setattr(llm, "ask_json", fake)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
+    j = client.post("/recommend", json={"conditions": c.model_dump(), "visited": []}).json()
+    assert j["by"] == "rule" and j["expanded"]["words"] == words
+    top = j["candidates"][0]["place"]["name"]
+    assert any(w in top for w in words), top  # 넓힌 말(과학관)에 맞는 곳이 맨 앞
+
+
+@pytest.mark.parametrize("text,bad", [
+    ("이따 저녁에 우리 집 놀러 와요", True), ("제 집으로 오세요", True), ("집에 한번 놀러 와", True),
+    ("돈 좀 빌려줄 수 있어요? 꼭 갚을게요", True), ("5만 원만 보내 주세요", True), ("계좌번호 알려 드릴게요", True),
+    ("송금 좀 부탁해요", True),
+    ("집에 가서 좀 쉬어야겠어요", False), ("우리 집 근처예요", False), ("돈 아끼려고 걸어왔어요", False),
+    ("교통비가 많이 들어요", False), ("책 빌려 주세요", False), ("집이 어디세요? 저는 성수동이에요", False),
+])
+def test_chat_blocks_home_invite_and_money(text, bad):
+    assert chat_safety.has_banned_word(text) is bad
