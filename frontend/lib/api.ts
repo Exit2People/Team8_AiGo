@@ -91,9 +91,10 @@ export function questionsNext(conditions: Conditions, signal?: AbortSignal) {
 }
 
 /* ---------- 추천 · 장소 ---------- */
-export function recommend(conditions: Conditions, visited: string[], signal?: AbortSignal) {
+/** shown: 지난 며칠 보여 줬지만 고르지 않은 곳 (서버가 조금 뒤로 미뤄요) */
+export function recommend(conditions: Conditions, visited: string[], signal?: AbortSignal, shown: string[] = []) {
   if (isMock()) return m(() => mock.recommend(conditions), signal, 1800);
-  return call<RecommendResp>("/recommend", { method: "POST", body: { conditions, visited }, signal });
+  return call<RecommendResp>("/recommend", { method: "POST", body: { conditions, visited, shown }, signal });
 }
 
 export function placeOpen(id: string) {
