@@ -36,8 +36,8 @@ export default function Confirm({ f }: { f: FlowApi }) {
 
   return (
     <div className="content">
-      {/* 가방에 담을 때: 제목은 흐리게(0.2), 답 줄은 그 자리에서 가방 카드로 바뀌니 원래 줄은 감춰요 */}
-      <div style={{ opacity: packing ? 0.2 : 1, transition: "opacity .4s" }}>
+      {/* 가방에 담을 때: 진행 막대 · 제목은 완전히 사라지고, 답 줄은 그 자리에서 가방 카드로 바뀌니 원래 줄은 감춰요 */}
+      <div style={{ opacity: packing ? 0 : 1, visibility: packing ? "hidden" : undefined, transition: "opacity .3s, visibility 0s .3s" }}>
         <Progress on={4} text="확인" />
         <Title y={112}>{"이대로\n찾아볼까요?"}</Title>
       </div>
