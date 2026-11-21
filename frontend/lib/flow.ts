@@ -184,13 +184,14 @@ export function poseOf(step: Step, s: FlowState): string {
     case "kwait":
     case "agree":
     case "addr":
-    case "elogin":
     case "welcome":
       return step.k === "welcome" ? "sud" : step.k;
+    case "elogin":
+      return "login";
     case "restore":
       return "agree";
     case "signup":
-      return "su1";
+      return "my";
     case "my":
     case "myedit":
     case "mine":

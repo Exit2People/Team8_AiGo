@@ -278,16 +278,16 @@ export function Elogin({ f }: { f: FlowApi }) {
     <div className="content">
       <Title y={112}>{"이메일로\n로그인해요"}</Title>
       <Sub y={196}>{"가입할 때 쓴\n이메일이에요"}</Sub>
-      <Sheet y={300} />
-      <div className="abs" style={{ left: 24, top: 318, width: 345 }}>
+      <Sheet y={440} />
+      <div className="abs" style={{ left: 24, top: 446, width: 345 }}>
         <Field label="이메일" type="email" mode="email" value={email} onChange={setEmail} placeholder="damgo@aigo.kr" />
         <Field label="비밀번호" type="password" value={pw} onChange={setPw} onEnter={login} />
       </div>
-      <Primary y={560} disabled={busy || !email || !pw} onClick={login}>
+      <Primary y={636} disabled={busy || !email || !pw} onClick={login}>
         로그인
       </Primary>
       <Secondary
-        y={632}
+        y={708}
         onClick={() => {
           resetDraft();
           f.go({ k: "signup", i: 0 });
@@ -295,7 +295,7 @@ export function Elogin({ f }: { f: FlowApi }) {
       >
         처음이에요 · 가입하기
       </Secondary>
-      <Caption y={726} dark onClick={() => f.note("비밀번호 다시 정하기는 아직 준비 중이에요")}>
+      <Caption y={796} dark onClick={() => f.note("비밀번호 다시 정하기는 아직 준비 중이에요")}>
         비밀번호를 잊었어요
       </Caption>
     </div>
