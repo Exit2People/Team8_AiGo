@@ -41,7 +41,7 @@ export default function Screen({ f, step, at }: { f: FlowApi; step: Step; at?: n
     case "flex":
       return <Question key={`${key}-${step.i}`} f={f} kind="flex" i={step.i} edit={step.edit} />;
     case "confirm":
-      return <Confirm key={key} f={f} />;
+      return <Confirm key={key} f={f} auto={step.auto} step={step} />;
     case "result":
       return <Result key={key} f={f} />;
     case "route":

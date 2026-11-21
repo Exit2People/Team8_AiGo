@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { FlowApi } from "../Flow";
 import { CheckIcon } from "../Icons";
 import { Caption, Dots, Primary, Secondary, Sheet, Sub, Title } from "../ui";
@@ -261,6 +261,9 @@ function Field({
   );
 }
 
+/** 흐름 안에 쌓는 버튼: .btn은 원래 화면 좌표(absolute)라 이 화면에서만 제자리에 두어요 */
+const FLOW_BTN: CSSProperties = { position: "relative", left: "auto", top: "auto", width: "100%", flex: "none" };
+
 /** 이메일로 로그인 (4.1 elogin) */
 export function Elogin({ f }: { f: FlowApi }) {
   const [email, setEmail] = useState("");
@@ -284,25 +287,34 @@ export function Elogin({ f }: { f: FlowApi }) {
       <Title y={112}>{"이메일로\n로그인해요"}</Title>
       <Sub y={196}>{"가입할 때 쓴\n이메일이에요"}</Sub>
       <Sheet y={440} />
-      <div className="abs" style={{ left: 24, top: 440, width: 345 }}>
+      {/* 입력칸 · 버튼을 한 줄기로 쌓아요: 입력칸이 커져도(아이폰 16px · 글씨 크기 설정) 버튼이 겹치지 않고 아래로 밀려요 */}
+      <div className="abs" style={{ left: 24, top: 440, width: 345, display: "flex", flexDirection: "column" }}>
         <Field label="이메일" type="email" mode="email" value={email} onChange={setEmail} placeholder="damgo@aigo.kr" />
         <Field label="비밀번호" type="password" value={pw} onChange={setPw} onEnter={login} />
+        <button className="btn btn-primary" style={{ ...FLOW_BTN, marginTop: 18 }} disabled={busy || !email || !pw} onClick={login}>
+          <span>로그인</span>
+          <span className="arrow" aria-hidden="true">
+            →
+          </span>
+        </button>
+        <button
+          className="btn btn-secondary"
+          style={{ ...FLOW_BTN, marginTop: 10 }}
+          onClick={() => {
+            resetDraft();
+            f.go({ k: "signup", i: 0 });
+          }}
+        >
+          처음이에요 · 가입하기
+        </button>
+        <button
+          className="t-caption pre c-mute"
+          style={{ alignSelf: "center", marginTop: 6, height: 34, padding: "0 12px", textDecoration: "underline", textUnderlineOffset: 3 }}
+          onClick={() => f.note("비밀번호 다시 정하기는 아직 준비 중이에요")}
+        >
+          비밀번호를 잊었어요
+        </button>
       </div>
-      <Primary y={636} disabled={busy || !email || !pw} onClick={login}>
-        로그인
-      </Primary>
-      <Secondary
-        y={708}
-        onClick={() => {
-          resetDraft();
-          f.go({ k: "signup", i: 0 });
-        }}
-      >
-        처음이에요 · 가입하기
-      </Secondary>
-      <Caption y={796} dark onClick={() => f.note("비밀번호 다시 정하기는 아직 준비 중이에요")}>
-        비밀번호를 잊었어요
-      </Caption>
     </div>
   );
 }
