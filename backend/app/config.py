@@ -1,6 +1,8 @@
 """환경 변수와 설정 값. 숫자는 PROMPTS/SHARED/04_CONSTANTS.md 기준."""
 
 import os
+import re
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -12,12 +14,43 @@ def _find_root() -> Path:
     for p in [here, *here.parents]:
         if (p / "data" / "reference").is_dir():
             return p
-    return here.parent
+    return here.parent.parent
 
 
 ROOT = _find_root()
 load_dotenv(ROOT / ".env")
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
+KST = timezone(timedelta(hours=9))
+
+# 04_CONSTANTS 1절
+RADIUS_KM = (2.0, 5.0)
+MAX_AI_QUESTIONS = 3
+QUESTION_AI_TIMEOUT = 3.5
+OPEN_AI_TIMEOUT = 5.0
+RECOMMEND_TOTAL = 8.0
+RECOMMEND_AI_MAX = 6.0
+TRANSIT_TOP = 6
+TRANSIT_TIMEOUT = 2.5
+EXPAND_TIMEOUT = 3.5
+INFO_TIMEOUT = 1.5
+MAX_CANDIDATES = 3
+AI_POOL = 20
+AGENT_MAX_ROUNDS = 6
+AGENT_TIMEOUT = 30.0
+AGENT_RELAX_MIN = 20
+QUESTION_AGENT_TIMEOUT = 6.0
+QUESTION_AGENT_ROUNDS = 2
+QUESTION_JEV_NATURAL_MIN = 0.6
+QUESTION_JEV_FIT_MIN = 0.35
+JEV_TIMEOUT = 2.0
+JEV_MIN_YES = 0.5
+MIN_PER_TRANSFER = 5
+MIN_STAY = 60
+SESSION_DAYS = 30
+CONSENT_VERSION = "2026-11-20"
+RETENTION_DAYS = 90
+EST_SLACK_MIN = 15
 
 
 def env(name: str, default: str | None = None) -> str | None:
@@ -49,5 +82,83 @@ def has_ai() -> bool:
     return bool(env("ANTHROPIC_API_KEY") or env("ANTHROPIC_AUTH_TOKEN"))
 
 
+has_ai_key = has_ai
+
+
+def has_jev_key() -> bool:
+    return bool(env("TYPESAFE_API_KEY"))
+
+
 def has_jev() -> bool:
-    return flag("AIGO_JEV") and bool(env("TYPESAFE_API_KEY"))
+    return flag("AIGO_JEV") and has_jev_key()
+
+
+def jev_model() -> str:
+    return env("AIGO_JEV_MODEL", "jev-latest") or "jev-latest"
+
+
+def question_mode() -> str:
+    return env("AIGO_QUESTION", "graph") or "graph"
+
+
+def question_start() -> str:
+    return env("AIGO_QUESTION_START", "open") or "open"
+
+
+def agent_on() -> bool:
+    return env("AIGO_AGENT") == "1"
+
+
+def question_agent_on() -> bool:
+    return env("AIGO_QUESTION_AGENT") != "0"
+
+
+def question_jev_on() -> bool:
+    return env("AIGO_QUESTION_JEV") != "0"
+
+
+def chat_jev_on() -> bool:
+    return env("AIGO_CHAT_JEV") != "0"
+
+
+def transit_on() -> bool:
+    return (env("AIGO_TRANSIT", "on") or "on").lower() != "off"
+
+
+def sync_frozen() -> bool:
+    return flag("AIGO_SYNC_FREEZE")
+
+
+def public_url() -> str:
+    return (env("AIGO_PUBLIC_URL", "http://localhost:3000") or "").rstrip("/")
+
+
+def ref_dir() -> Path:
+    return Path(env("AIGO_REF_DIR") or ROOT / "data" / "reference")
+
+
+def db_path() -> Path:
+    return Path(env("AIGO_DB_PATH") or ROOT / "data" / "cache" / "aigo.db")
+
+
+def snapshot_path() -> Path:
+    return Path(env("AIGO_SNAPSHOT_PATH") or ROOT / "data" / "snapshot" / "aigo.db")
+
+
+def now() -> datetime:
+    """서울 시각. AIGO_NOW가 HH:MM이면 오늘 그 시각, ISO면 그 날짜 · 시각."""
+    real = datetime.now(KST)
+    raw = env("AIGO_NOW")
+    if not raw:
+        return real
+    raw = raw.strip()
+    try:
+        if "T" in raw:
+            dt = datetime.fromisoformat(raw)
+            return dt.replace(tzinfo=KST) if dt.tzinfo is None else dt.astimezone(KST)
+        m = re.fullmatch(r"(\d{1,2}):(\d{2})", raw)
+        if m:
+            return real.replace(hour=int(m.group(1)), minute=int(m.group(2)), second=0, microsecond=0)
+    except ValueError:
+        pass
+    return real
