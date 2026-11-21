@@ -21,10 +21,10 @@ def _now(monkeypatch):
     monkeypatch.setenv("AIGO_NOW", "2026-11-21T11:00")
 
 
-def cond(one_way: int = 45, **extra) -> dict:
+def cond(one_way: int = 45, walk: str = "보통", **extra) -> dict:
     return Conditions.model_validate({
         "origin": ORIGIN, "body": "보통이에요", "time": "한나절",
-        "range": {"oneWayMin": one_way, "walk": "보통", "avoid": []},
+        "range": {"oneWayMin": one_way, "walk": walk, "avoid": []},
         "basic": {"want": "구경하기", "walk": None, "inout": None},
         "extra": extra,
     }).model_dump()
@@ -115,3 +115,26 @@ def test_pick_ai_sees_relaxed_mark():
     item = {"place": {"id": "x", "name": "먼 곳", "kind": "공원"}, "route": {"totalMin": 60, "transfers": 0, "legs": []},
             "relaxed": True}
     assert "이동 범위" in for_ai(item)
+
+
+def test_open_direct_place_is_shown_instead_of_come_another_day(monkeypatch):
+    # 월요일: 경희대 자연사박물관이 열어요. AI가 안 골라도 그곳을 넣고, "다른 날 가세요"라고 하지 않아요
+    monkeypatch.setenv("AIGO_NOW", "2026-11-23T11:00")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
+    monkeypatch.setenv("AIGO_AGENT", "0")
+    from app.recommend.wish import direct_specific
+
+    async def no_expand(c, timeout):
+        return [], []
+
+    async def pick_other(pool, c, timeout):
+        # AI가 바람과 맞지 않는 곳만 골랐다고 쳐요
+        other = [x for x in pool if not direct_specific(x["place"], ["공룡 구경"]) and not x.get("overEstimate")]
+        return [{"id": x["place"]["id"], "reason": "구경하기 좋아요"} for x in other[:3]]
+
+    monkeypatch.setattr(ex, "expand", no_expand)
+    monkeypatch.setattr(svc, "pick_by_ai", pick_other)
+    monkeypatch.setattr(svc, "confirm_by_jev", lambda v, t=None: asyncio.sleep(0, v))
+    r = client.post("/recommend", json={"conditions": cond(walk="제한 없음", wish=["공룡 구경"]), "visited": []}).json()
+    assert any(direct_specific(c["place"], ["공룡 구경"]) for c in r["candidates"])
+    assert "wishLater" not in r

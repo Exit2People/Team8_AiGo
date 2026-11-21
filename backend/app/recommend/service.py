@@ -7,6 +7,7 @@ exp/agent-full: 에이전트를 쓰면 넓혀 다시 찾기(이동 범위 +20분
 import asyncio
 import logging
 import time
+from datetime import timedelta
 
 from app import config
 from app.data import filter_places as fp
@@ -47,6 +48,17 @@ def _open_days(closed: list[int]) -> str:
     return " · ".join(_DAYS[r[0]] if len(r) == 1 else f"{_DAYS[r[0]]}~{_DAYS[r[-1]]}" for r in runs)
 
 
+def _fits_on_open_day(p: dict, cond: Conditions, now) -> bool:
+    """다음에 여는 날 오전 11시라면 이 어르신 조건(걷는 양 · 이동 시간 · 실내외 …)을 통과하는지.
+    통과하지 못하는 곳(예: 역에서 15분 걸어야 하는데 걷기 '보통')은 "다른 날 가 보세요"라고 하지 않아요."""
+    closed = set(p.get("closed") or [])
+    for k in range(1, 8):
+        day = (now + timedelta(days=k)).replace(hour=11, minute=0, second=0, microsecond=0)
+        if day.weekday() not in closed:
+            return bool(fp.filter_places(cond, day, None, [], places=[p]))
+    return False
+
+
 def _wish_later(cond: Conditions, shown: list[dict], now) -> dict | None:
     """구체적인 바람(공룡 …)과 맞는 곳을 오늘 못 보여 주면, 맞는 곳이 언제 여는지 알려 다른 날 가시게 해요."""
     wish = unmatched_specific(list(cond.extra.wish), shown)
@@ -57,7 +69,7 @@ def _wish_later(cond: Conditions, shown: list[dict], now) -> dict | None:
         if p.get("kind") == "행사" or not direct_specific(p, [wish]):
             continue
         oi = fp.open_info(p, now)
-        if oi["ok"] is False and oi["why"] == "쉬는 날" and _open_days(p.get("closed") or []):
+        if oi["ok"] is False and oi["why"] == "쉬는 날" and _open_days(p.get("closed") or []) and _fits_on_open_day(p, cond, now):
             later.append(p)
     if not later:
         return {"wish": wish, "note": "말씀하신 것과 꼭 맞는 곳은 오늘 찾지 못했어요. 대신 갈 만한 곳을 골랐어요."}
@@ -72,6 +84,26 @@ def _wish_later(cond: Conditions, shown: list[dict], now) -> dict | None:
         "openDays": days,
         "note": f"{p['name']}{_eun(p['name'])} 오늘 쉬어요. {days}요일에 가 보세요. 오늘은 대신 갈 만한 곳을 골랐어요.",
     }
+
+
+def _ensure_direct(shown: list[dict], pool: list[dict], items: list[dict], cond: Conditions) -> list[dict]:
+    """구체적인 바람(공룡 …)과 바로 맞는 곳이 오늘 갈 수 있는 곳에 있는데 아무도 안 골랐으면, 그곳을 맨 앞에 넣어요.
+    (넣지 않으면 열려 있는 곳을 두고 "오늘 쉬어요, 다른 날 가세요"라고 잘못 안내해요)
+    AI에 넘긴 pool 은 종류별로 고루 뽑은 20곳 안팎이라 빠질 수 있어서, 길을 잰 pool 다음에 오늘 갈 수 있는 곳 전체(items)도 봐요."""
+    wish = unmatched_specific(list(cond.extra.wish), shown)
+    if not wish or not shown:
+        return shown
+    used = {v["item"]["place"]["id"] for v in shown}
+
+    def direct_in(xs: list[dict]) -> list[dict]:
+        return [x for x in xs if not x.get("overEstimate") and x["place"]["id"] not in used
+                and direct_specific(x["place"], [wish])]
+
+    direct = direct_in(pool) or direct_in(items)
+    best = pick_by_rule(direct, cond, 1) if direct else []
+    if not best:
+        return shown
+    return best + shown[: config.MAX_CANDIDATES - 1]
 
 
 def _fix_wish_reasons(shown: list[dict], cond: Conditions) -> list[dict]:
@@ -315,6 +347,7 @@ async def recommend(cond: Conditions, visited: list[str], shown: list[str] | Non
         return done({"candidates": [], "notFound": True, "why": "none"})
 
     shown = limit_revisits(shown, work_cond)  # 다녀온 곳은 1곳까지, 맨 앞은 새로운 곳
+    shown = _ensure_direct(shown, pool, items, work_cond)
     # 넓혀 찾은 곳이 하나라도 보이면 화면이 "조금 더 먼 곳까지 찾았어요"를 띄워요.
     # 코드 길 _relax 는 cond 자체를 넓혀서 relaxed 가 이미 True, 에이전트 relax_travel 은 곳마다 relaxed 를 달아요
     # (에이전트가 넓혀 찾은 곳을 코드 길 · 규칙 채우기가 골라도 여기서 잡혀요)

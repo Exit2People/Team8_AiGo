@@ -24,10 +24,10 @@ def _now(monkeypatch):
     monkeypatch.setenv("AIGO_NOW", "2026-11-21T11:00")
 
 
-def cond(**extra) -> Conditions:
+def cond(walk: str = "보통", **extra) -> Conditions:
     return Conditions.model_validate({
         "origin": ORIGIN, "body": "보통이에요", "time": "한나절",
-        "range": {"oneWayMin": 45, "walk": "보통", "avoid": []},
+        "range": {"oneWayMin": 45, "walk": walk, "avoid": []},
         "basic": {"want": "구경하기", "walk": None, "inout": None},
         "extra": {"who": "손주", "wish": ["공룡 구경"], **extra},
     })
@@ -78,7 +78,7 @@ def test_open_days_and_particle():
 
 def test_wish_later_names_closed_museum_and_open_days():
     shown = [item(place("성북어린이미술관 꿈자람", kind="미술관"))]
-    later = svc._wish_later(cond(), shown, config.now())
+    later = svc._wish_later(cond(walk="제한 없음"), shown, config.now())
     assert later is not None
     assert "자연사박물관" in later["place"]["name"]
     assert later["openDays"] == "월~금"
@@ -99,12 +99,16 @@ def test_reason_drops_dinosaur_for_unrelated_place():
 def test_recommend_dinosaur_on_saturday_without_key():
     # 키 없이 규칙 길로도 하수도과학관을 공룡 곳으로 내지 않고, 여는 요일을 알려요
     assert any("자연사" in (p.get("name") or "") for p in loader.places())
-    r = client.post("/recommend", json={"conditions": cond().model_dump(), "visited": []})
+    r = client.post("/recommend", json={"conditions": cond(walk="제한 없음").model_dump(), "visited": []})
     assert r.status_code == 200
     j = r.json()
     for c in j["candidates"]:
-        assert "공룡" not in c["reason"]
-    if not any(direct_specific(c["place"], ["공룡 구경"]) for c in j["candidates"]):
+        if not direct_specific(c["place"], ["공룡 구경"]):
+            assert "공룡" not in c["reason"]  # 공룡과 맞지 않는 곳에 공룡 이유를 붙이지 않아요
+        assert "하수" not in c["place"]["name"]
+    if any(direct_specific(c["place"], ["공룡 구경"]) for c in j["candidates"]):
+        assert "wishLater" not in j  # 맞는 곳을 보여 주면 "다른 날 가세요"라고 하지 않아요
+    else:
         assert j["wishLater"]["openDays"] == "월~금"
 
 
@@ -125,3 +129,11 @@ def test_agent_is_told_when_wish_has_no_place_today():
     assert qa.missing_wishes(c, items) == ["공룡 구경"]
     msg = qa.first_message(c, items)
     assert "대신" in msg["바람과 바로 맞는 곳 없음"] and "공룡 구경" in msg["바람과 바로 맞는 곳 없음"]
+
+
+def test_wish_later_skips_places_the_person_cannot_walk_to():
+    # 자연사박물관 두 곳은 역에서 15 · 18분 걸어요. 걷기 '보통'이면 여는 날에도 맞지 않아서 "다른 날 가세요"라고 하지 않아요
+    shown = [item(place("성북어린이미술관 꿈자람", kind="미술관"))]
+    later = svc._wish_later(cond(walk="보통"), shown, config.now())
+    assert later is not None and "place" not in later
+    assert "찾지 못했어요" in later["note"]
