@@ -1101,7 +1101,7 @@ html.ios .textbox {
   background: var(--g-coral-deep-fade);
 }
 
-/* 가운데 창: 폰 화면(393 × 852)을 90%로 줄여 띄워요. 패널이 있으면 남은 오른쪽 자리 가운데 */
+/* 가운데 창: 폰 화면(393 × 852)을 90%로 줄여 화면 가운데에 띄워요 */
 .lyModal {
   --bleed: 0px;
   position: absolute;
@@ -1121,8 +1121,11 @@ html.ios .textbox {
   transition: transform 520ms var(--ly-in), opacity 360ms var(--ly-in), left 520ms var(--ly-in);
   will-change: transform, opacity;
 }
+/* 패널이 있어도 창은 화면 가운데(left 0)에 둬요.
+   다만 화면이 좁아 패널과 겹치면, 패널 오른쪽 끝에서 24만큼 떨어지도록 필요한 만큼만 오른쪽으로 비켜요.
+   (창은 90%로 줄어 왼쪽에 19.65만큼 여백이 생겨요: 400 − 옆 빈자리 + 24 − 19.65 ≈ 405 − 옆 빈자리) */
 .lyModal.side {
-  left: 200px; /* (패널 오른쪽 끝 + 화면 오른쪽 끝) ÷ 2 − 창 폭 ÷ 2 : 화면 폭과 관계없이 늘 200이에요 */
+  left: max(0px, calc(405px - var(--ly-bleed, 0px)));
 }
 .lyModal.leaving {
   transform: translateY(18px) scale(0.87);
@@ -1152,7 +1155,7 @@ html.ios .textbox {
   z-index: 80;
 }
 .toast.lyToast.side {
-  left: 224px;
+  left: calc(max(0px, calc(405px - var(--ly-bleed, 0px))) + 24px);
   right: auto;
   width: 345px;
 }
