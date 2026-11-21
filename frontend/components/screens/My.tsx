@@ -30,7 +30,7 @@ function Line({ label, value, onClick, danger, disabled, on }: { label: string; 
       disabled={disabled}
       className="myLine"
       aria-current={on || undefined}
-      style={{ display: "flex", width: "100%", alignItems: "center", minHeight: 54, padding: "0 16px 0 20px", gap: 8, borderBottom: "1.5px solid var(--soft)", textAlign: "left" }}
+      style={{ display: "flex", width: "100%", alignItems: "center", minHeight: 54, padding: "0 16px 0 20px", gap: 8, textAlign: "left" }}
     >
       <span className="t-answer" style={{ flex: 1, color: danger ? "var(--coral-deep)" : undefined, fontSize: "calc(17px * var(--fs))" }}>
         {label}

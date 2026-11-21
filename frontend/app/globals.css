@@ -861,6 +861,22 @@ html.ios .textbox {
 .linkBtn { align-self: center; min-height: 44px; margin-top: 6px; padding: 0 12px; background: none; font-size: calc(13.5px * var(--fs)); font-weight: 600; color: var(--sub); }
 .linkBtn.under { margin-top: 14px; color: var(--mute); text-decoration: underline; text-underline-offset: 3px; font-size: calc(15px * var(--fs)); font-weight: 700; }
 
+/* 마이메뉴 줄 사이 구분선: 상자 안쪽으로 들여 그리고, 마지막 줄 밑에는 그리지 않아요
+   (예전엔 줄마다 밑줄이 상자 폭 끝까지 그어져, 마지막 밑줄이 둥근 상자 아래 모서리에 겹쳐 보였어요) */
+.myLine {
+  position: relative;
+}
+.myLine + .myLine::before {
+  content: "";
+  position: absolute;
+  left: 20px;
+  right: 16px;
+  top: 0;
+  height: 1.5px;
+  background: var(--soft);
+  pointer-events: none;
+}
+
 /* 내 정보 카드 (업적 · 게임) */
 .profileText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; word-break: keep-all; }
 .profileText b { font-size: calc(18px * var(--fs)); font-weight: 800; letter-spacing: -0.03em; }
@@ -1137,7 +1153,12 @@ html.ios .textbox {
   background: var(--soft);
 }
 .lyDrawer .myLine:first-child {
-  border-radius: 20px 20px 0 0;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+}
+.lyDrawer .myLine:last-child {
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
 }
 @media (hover: hover) {
   .lyDrawer .myLine:hover:not(:disabled) {
