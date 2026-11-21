@@ -151,6 +151,17 @@ CHAT_OK = ("등신대", "섹시하게 차려입", "자위대", "젖꼭지모양"
            "한녀석", "애미야", "개색깔", "정액제", "정액권", "정액요금")
 
 
+def slang_group(text: str) -> str | None:
+    """톡방 은어 표에 걸리면 그 갈래(성적 · 욕설 · 비하 · 범죄). 닉네임 거절 이유에도 써요."""
+    sq = _squash(clean(text))
+    for ok in CHAT_OK:
+        sq = sq.replace(ok.replace(" ", ""), "")
+    for name, words in CHAT_SLANG.items():
+        if any(w in sq for w in words):
+            return name
+    return None
+
+
 def _slang_hit(sq: str) -> bool:
     for ok in CHAT_OK:
         sq = sq.replace(ok.replace(" ", ""), "")
