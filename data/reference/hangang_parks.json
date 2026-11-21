@@ -1,0 +1,146 @@
+{
+ "_source": "이름: 서울시 미래한강본부 (https://hangang.seoul.go.kr) · 좌표 · 주소 · 전화: 카카오 장소 검색",
+ "homepage": "https://hangang.seoul.go.kr",
+ "parks": [
+  {
+   "id": "HG01",
+   "name": "광나루한강공원",
+   "gu": "강동구",
+   "address": "서울 강동구 천호동 481-9",
+   "lat": 37.54413379806722,
+   "lng": 127.1183161576554,
+   "phone": null,
+   "kakao": "http://place.map.kakao.com/17384968",
+   "category": "여행 > 공원",
+   "entrance": null
+  },
+  {
+   "id": "HG02",
+   "name": "잠실한강공원",
+   "gu": "송파구",
+   "address": "서울 송파구 잠실동 1-1",
+   "lat": 37.5177992564873,
+   "lng": 127.082357837214,
+   "phone": "02-3780-0511",
+   "kakao": "http://place.map.kakao.com/10952965",
+   "category": "여행 > 공원 > 도시근린공원",
+   "entrance": null
+  },
+  {
+   "id": "HG03",
+   "name": "뚝섬한강공원",
+   "gu": "광진구",
+   "address": "서울 광진구 자양동 427-6",
+   "lat": 37.5292974433415,
+   "lng": 127.06892112991,
+   "phone": "02-3780-0521",
+   "kakao": "http://place.map.kakao.com/8136085",
+   "category": "여행 > 공원 > 도시근린공원",
+   "entrance": null
+  },
+  {
+   "id": "HG04",
+   "name": "잠원한강공원",
+   "gu": "강남구",
+   "address": "서울 강남구 압구정동 386",
+   "lat": 37.5273338139916,
+   "lng": 127.019046713623,
+   "phone": "02-3780-0531",
+   "kakao": "http://place.map.kakao.com/17384905",
+   "category": "여행 > 공원 > 도시근린공원",
+   "entrance": null
+  },
+  {
+   "id": "HG05",
+   "name": "반포한강공원",
+   "gu": "서초구",
+   "address": "서울 서초구 반포동 115-5",
+   "lat": 37.51081992690844,
+   "lng": 126.99716104081192,
+   "phone": "02-3780-0541",
+   "kakao": "http://place.map.kakao.com/8142957",
+   "category": "여행 > 공원 > 도시근린공원",
+   "entrance": null
+  },
+  {
+   "id": "HG06",
+   "name": "이촌한강공원",
+   "gu": "용산구",
+   "address": "서울 용산구 이촌로72길 62",
+   "lat": 37.5172404421072,
+   "lng": 126.970526590861,
+   "phone": "02-3780-0551",
+   "kakao": "http://place.map.kakao.com/8625698",
+   "category": "여행 > 공원 > 도시근린공원",
+   "entrance": null
+  },
+  {
+   "id": "HG07",
+   "name": "여의도한강공원",
+   "gu": "영등포구",
+   "address": "서울 영등포구 여의도동 85",
+   "lat": 37.52638860108943,
+   "lng": 126.93512931714196,
+   "phone": "02-3780-0561",
+   "kakao": "http://place.map.kakao.com/10952963",
+   "category": "여행 > 공원 > 도시근린공원",
+   "entrance": null
+  },
+  {
+   "id": "HG08",
+   "name": "망원한강공원",
+   "gu": "마포구",
+   "address": "서울 마포구 마포나루길 467",
+   "lat": 37.5517245459018,
+   "lng": 126.900027640945,
+   "phone": "02-3780-0601",
+   "kakao": "http://place.map.kakao.com/8126939",
+   "category": "여행 > 공원 > 도시근린공원",
+   "entrance": {
+    "name": "망원한강공원 1주차장",
+    "lat": 37.54474456657767,
+    "lng": 126.91018715779663
+   }
+  },
+  {
+   "id": "HG09",
+   "name": "양화한강공원",
+   "gu": "영등포구",
+   "address": "서울 영등포구 노들로 221",
+   "lat": 37.5378083426973,
+   "lng": 126.90293825104,
+   "phone": "02-3780-0581",
+   "kakao": "http://place.map.kakao.com/8143124",
+   "category": "여행 > 공원",
+   "entrance": null
+  },
+  {
+   "id": "HG10",
+   "name": "난지한강공원",
+   "gu": "마포구",
+   "address": "서울 마포구 상암동 495-72",
+   "lat": 37.5670399093241,
+   "lng": 126.875607758973,
+   "phone": "02-3780-0611",
+   "kakao": "http://place.map.kakao.com/8126938",
+   "category": "여행 > 공원 > 도시근린공원",
+   "entrance": null
+  },
+  {
+   "id": "HG11",
+   "name": "강서한강공원",
+   "gu": "강서구",
+   "address": "서울 강서구 개화동 276-1",
+   "lat": 37.58837414475718,
+   "lng": 126.81312520288417,
+   "phone": "02-3780-0622",
+   "kakao": "http://place.map.kakao.com/8631818",
+   "category": "여행 > 공원 > 도시근린공원",
+   "entrance": {
+    "name": "강서한강공원 정곡나들목 진출입로2",
+    "lat": 37.584275488071604,
+    "lng": 126.8194642701628
+   }
+  }
+ ]
+}
