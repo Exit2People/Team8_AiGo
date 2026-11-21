@@ -91,9 +91,10 @@ export function questionsNext(conditions: Conditions, signal?: AbortSignal) {
 }
 
 /* ---------- 추천 · 장소 ---------- */
-export function recommend(conditions: Conditions, visited: string[], signal?: AbortSignal) {
+/** shown: 지난 며칠 보여 줬지만 고르지 않은 곳 (서버가 조금 뒤로 미뤄요) */
+export function recommend(conditions: Conditions, visited: string[], signal?: AbortSignal, shown: string[] = []) {
   if (isMock()) return m(() => mock.recommend(conditions), signal, 1800);
-  return call<RecommendResp>("/recommend", { method: "POST", body: { conditions, visited }, signal });
+  return call<RecommendResp>("/recommend", { method: "POST", body: { conditions, visited, shown }, signal });
 }
 
 export function placeOpen(id: string) {
@@ -171,6 +172,11 @@ export function logout() {
 export function deleteAccount() {
   if (isMock()) return m(() => mock.logout());
   return call<void>("/auth/account", { method: "DELETE", same: true });
+}
+/** 닉네임을 저장하기 전에 서버가 미리 확인해요. 안 되면 message에 이유 문장이 와요 */
+export function nicknameCheck(nickname: string) {
+  if (isMock()) return m(() => mock.nicknameCheck(nickname));
+  return call<{ ok: boolean; reason: string | null; message: string | null }>("/auth/nickname/check", { method: "POST", body: { nickname }, same: true });
 }
 export function patchProfile(p: Partial<{ homeDong1: string; homeDong2: string; name: string; nickname: string; age: string }>) {
   if (isMock()) return m(() => mock.patchProfile(p));

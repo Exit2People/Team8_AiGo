@@ -11,3 +11,10 @@ __pycache__
 .pytest_cache
 .ruff_cache
 data/cache/
+# 키 파일 변형 · 작업 도구 상태
+env
+*.env
+!.env.example
+.omc/
+.vscode/
+backend/evals/out/

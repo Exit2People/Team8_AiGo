@@ -7,13 +7,21 @@ KEYS = [
     "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "TYPESAFE_API_KEY", "SEOUL_OPENAPI_KEY",
     "DATA_GO_KR_SERVICE_KEY", "KAKAO_REST_API_KEY", "KAKAO_CLIENT_SECRET", "KAKAO_ADMIN_KEY",
     "KAKAO_JS_KEY", "TMAP_APP_KEY", "DATABASE_URL", "DATABASE_URL_DIRECT", "AIGO_SMTP_USER",
-    "AIGO_SMTP_PASSWORD", "AIGO_SESSION_SECRET", "AIGO_AGENT", "AIGO_JEV", "AIGO_NOW",
+    "AIGO_SMTP_PASSWORD", "AIGO_SESSION_SECRET", "AIGO_AGENT", "CRON_SECRET", "AIGO_JEV", "AIGO_NOW",
     "AIGO_SYNC_FREEZE", "AIGO_PUBLIC_URL", "AIGO_QUESTION", "AIGO_QUESTION_START",
 ]
 for _k in KEYS:
     os.environ[_k] = ""
 os.environ["AIGO_WEATHER"] = "맑음"
 os.environ["AIGO_QUESTION_AGENT"] = "0"
+os.environ["AIGO_AGENT"] = "0"
+os.environ["AIGO_QUESTION_VARIETY"] = "0"
+
+# 가짜 LLM 테스트가 라이브러리 불러오기 시간에 걸리지 않게 먼저 불러 둬요 (app/llm/warm.py)
+from app.llm import warm  # noqa: E402
+
+warm.start()
+warm._fut.result()
 
 
 @pytest.fixture(autouse=True)
@@ -22,6 +30,11 @@ def _clean_env(monkeypatch, tmp_path):
         monkeypatch.setenv(k, "")
     monkeypatch.setenv("AIGO_WEATHER", "맑음")
     monkeypatch.setenv("AIGO_QUESTION_AGENT", "0")
+    monkeypatch.setenv("AIGO_AGENT", "0")  # 브랜치 기본은 켜짐, 테스트는 필요할 때만 켜요
+    monkeypatch.setenv("AIGO_QUESTION_VARIETY", "0")  # 테스트는 늘 같은 질문 (켜는 테스트는 씨앗 고정)
+    from app.question import variety
+
+    variety.clear()
     # 매일 DB는 빈 임시 폴더 → 저장소 스냅숏을 읽어요
     monkeypatch.setenv("AIGO_DB_PATH", str(tmp_path / "cache" / "aigo.db"))
     from app.data import loader, weather

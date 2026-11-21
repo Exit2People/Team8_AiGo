@@ -1,3 +1,9 @@
+/* 글씨 크기 배율(lib/textSize.ts가 바꿔요). 제목(24 ~ 39px)은 절반만 커져요. 40px 이상 큰 제목은 그대로 */
+:root {
+  --fs: 1;
+  --fs-t: calc(1 + (var(--fs) - 1) * 0.5);
+}
+
 /* AI GO — 디자인 값 (design_handoff/3-tokens.json). .app 에서도 다시 계산해 테마 색(--coral)을 따라가요 */
 :root,
 .app {
@@ -121,10 +127,53 @@ a {
   text-decoration: none;
 }
 
+/* 키보드로 고른 버튼 · 링크만 파란 테두리. 화면이 바뀔 때 포커스를 받는 제목(tabindex=-1)에는 그리지 않아요 */
 :focus-visible {
-  outline: 3px solid var(--ink);
-  outline-offset: 2px;
+  outline: 4px solid #0047ff;
+  outline-offset: 3px;
 }
+h1:focus,
+[tabindex="-1"]:focus {
+  outline: none;
+}
+/* 배지 축하 화면: 열릴 때 '좋아요'에 자동으로 포커스가 가도 테두리를 그리지 않아요 */
+.celebrate :focus,
+.celebrate:focus {
+  outline: none;
+}
+/* 화면이 바뀔 때 코드로 초점만 옮기는 제목(tabIndex -1)은 테두리를 그리지 않아요 */
+[tabindex="-1"]:focus,
+[tabindex="-1"]:focus-visible {
+  outline: none;
+}
+
+/* 막대 색을 읽는 한순간만: 바탕 층(pointer-events: none)도 elementsFromPoint에 잡히게 (lib/bars.ts) */
+html.bar-probe *,
+html.bar-probe *::before,
+html.bar-probe *::after {
+  pointer-events: auto !important;
+}
+
+/* 아이폰 사파리 상태 표시줄 자리를 칠하는 띠 (Stage.tsx). 다른 기기에선 그리지 않아요 */
+.bar-band {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: max(env(safe-area-inset-top), 6px);
+  z-index: 100;
+  pointer-events: none;
+}
+html.ios .bar-band {
+  display: block;
+}
+/* 아이폰 사파리만: 화면 틀을 fixed가 아니라 absolute로. 화면 아래 끝에 고정 요소가 닿아 있으면 사파리가 그 요소(속 상자) 색으로
+   주소창 뒤를 칠해서 body 바탕색이 안 먹어요. html · body가 화면 높이에 고정(overflow: hidden)이라 크기 · 자리는 같아요 */
+html.ios .viewport {
+  position: absolute;
+}
+
 
 /* ---------- 화면 틀 ---------- */
 .viewport {
@@ -143,6 +192,8 @@ a {
   height: var(--canvas-h);
   zoom: var(--zoom);
   overflow: hidden;
+  /* 오른쪽에 걸친 큰 담고 그림 때문에 입력칸 · 버튼에 초점이 갈 때 화면이 옆으로 밀리지 않게, 스크롤 자체를 막아요 */
+  overflow: clip;
   background: var(--g-paper);
 }
 
@@ -221,20 +272,7 @@ a {
 .damgo-tail {
   background: var(--gray);
 }
-.damgo.wag .tail-1 {
-  animation: wag1 0.9s ease-in-out infinite alternate;
-}
-.damgo.wag .tail-2 {
-  animation: wag2 0.9s ease-in-out infinite alternate;
-}
-@keyframes wag1 {
-  from { translate: 0 0; scale: 1; }
-  to { translate: -10px -18px; scale: 1.08; }
-}
-@keyframes wag2 {
-  from { translate: 0 0; scale: 1; }
-  to { translate: 6px 10px; scale: 0.92; }
-}
+/* 꼬리 살랑은 components/useTail.ts가 translate · scale로 움직여요 (불규칙하게) */
 .damgo-paw {
   background: var(--ink);
 }
@@ -245,27 +283,27 @@ a {
 /* ---------- 글자 (3-design-tokens 글꼴 표) ---------- */
 .t-display { font-size: 66px; font-weight: 900; line-height: 1; letter-spacing: -0.05em; }
 .t-place { font-size: 56px; font-weight: 900; line-height: 1.05; letter-spacing: -0.05em; }
-.t-title { font-size: 32px; font-weight: 900; line-height: 1.22; letter-spacing: -0.045em; }
-.t-title-s { font-size: 29px; font-weight: 900; line-height: 1.22; letter-spacing: -0.045em; }
+.t-title { font-size: calc(32px * var(--fs-t)); font-weight: 900; line-height: 1.22; letter-spacing: -0.045em; }
+.t-title-s { font-size: calc(29px * var(--fs-t)); font-weight: 900; line-height: 1.22; letter-spacing: -0.045em; }
 .t-title-l { font-size: 56px; font-weight: 900; line-height: 1.15; letter-spacing: -0.05em; }
-.t-tile { font-size: 25px; font-weight: 800; line-height: 1.15; letter-spacing: -0.04em; }
-.t-button { font-size: 20px; font-weight: 800; line-height: 62px; letter-spacing: -0.02em; }
-.t-answer { font-size: 18px; font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; }
-.t-body { font-size: 17px; font-weight: 800; line-height: 46px; letter-spacing: -0.03em; }
-.t-sub { font-size: 16px; font-weight: 700; line-height: 1.45; }
-.t-caption { font-size: 13.5px; font-weight: 600; line-height: 1.3; }
-.t-label { font-size: 12px; font-weight: 800; line-height: 1; }
-.t-mono { font-family: var(--mono); font-size: 10.5px; font-weight: 700; line-height: 1; letter-spacing: 0.12em; }
-.t-lead { font-size: 19px; font-weight: 800; line-height: 1.3; letter-spacing: -0.02em; }
-.t-nav { font-size: 18px; font-weight: 800; line-height: 28px; letter-spacing: -0.02em; }
-.t-number { font-size: 15px; font-weight: 800; line-height: 30px; }
-.t-count { font-size: 14px; font-weight: 800; line-height: 1; }
-.t-chip { font-size: 13px; font-weight: 800; line-height: 28px; }
-.t-item { font-size: 12.5px; font-weight: 600; line-height: 1; }
-.t-tlabel { font-size: 10.5px; font-weight: 700; line-height: 1; letter-spacing: 0.04em; }
-.t-tmeta { font-size: 13px; font-weight: 600; line-height: 1; }
-.t-tinfo { font-size: 14px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
-.t-tvalue { font-size: 22px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; }
+.t-tile { font-size: calc(25px * var(--fs-t)); font-weight: 800; line-height: 1.15; letter-spacing: -0.04em; }
+.t-button { font-size: calc(20px * var(--fs-t)); font-weight: 800; line-height: 62px; letter-spacing: -0.02em; }
+.t-answer { font-size: calc(18px * var(--fs)); font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; }
+.t-body { font-size: calc(17px * var(--fs)); font-weight: 800; line-height: 46px; letter-spacing: -0.03em; }
+.t-sub { font-size: calc(16px * var(--fs)); font-weight: 700; line-height: 1.45; }
+.t-caption { font-size: calc(13.5px * var(--fs)); font-weight: 600; line-height: 1.3; }
+.t-label { font-size: calc(12px * var(--fs)); font-weight: 800; line-height: 1; }
+.t-mono { font-family: var(--mono); font-size: calc(10.5px * var(--fs)); font-weight: 700; line-height: 1; letter-spacing: 0.12em; }
+.t-lead { font-size: calc(19px * var(--fs)); font-weight: 800; line-height: 1.3; letter-spacing: -0.02em; }
+.t-nav { font-size: calc(18px * var(--fs)); font-weight: 800; line-height: 28px; letter-spacing: -0.02em; }
+.t-number { font-size: calc(15px * var(--fs)); font-weight: 800; line-height: 30px; }
+.t-count { font-size: calc(14px * var(--fs)); font-weight: 800; line-height: 1; }
+.t-chip { font-size: calc(13px * var(--fs)); font-weight: 800; line-height: 28px; }
+.t-item { font-size: calc(12.5px * var(--fs)); font-weight: 600; line-height: 1; }
+.t-tlabel { font-size: calc(10.5px * var(--fs)); font-weight: 700; line-height: 1; letter-spacing: 0.04em; }
+.t-tmeta { font-size: calc(13px * var(--fs)); font-weight: 600; line-height: 1; }
+.t-tinfo { font-size: calc(14px * var(--fs)); font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
+.t-tvalue { font-size: calc(22px * var(--fs)); font-weight: 900; line-height: 1; letter-spacing: -0.03em; }
 
 .pre { white-space: pre-line; }
 .c-sub { color: var(--sub); }
@@ -309,7 +347,7 @@ a {
   align-items: center;
   justify-content: space-between;
   padding: 0 22px;
-  font-size: 20px;
+  font-size: calc(20px * var(--fs-t)); /* 버튼은 칸 크기가 정해져 있어 절반만 커져요 */
   font-weight: 800;
   letter-spacing: -0.02em;
   transition: transform 0.12s ease, opacity 0.2s ease;
@@ -346,7 +384,7 @@ a {
   height: 28px;
   border-radius: 14px;
   padding: 0 12px;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   font-weight: 800;
   line-height: 28px;
   background: var(--ink);
@@ -364,7 +402,7 @@ a {
   top: 54px;
   height: 36px;
   padding: 0 8px;
-  font-size: 18px;
+  font-size: calc(18px * var(--fs));
   font-weight: 800;
   line-height: 36px;
   z-index: 40;
@@ -389,7 +427,7 @@ a {
   right: 110px;
   top: 58px;
   text-align: center;
-  font-size: 17px;
+  font-size: calc(17px * var(--fs));
   font-weight: 800;
   line-height: 28px;
   white-space: nowrap;
@@ -456,7 +494,7 @@ a {
   border-radius: 50%;
   background: var(--ink);
   color: var(--white);
-  font-size: 15px;
+  font-size: calc(15px * var(--fs));
   font-weight: 800;
   line-height: 30px;
   text-align: center;
@@ -482,15 +520,11 @@ a {
 }
 .tile .hint {
   display: block;
-  font-size: 14px;
+  font-size: calc(14px * var(--fs));
   font-weight: 700;
   letter-spacing: 0;
   opacity: 0.6;
   margin-top: 2px;
-}
-.tile.dontknow {
-  background: var(--soft);
-  box-shadow: none;
 }
 
 .row {
@@ -513,7 +547,7 @@ a {
   border-radius: 50%;
   background: var(--ink);
   color: var(--white);
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   font-weight: 800;
   line-height: 36px;
   text-align: center;
@@ -567,7 +601,7 @@ a {
   height: 52px;
   border-radius: var(--r-row);
   background: var(--white);
-  font-size: 18px;
+  font-size: calc(18px * var(--fs));
   font-weight: 800;
   letter-spacing: -0.03em;
   box-shadow: var(--sh-row);
@@ -576,7 +610,7 @@ a {
   transform: scale(0.97);
 }
 .grid4 .pick {
-  font-size: 16px;
+  font-size: calc(16px * var(--fs));
   padding: 0 2px;
 }
 
@@ -613,7 +647,7 @@ a {
   color: var(--white);
   border-radius: 16px;
   padding: 14px 18px;
-  font-size: 16px;
+  font-size: calc(16px * var(--fs));
   font-weight: 700;
   line-height: 1.45;
   box-shadow: var(--sh-tile);
@@ -639,7 +673,7 @@ a {
   border: 2px solid var(--ink);
   border-radius: 16px;
   padding: 14px 16px;
-  font-size: 20px;
+  font-size: calc(var(--in-base, 20px) * var(--fs));
   font-weight: 700;
   line-height: 1.4;
   resize: none;
@@ -649,6 +683,12 @@ a {
 }
 .textbox::placeholder {
   color: var(--mute);
+}
+/* 아이폰은 그려진 글자가 16px보다 작은 입력칸을 누르면 화면을 확대해요.
+   화면 전체를 zoom으로 줄이니까 아이폰에서만 "원래 크기 × 글씨 배율"과 "16px ÷ zoom" 중 큰 값을 써요.
+   입력칸 기본 크기는 --in-base(px)로 넘겨요 (--fs는 글씨 크기 설정 배율이에요). */
+html.ios .textbox {
+  font-size: max(calc(var(--in-base, 20px) * var(--fs)), calc(16px / var(--zoom, 1)));
 }
 
 .card {
@@ -661,9 +701,13 @@ a {
   padding: 18px 20px;
 }
 
+/* 어두운 막: 웹처럼 화면이 넓으면 앱 배경(--bleed)까지 덮어요. 폰에서는 --bleed가 0이라 그대로예요 */
 .modal-bg {
   position: absolute;
-  inset: 0;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--bleed) * -1);
+  right: calc(var(--bleed) * -1);
   z-index: 90;
   background: rgba(17, 17, 17, 0.45);
   animation: fadeIn 0.2s ease both;
@@ -675,7 +719,8 @@ a {
   bottom: 0;
   background: var(--white);
   border-radius: var(--r-sheet) var(--r-sheet) 0 0;
-  padding: 28px 24px 36px;
+  /* 흰 판은 앱 바닥처럼 화면 폭 전체로, 안의 내용은 가운데 폰 폭(393)에 맞춰요 */
+  padding: 28px calc(24px + var(--bleed)) 36px;
   box-shadow: var(--sh-sheet);
 }
 .modal .btn {
@@ -732,6 +777,41 @@ a {
   to { opacity: 1; transform: none; }
 }
 
+/* 가방 담기: 카드가 들어갈 때마다 가방이 살짝 출렁해요 (Pack.tsx) — 다시 틀려고 이름 두 개를 번갈아 써요 */
+.pack-bump0 {
+  animation: packBump0 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.pack-bump1 {
+  animation: packBump1 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes packBump0 {
+  0% { transform: none; }
+  40% { transform: scale(1.04, 0.96); }
+  100% { transform: none; }
+}
+@keyframes packBump1 {
+  0% { transform: none; }
+  40% { transform: scale(1.04, 0.96); }
+  100% { transform: none; }
+}
+/* 가방이 프린터가 될 때 똑딱이가 표시등으로 바뀌며 끝 무렵 사라져요 (Pack.tsx, 0.85초) */
+.pack-led {
+  animation: packLed 0.85s linear forwards;
+}
+@keyframes packLed {
+  0%, 70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+/* 쏙 · 딸깍 소리 글자: 톡 튀어나왔다가 사라져요 */
+.pack-sound {
+  animation: packSound 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes packSound {
+  0% { opacity: 0; transform: scale(0.6); }
+  30% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 1; transform: none; }
+}
+
 /* 움직임 줄이기 */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -749,3 +829,137 @@ a {
   animation-iteration-count: 1 !important;
   transition-duration: 0.001ms !important;
 }
+
+/* ==========================================================
+   담고 달리기 · 랭킹 · 업적 배지
+   이 프로젝트의 .btn은 position:absolute라서, 아래 묶음 안에서는 흐름대로(relative) 놓아요.
+   ========================================================== */
+.app { --spring: cubic-bezier(0.22, 1, 0.36, 1); }
+.run .btn, .rankWrap .btn, .badgeSheet .btn, .celebrate .btn {
+  position: relative; flex: none; width: 100%; height: 62px; padding: 0 22px; border-radius: 18px;
+  font-size: calc(20px * var(--fs)); font-weight: 800; letter-spacing: -0.02em; white-space: nowrap;
+}
+.btn.dark { background: var(--ink); color: #fff; }
+.btn.white { background: #fff; color: var(--ink); box-shadow: var(--sh-row); }
+.btn.soft { background: var(--soft); color: var(--ink); }
+.btn.center { justify-content: center; }
+.btn.center .arrow { margin-left: 8px; }
+.gapBtn { margin-top: 20px; }
+.caption { margin: 14px 0 0; text-align: center; font-size: calc(13.5px * var(--fs)); font-weight: 600; line-height: 1.3; color: var(--sub); }
+.caption.mute { color: var(--mute); }
+.srOnly { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.linkBtn { align-self: center; min-height: 44px; margin-top: 6px; padding: 0 12px; background: none; font-size: calc(13.5px * var(--fs)); font-weight: 600; color: var(--sub); }
+.linkBtn.under { margin-top: 14px; color: var(--mute); text-decoration: underline; text-underline-offset: 3px; font-size: calc(15px * var(--fs)); font-weight: 700; }
+
+/* 내 정보 카드 (업적 · 게임) */
+.profileText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; word-break: keep-all; }
+.profileText b { font-size: calc(18px * var(--fs)); font-weight: 800; letter-spacing: -0.03em; }
+.profileText span { font-size: calc(13.5px * var(--fs)); font-weight: 600; line-height: 1.3; color: var(--mute); }
+.pillWhite { flex: none; height: 32px; padding: 0 16px; border-radius: 16px; background: #fff; color: var(--ink); font-size: calc(13px * var(--fs)); font-weight: 800; line-height: 32px; }
+.badgeCard, .gameCard { display: flex; align-items: center; gap: 16px; width: 100%; min-height: 92px; padding: 16px; border-radius: 24px; background: #fff; box-shadow: var(--sh-row); text-align: left; }
+.badgeCard .pillWhite, .gameCard .pillWhite { background: var(--ink); color: #fff; }
+.bcThumbs { flex: none; display: flex; align-items: center; width: 100px; height: 56px; } /* 배지 3개를 겹쳐도(52 + 22 + 22) 글자를 가리지 않게 */
+.bcThumbs img { width: 52px; height: 52px; margin-right: -30px; filter: drop-shadow(0 2px 3px rgba(17, 17, 17, 0.12)); }
+.gcThumb { flex: none; display: block; width: 58px; height: 58px; }
+
+/* 담고 달리기 */
+.run { display: flex; flex-direction: column; margin-top: 4px; }
+.runHud { display: flex; align-items: flex-end; justify-content: space-between; margin: 0 4px 10px; }
+.runNow { font-size: calc(17px * var(--fs)); font-weight: 800; letter-spacing: -0.03em; }
+.runNow b { margin-right: 2px; font-size: calc(34px * var(--fs-t)); font-weight: 900; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.runBest { position: relative; height: 34px; padding: 0 6px 0 14px; border-radius: 17px; background: #fff; box-shadow: var(--sh-row); font-size: calc(14px * var(--fs)); font-weight: 700; line-height: 34px; color: var(--mute); }
+.runBest b { font-weight: 900; color: var(--ink); }
+.runBest::after { content: ""; position: absolute; inset: -6px -4px; }
+.runBest:disabled { cursor: default; opacity: 0.6; }
+.runBestGo { display: inline-block; height: 24px; margin-left: 8px; padding: 0 10px; border-radius: 12px; background: var(--ink); color: #fff; font-size: calc(13px * var(--fs)); font-weight: 800; line-height: 24px; vertical-align: 1px; }
+.runRank { font-style: normal; font-size: calc(14.5px * var(--fs)); font-weight: 800; color: var(--coral-deep); }
+.run .btn.runRankBtn { height: 56px; margin-top: 10px; border-radius: 18px; font-size: calc(19px * var(--fs)); }
+.runCard { position: relative; flex: none; height: 300px; border-radius: 24px; overflow: hidden; background: var(--coral); box-shadow: var(--sh-tile); touch-action: manipulation; cursor: pointer; }
+.runCanvas { display: block; width: 100%; height: 100%; }
+.runOver { position: absolute; left: 0; right: 0; top: 34px; margin: 0 auto; width: 270px; padding: 16px 18px 18px; border-radius: 20px; background: #fff; box-shadow: var(--sh-row); text-align: center; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.runOver b { font-size: calc(20px * var(--fs)); font-weight: 900; letter-spacing: -0.04em; }
+.runOver span { font-size: calc(15px * var(--fs)); font-weight: 700; line-height: 1.4; color: var(--mute); white-space: pre-line; }
+.runOver .runBig { font-size: calc(34px * var(--fs-t)); letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
+.runOver.pop { top: 12px; padding: 12px 16px 14px; gap: 3px; animation: cbIn 420ms var(--spring) both; }
+.runOver.pop .runBig { font-size: calc(30px * var(--fs-t)); }
+.runChip { position: absolute; right: -6px; top: -10px; height: 28px; padding: 0 12px; border-radius: 14px; background: var(--amber); color: var(--ink); font-style: normal; font-size: calc(13px * var(--fs)); font-weight: 900; line-height: 28px; transform: rotate(6deg); }
+.run .btn.runBtn, .rankWrap .btn.runBtn { height: 76px; margin-top: 16px; border-radius: 22px; font-size: calc(26px * var(--fs-t)); font-weight: 900; }
+.btn.runBtn.jump { box-shadow: inset 0 -6px 0 var(--coral); }
+.btn.runBtn.jump:active { transform: translateY(2px); box-shadow: inset 0 -3px 0 var(--coral); }
+
+/* 랭킹 */
+.rankWrap { display: flex; flex-direction: column; }
+.rankList { flex: 0 1 auto; min-height: 0; list-style: none; margin: 4px -2px 0; padding: 2px 2px 12px; display: flex; flex-direction: column; gap: 8px; }
+.rankRow { flex: none; display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 0 18px 0 14px; border-radius: 18px; background: #fff; box-shadow: var(--sh-row); }
+.rankNo { flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--soft); font-size: calc(16px * var(--fs)); font-weight: 900; line-height: 36px; text-align: center; }
+.rankRow.top1 .rankNo { background: var(--amber); }
+.rankRow.top2 .rankNo { background: var(--coral); color: #fff; }
+.rankRow.top3 .rankNo { background: var(--ink); color: #fff; }
+.rankName { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; font-size: calc(18px * var(--fs)); font-weight: 800; letter-spacing: -0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rankName i { flex: none; height: 22px; padding: 0 8px; border-radius: 11px; background: var(--coral); color: #fff; font-style: normal; font-size: calc(12px * var(--fs)); font-weight: 900; line-height: 22px; }
+.rankSteps { flex: none; font-size: calc(14px * var(--fs)); font-weight: 700; color: var(--mute); }
+.rankSteps b { margin-right: 1px; font-size: calc(19px * var(--fs)); font-weight: 900; color: var(--ink); font-variant-numeric: tabular-nums; }
+.rankRow.me { background: var(--ink); color: #fff; box-shadow: none; }
+.rankRow.me .rankSteps, .rankRow.me .rankSteps b { color: #fff; }
+.rankRow.me .rankNo { background: #fff; color: var(--ink); }
+.rankRow.me.top1 .rankNo { background: var(--amber); }
+.rankRow.me.top2 .rankNo, .rankRow.me.top3 .rankNo { box-shadow: 0 0 0 2px #fff; }
+.rankGap { flex: none; text-align: center; font-size: calc(20px * var(--fs)); font-weight: 900; line-height: 1; color: var(--mute); }
+.rankEmpty { padding: 24px 12px; text-align: center; font-size: calc(16px * var(--fs)); font-weight: 700; color: var(--mute); }
+.rankState { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; padding: 20px; border-radius: 24px; background: #fff; box-shadow: var(--sh-row); }
+.rankState b { font-size: calc(20px * var(--fs)); font-weight: 900; letter-spacing: -0.04em; }
+.rankState span { font-size: calc(15px * var(--fs)); font-weight: 700; color: var(--mute); }
+.rankGuest { flex: none; min-height: 76px; margin-top: 4px; }
+
+/* 업적 모아 보기 */
+.badgeBoard { display: flex; flex-direction: column; gap: 18px; margin-top: 4px; padding: 2px 2px 20px; margin-left: -2px; margin-right: -2px; }
+.bbTier { padding: 18px 14px 16px; border-radius: 24px; background: #fff; box-shadow: var(--sh-row); }
+.bbHead { display: flex; align-items: baseline; gap: 8px; margin: 0 4px 12px; }
+.bbHead b { font-size: calc(20px * var(--fs)); font-weight: 900; letter-spacing: -0.04em; }
+.bbHead i { font-style: normal; font-size: calc(14px * var(--fs)); font-weight: 700; color: var(--mute); }
+.bbHead em { margin-left: auto; font-style: normal; font-size: calc(15px * var(--fs)); font-weight: 800; color: var(--coral-deep); }
+.bbGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 4px; }
+.bbItem { background: none; box-shadow: none; display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 132px; padding: 6px 2px 8px; border-radius: 16px; }
+.bbItem:active { background: var(--soft); }
+.bbItem img { width: 84px; height: 84px; }
+.bbItem b { font-size: calc(14.5px * var(--fs)); font-weight: 800; letter-spacing: -0.03em; line-height: 1.2; text-align: center; word-break: keep-all; }
+.bbItem.locked img { filter: grayscale(1); opacity: 0.35; }
+.bbItem.secret img { filter: none; opacity: 1; }
+.bbItem.locked b { color: var(--mute); }
+.bbProg { position: relative; display: block; width: 72px; height: 16px; border-radius: 8px; background: var(--soft); overflow: hidden; }
+.bbProg i { position: absolute; inset: 0 auto 0 0; background: var(--coral); border-radius: 8px; }
+.bbProg em { position: relative; display: block; font-style: normal; font-size: calc(11.5px * var(--fs)); font-weight: 800; line-height: 16px; text-align: center; color: var(--ink); }
+
+/* 배지 자세히 · 얻은 순간 축하 */
+.dim { position: absolute; z-index: 95; top: 0; bottom: 0; left: calc(var(--bleed) * -1); right: calc(var(--bleed) * -1); display: flex; align-items: flex-end; background: rgba(17, 17, 17, 0.45); animation: fadeIn 300ms ease-out both; }
+.dim.center { align-items: center; justify-content: center; padding: 0 calc(20px + var(--bleed)); }
+.menuSheet { width: 100%; padding: 26px calc(24px + var(--bleed)) 32px; border-radius: 30px 30px 0 0; background: #fff; display: flex; flex-direction: column; animation: sheetUp 450ms var(--spring) both; }
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
+.handle { display: block; align-self: center; width: 40px; height: 5px; margin: -12px 0 16px; border-radius: 3px; background: var(--gray); }
+.menuTitle { margin: 0; font-size: calc(29px * var(--fs-t)); font-weight: 900; line-height: 1.22; letter-spacing: -0.045em; white-space: pre-line; }
+.sheetSub { margin: 8px 0 16px; font-size: calc(16px * var(--fs)); font-weight: 700; line-height: 1.45; color: var(--mute); white-space: pre-line; }
+.badgeSheet { align-items: center; text-align: center; }
+.badgeSheet .menuTitle, .badgeSheet .sheetSub { align-self: stretch; text-align: center; }
+.bsImg { width: 168px; height: 168px; margin: 4px 0 10px; }
+.bsImg.locked { filter: grayscale(1); opacity: 0.35; }
+.bsTier { display: inline-block; height: 28px; padding: 0 12px; border-radius: 14px; font-size: calc(13px * var(--fs)); font-weight: 800; line-height: 28px; margin-bottom: 10px; }
+.bsTier.t1 { background: var(--coral); color: #fff; }
+.bsTier.t2 { background: var(--ink); color: #fff; }
+.bsTier.t3 { background: var(--amber); color: var(--ink); }
+.bsTier.t4 { background: var(--ink); color: var(--amber); }
+.bsDone { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0 0 22px; font-size: calc(16px * var(--fs)); font-weight: 800; }
+.bsDone.muted { color: var(--mute); }
+.bsProg { align-self: stretch; display: flex; align-items: center; gap: 12px; margin: 0 0 22px; }
+.bsProg span { position: relative; flex: 1; height: 14px; border-radius: 7px; background: var(--soft); overflow: hidden; }
+.bsProg i { position: absolute; inset: 0 auto 0 0; border-radius: 7px; background: var(--coral); }
+.bsProg em { font-style: normal; font-size: calc(18px * var(--fs)); font-weight: 900; }
+.celebrate { position: relative; width: 100%; max-width: 353px; padding: 28px 22px 22px; border-radius: 30px; background: #fff; display: flex; flex-direction: column; align-items: center; text-align: center; overflow: hidden; animation: cbIn 520ms var(--spring) both; }
+.cbRays { position: absolute; top: -90px; left: 50%; width: 420px; height: 420px; margin-left: -210px; border-radius: 50%; background: repeating-conic-gradient(from 0deg, rgba(242, 163, 58, 0.16) 0deg 10deg, transparent 10deg 30deg); animation: cbSpin 14s linear infinite; pointer-events: none; }
+.cbImg { position: relative; width: 190px; height: 190px; margin-bottom: 8px; animation: cbPop 700ms var(--spring) 120ms both; }
+.celebrate .bsTier { position: relative; }
+.cbKicker { position: relative; margin: 0; font-size: calc(16px * var(--fs)); font-weight: 800; color: var(--coral-deep); }
+.cbName { position: relative; margin: 4px 0 6px; font-size: calc(34px * var(--fs-t)); font-weight: 900; letter-spacing: -0.05em; line-height: 1.15; }
+.cbText { position: relative; margin: 0 0 22px; font-size: calc(17px * var(--fs)); font-weight: 700; line-height: 1.45; color: #4a4642; white-space: pre-line; word-break: keep-all; }
+@keyframes cbIn { from { opacity: 0; transform: translateY(40px) scale(0.92); } to { opacity: 1; transform: none; } }
+@keyframes cbPop { 0% { transform: scale(0.2) rotate(-25deg); opacity: 0; } 60% { transform: scale(1.12) rotate(6deg); opacity: 1; } 100% { transform: none; } }
+@keyframes cbSpin { to { transform: rotate(360deg); } }

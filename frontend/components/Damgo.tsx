@@ -1,7 +1,8 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useMemo, useRef, type CSSProperties } from "react";
 import type { Pose } from "@/lib/poses";
+import { useTail, type TailGeom, type TailMode } from "./useTail";
 
 /** 담고 머리 원본 (design_handoff/1-svg/damgo_head.svg, 190×170, 중심 95·97) */
 export function DamgoHeadSvg({ look = [0, 0] }: { look?: [number, number] }) {
@@ -52,16 +53,22 @@ function paw([cx, cy, rx, ry, rot, on]: Pose["p"][number]): CSSProperties {
   };
 }
 
-/** 꼬리 + 머리 (화면 내용 뒤) */
-export function DamgoBack({ pose, blink, wag }: { pose: Pose; blink?: boolean; wag?: boolean }) {
+/** 꼬리 + 머리 (화면 내용 뒤). wag: 고민하는 화면이라 꼬리를 계속 흔들어요. still: 움직임 끄기 */
+export function DamgoBack({ pose, blink, wag, still }: { pose: Pose; blink?: boolean; wag?: boolean; still?: boolean }) {
+  const baseRef = useRef<HTMLDivElement>(null);
+  const tipRef = useRef<HTMLDivElement>(null);
+  const mode: TailMode = still || pose.x ? "off" : wag ? "think" : "idle";
+  const b = pose.t[0];
+  const t = pose.t[1] ?? b;
+  const geom = useMemo<TailGeom>(
+    () => ({ base: [b[0], b[1], b[2]], tip: [t[0], t[1], t[2]], head: [pose.h[0], pose.h[1]] }),
+    [b, t, pose.h],
+  );
+  useTail(baseRef, tipRef, mode, geom);
   return (
-    <div
-      className={`damgo${blink || pose.e[2] ? " blink" : ""}${wag ? " wag" : ""}`}
-      style={{ opacity: pose.x ? 0 : 1 }}
-      aria-hidden="true"
-    >
+    <div className={`damgo${blink || pose.e[2] ? " blink" : ""}`} style={{ opacity: pose.x ? 0 : 1 }} aria-hidden="true">
       {pose.t.map(([cx, cy, d, on], i) => (
-        <div key={i} className={`damgo-tail tail-${i + 1}`} style={circle(cx, cy, d, on)} />
+        <div key={i} ref={i === 0 ? baseRef : i === 1 ? tipRef : undefined} className={`damgo-tail tail-${i + 1}`} style={circle(cx, cy, d, on)} />
       ))}
       <div className="damgo-head" style={headStyle(pose)}>
         <DamgoHeadSvg look={[pose.e[0], pose.e[1]]} />

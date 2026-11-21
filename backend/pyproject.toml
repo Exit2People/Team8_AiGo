@@ -13,6 +13,7 @@ dependencies = [
   "langchain-anthropic>=1.7.10",
   "httpx>=0.28.1",
   "psycopg[binary]>=3.2",
+  "korcen==1.0.3",
 ]
 
 [dependency-groups]

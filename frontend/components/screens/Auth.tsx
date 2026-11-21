@@ -1,18 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { FlowApi } from "../Flow";
 import { CheckIcon } from "../Icons";
 import { Caption, Dots, Primary, Secondary, Sheet, Sub, Title } from "../ui";
-import Mic, { cleanName, cleanNick } from "../Mic";
+import Mic, { cleanNick } from "../Mic";
 import HomePicker from "./HomePicker";
 import * as api from "@/lib/api";
 import { discardDevice, restoreDevice } from "@/lib/device";
+import { nickProblem, randomNick } from "@/lib/nick";
 
 /** 이메일 가입 중인 값 (화면 사이에서 이어져요, 기기에 남기지 않아요) */
-const draft = { email: "", pw: "", pw2: "", code: "", name: "", nick: "", age: "", home: "" as string, provider: "kakao" as "kakao" | "email" };
+const draft = { email: "", pw: "", pw2: "", code: "", nick: "", age: "", home: "" as string, provider: "kakao" as "kakao" | "email" };
 function resetDraft() {
-  Object.assign(draft, { email: "", pw: "", pw2: "", code: "", name: "", nick: "", age: "", home: "", provider: "email" });
+  Object.assign(draft, { email: "", pw: "", pw2: "", code: "", nick: "", age: "", home: "", provider: "email" });
 }
 
 /** 카카오에서 확인 중 (4.1 kwait) */
@@ -55,7 +56,7 @@ function Bullets({ y, items }: { y: number; items: string[] }) {
           <span style={{ flex: "none", marginTop: 1 }}>
             <CheckIcon size={22} />
           </span>
-          <span className="t-answer" style={{ lineHeight: 1.35, fontSize: 16 }}>
+          <span className="t-answer" style={{ lineHeight: 1.35, fontSize: "calc(16px * var(--fs))" }}>
             {t}
           </span>
         </div>
@@ -80,7 +81,7 @@ export function Agree({ f }: { f: FlowApi }) {
           "다녀온 곳 (여기로 갈게요를 누른 곳)",
           "올린 우표 사진과 한 줄",
           "카카오 회원 번호",
-          "내 정보에 적은 이름 · 닉네임 · 나이",
+          "내 정보에 적은 닉네임 · 나이",
           "탈퇴하면 3개월 보관 뒤 완전히 지워요 (게임 기록은 바로 지워요)",
         ]}
       />
@@ -97,9 +98,10 @@ export function Agree({ f }: { f: FlowApi }) {
   );
 }
 
-function HomeRow({ y, value, onPick }: { y: number; value: string; onPick: () => void }) {
+function HomeRow({ y, value, onPick, inFlow }: { y: number; value: string; onPick: () => void; inFlow?: boolean }) {
   return (
-    <div className="row abs" style={{ left: 24, top: y, minHeight: 64 }}>
+    // inFlow: 이미 왼쪽 여백이 있는 칸 안에 놓을 때는 흐름대로(왼쪽 여백을 두 번 넣지 않게)
+    <div className={inFlow ? "row" : "row abs"} style={inFlow ? { width: "100%", minHeight: 64 } : { left: 24, top: y, minHeight: 64 }}>
       <span className="main">
         <span className="t-item c-mute" style={{ display: "block" }}>
           사는 곳 · 비워도 돼요
@@ -182,7 +184,7 @@ export function Restore({ f }: { f: FlowApi }) {
       <p className="abs t-label c-deep" style={{ left: 24, top: 352 }}>
         불러오면 돌아오는 것
       </p>
-      <Bullets y={366} items={[info?.nickname ? `내 정보 (닉네임 ${info.nickname})` : "내 정보 (이름 · 닉네임 · 나이 · 사는 곳)", "이 폰에 남긴 다녀온 곳 · 우표 · 업적"]} />
+      <Bullets y={366} items={[info?.nickname ? `내 정보 (닉네임 ${info.nickname})` : "내 정보 (닉네임 · 나이 · 사는 곳)", "이 폰에 남긴 다녀온 곳 · 우표 · 업적"]} />
       <p className="abs t-label c-deep" style={{ left: 24, top: 470 }}>
         돌아오지 않는 것
       </p>
@@ -237,7 +239,10 @@ function Field({
 }: { label: string; value: string; onChange: (v: string) => void; type?: string; mode?: "email" | "numeric" | "text"; max?: number; placeholder?: string; onEnter?: () => void }) {
   return (
     <label style={{ display: "block", marginTop: 14 }}>
-      <span className="t-label c-deep">{label}</span>
+      {/* 블록으로 둬야 이름표가 글자 높이만큼만 자리를 차지해요(줄 안에 두면 위아래로 더 커져 아래 버튼과 겹쳐요) */}
+      <span className="t-label c-deep" style={{ display: "block" }}>
+        {label}
+      </span>
       <input
         className="textbox"
         style={{ marginTop: 6, height: 58 }}
@@ -255,6 +260,9 @@ function Field({
     </label>
   );
 }
+
+/** 흐름 안에 쌓는 버튼: .btn은 원래 화면 좌표(absolute)라 이 화면에서만 제자리에 두어요 */
+const FLOW_BTN: CSSProperties = { position: "relative", left: "auto", top: "auto", width: "100%", flex: "none" };
 
 /** 이메일로 로그인 (4.1 elogin) */
 export function Elogin({ f }: { f: FlowApi }) {
@@ -279,78 +287,108 @@ export function Elogin({ f }: { f: FlowApi }) {
       <Title y={112}>{"이메일로\n로그인해요"}</Title>
       <Sub y={196}>{"가입할 때 쓴\n이메일이에요"}</Sub>
       <Sheet y={440} />
-      <div className="abs" style={{ left: 24, top: 446, width: 345 }}>
+      {/* 입력칸 · 버튼을 한 줄기로 쌓아요: 입력칸이 커져도(아이폰 16px · 글씨 크기 설정) 버튼이 겹치지 않고 아래로 밀려요 */}
+      <div className="abs" style={{ left: 24, top: 440, width: 345, display: "flex", flexDirection: "column" }}>
         <Field label="이메일" type="email" mode="email" value={email} onChange={setEmail} placeholder="damgo@aigo.kr" />
         <Field label="비밀번호" type="password" value={pw} onChange={setPw} onEnter={login} />
+        <button className="btn btn-primary" style={{ ...FLOW_BTN, marginTop: 18 }} disabled={busy || !email || !pw} onClick={login}>
+          <span>로그인</span>
+          <span className="arrow" aria-hidden="true">
+            →
+          </span>
+        </button>
+        <button
+          className="btn btn-secondary"
+          style={{ ...FLOW_BTN, marginTop: 10 }}
+          onClick={() => {
+            resetDraft();
+            f.go({ k: "signup", i: 0 });
+          }}
+        >
+          처음이에요 · 가입하기
+        </button>
+        <button
+          className="t-caption pre c-mute"
+          style={{ alignSelf: "center", marginTop: 6, height: 34, padding: "0 12px", textDecoration: "underline", textUnderlineOffset: 3 }}
+          onClick={() => f.note("비밀번호 다시 정하기는 아직 준비 중이에요")}
+        >
+          비밀번호를 잊었어요
+        </button>
       </div>
-      <Primary y={636} disabled={busy || !email || !pw} onClick={login}>
-        로그인
-      </Primary>
-      <Secondary
-        y={708}
-        onClick={() => {
-          resetDraft();
-          f.go({ k: "signup", i: 0 });
-        }}
-      >
-        처음이에요 · 가입하기
-      </Secondary>
-      <Caption y={796} dark onClick={() => f.note("비밀번호 다시 정하기는 아직 준비 중이에요")}>
-        비밀번호를 잊었어요
-      </Caption>
     </div>
   );
 }
 
-const STEPS = [
-  { name: "이메일", desc: "로그인할 때 써요" },
-  { name: "비밀번호", desc: "8자 이상, 글자와 숫자를 섞어요" },
-  { name: "이메일 확인", desc: "메일로 보낸 숫자 6자리를 넣어 주세요\n(데모: 아무 숫자 6자리나 돼요)" },
-  { name: "이름", desc: "실제 이름을 적어 주세요" },
-  { name: "닉네임", desc: "우표 · 한 줄 · 톡방에서 보이는 이름이에요" },
-  { name: "나이", desc: "숫자만 적어 주세요" },
-  { name: "사는 곳", desc: "골라도 되고 비워도 돼요 · 구와 동까지만 받아요" },
+// 단계는 번호가 아니라 key로 구분해요(단계를 빼거나 더해도 번호가 어긋나지 않게). 이름은 받지 않아요
+type StepKey = "email" | "pw" | "code" | "nick" | "age" | "home";
+const STEPS: { key: StepKey; name: string; desc: string }[] = [
+  { key: "email", name: "이메일", desc: "로그인할 때 써요" },
+  { key: "pw", name: "비밀번호", desc: "8자 이상, 글자와 숫자를 섞어요" },
+  { key: "code", name: "이메일 확인", desc: "메일로 보낸 숫자 6자리를 넣어 주세요\n(메일이 안 보이면 스팸함도 봐 주세요)" },
+  { key: "nick", name: "닉네임", desc: "한 줄 · 톡방 · 랭킹에서 보이는 이름이에요\n비워 두면 예쁜 이름을 지어 드려요" },
+  { key: "age", name: "나이", desc: "숫자만 적어 주세요" },
+  { key: "home", name: "사는 곳", desc: "골라도 되고 비워도 돼요 · 구와 동까지만 받아요" },
 ];
 
 /** 이메일 가입 (4.1.1) */
 export function Signup({ f, i }: { f: FlowApi; i: number }) {
-  const [v, setV] = useState(() => [draft.email, draft.pw, draft.code, draft.name, draft.nick, draft.age, draft.home][i]);
+  const st = STEPS[i];
+  const k = st.key;
+  const [v, setV] = useState(() => draft[k]);
   const [pw2, setPw2] = useState(draft.pw2);
   const [pick, setPick] = useState(false);
   const [busy, setBusy] = useState(false);
-  const st = STEPS[i];
 
   function store(x: string) {
     setV(x);
-    if (i === 0) draft.email = x;
-    if (i === 1) draft.pw = x;
-    if (i === 2) draft.code = x;
-    if (i === 3) draft.name = x;
-    if (i === 4) draft.nick = x;
-    if (i === 5) draft.age = x;
-    if (i === 6) draft.home = x;
+    draft[k] = x;
+  }
+
+  /** 확인 숫자 다시 받기: 서버에 다시 보내 달라고 해요 */
+  async function resend() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await api.emailStart(draft.email.trim(), draft.pw);
+      draft.code = "";
+      setV("");
+      f.note("숫자를 다시 보냈어요");
+    } catch (e) {
+      f.note(api.errText(e, "다시 보내지 못했어요"));
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function next() {
     if (busy) return;
     const t = v.trim();
-    if (i === 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t)) return f.note("이메일을 다시 확인해 주세요");
-    if (i === 1) {
+    if (k === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t)) return f.note("이메일을 다시 확인해 주세요");
+    if (k === "pw") {
       if (!(v.length >= 8 && /[A-Za-z가-힣]/.test(v) && /\d/.test(v))) return f.note("비밀번호는 8자 이상, 글자와 숫자를 섞어 주세요");
       if (v !== pw2) return f.note("두 비밀번호가 달라요. 다시 확인해 주세요");
     }
-    if (i === 3 && !t) return f.note("이름을 적어 주세요");
-    if (i === 4 && !/^[가-힣A-Za-z0-9]{2,8}$/.test(t)) return f.note("닉네임은 2 ~ 8자, 한글 · 영어 · 숫자만 돼요");
-    if (i === 5 && !(/^\d+$/.test(t) && +t >= 14 && +t <= 120)) return f.note("나이를 숫자로 적어 주세요");
+    if (k === "nick" && !t) {
+      // 비워 두면 이름을 지어 줘요(가입 규칙 2 ~ 8자에 맞아요)
+      const made = randomNick();
+      store(made);
+      f.note(`닉네임을 '${made}'(으)로 지어 드렸어요. 내 정보에서 바꿀 수 있어요`);
+    } else if (k === "nick" && nickProblem(t)) return f.note(nickProblem(t)!);
+    if (k === "age" && !(/^\d+$/.test(t) && +t >= 14 && +t <= 120)) return f.note("나이를 숫자로 적어 주세요");
     setBusy(true);
     try {
-      if (i === 1) await api.emailStart(draft.email.trim(), draft.pw);
-      if (i === 2) {
+      if (k === "pw") await api.emailStart(draft.email.trim(), draft.pw);
+      if (k === "nick" && t) {
+        // 욕설 · 성적 · 범죄 같은 내용은 서버가 보고 이유를 알려 줘요 (가입 마지막에 막히지 않게 여기서 미리)
+        const r = await api.nicknameCheck(t);
+        if (!r.ok) return f.note(r.message || "쓸 수 없는 닉네임이에요. 다른 이름을 지어 주세요");
+      }
+      if (k === "code") {
         const r = await api.emailVerify(t);
         if (r.restorable) return f.go({ k: "restore" });
       }
-      if (i === 6) {
-        await api.emailFinish({ name: draft.name.trim(), nickname: draft.nick.trim(), age: draft.age.trim(), homeDong1: draft.home || null });
+      if (k === "home") {
+        await api.emailFinish({ name: "", nickname: draft.nick.trim() || randomNick(), age: draft.age.trim(), homeDong1: draft.home || null });
         await f.refreshMe();
         f.set({ stack: [{ k: "start" }, { k: "welcome" }] });
         return;
@@ -364,25 +402,25 @@ export function Signup({ f, i }: { f: FlowApi; i: number }) {
   }
 
   const input =
-    i === 6 ? (
-      <HomeRow y={0} value={v} onPick={() => setPick(true)} />
+    k === "home" ? (
+      <HomeRow y={0} inFlow value={v} onPick={() => setPick(true)} />
     ) : (
       <div style={{ position: "relative" }}>
         <input
           className="textbox"
-          style={{ height: 62, paddingRight: i === 3 || i === 4 ? 70 : 60 }}
-          type={i === 1 ? "password" : i === 0 ? "email" : "text"}
-          inputMode={i === 0 ? "email" : i === 2 || i === 5 ? "numeric" : "text"}
-          maxLength={i === 2 ? 6 : i === 5 ? 3 : i === 4 ? 8 : i === 3 ? 20 : undefined}
+          style={{ height: 62, paddingRight: k === "nick" ? 70 : 60 }}
+          type={k === "pw" ? "password" : k === "email" ? "email" : "text"}
+          inputMode={k === "email" ? "email" : k === "code" || k === "age" ? "numeric" : "text"}
+          maxLength={k === "code" ? 6 : k === "age" ? 3 : k === "nick" ? 8 : undefined}
           value={v}
           onChange={(e) => store(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && next()}
           aria-label={st.name}
-          autoComplete={i === 1 ? "new-password" : i === 0 ? "email" : "off"}
+          autoComplete={k === "pw" ? "new-password" : k === "email" ? "email" : "off"}
         />
-        {(i === 3 || i === 4) && (
+        {k === "nick" && (
           <div style={{ position: "absolute", right: 7, top: 7 }}>
-            <Mic value={v} replace pause={1200} max={i === 4 ? 8 : 20} clean={i === 4 ? cleanNick : cleanName} onText={store} />
+            <Mic value={v} replace pause={1200} max={8} clean={cleanNick} onText={store} />
           </div>
         )}
       </div>
@@ -391,7 +429,25 @@ export function Signup({ f, i }: { f: FlowApi; i: number }) {
   return (
     <div className="content">
       <Title y={112}>회원가입</Title>
-      <Sub y={160}>{`일곱 가지 가운데 ${i + 1}번째`}</Sub>
+      {/* 진행 표시: 단계 수만큼 막대 + '4 / 6 단계' (질문 화면의 진행 막대와 같은 모양) */}
+      <div
+        className="abs"
+        style={{ left: 24, top: 166, display: "flex", alignItems: "center", gap: 12 }}
+        role="progressbar"
+        aria-valuemin={1}
+        aria-valuemax={STEPS.length}
+        aria-valuenow={i + 1}
+        aria-label={`회원가입 ${STEPS.length}단계 중 ${i + 1}단계, ${st.name}`}
+      >
+        <span className="progress-bar" aria-hidden="true">
+          {STEPS.map((_, n) => (
+            <i key={n} className={n <= i ? "on" : ""} style={{ width: 22 }} />
+          ))}
+        </span>
+        <span className="t-answer" aria-hidden="true">
+          {i + 1} / {STEPS.length} 단계
+        </span>
+      </div>
       <Sheet y={240} />
       <div className="abs" style={{ left: 24, top: 266, width: 345 }}>
         <p className="t-tile">{st.name}</p>
@@ -399,7 +455,7 @@ export function Signup({ f, i }: { f: FlowApi; i: number }) {
           {st.desc}
         </p>
         <div style={{ marginTop: 18, position: "relative", minHeight: 64 }}>{input}</div>
-        {i === 1 && (
+        {k === "pw" && (
           <>
             <input
               className="textbox"
@@ -422,14 +478,14 @@ export function Signup({ f, i }: { f: FlowApi; i: number }) {
             )}
           </>
         )}
-        {i === 2 && (
-          <button className="t-caption c-mute" style={{ marginTop: 10, textDecoration: "underline" }} onClick={() => f.note("숫자를 다시 보냈어요 (데모)")}>
+        {k === "code" && (
+          <button className="t-caption c-mute" style={{ marginTop: 10, textDecoration: "underline" }} onClick={resend} disabled={busy}>
             다시 받기
           </button>
         )}
       </div>
-      <Primary y={636} disabled={busy} onClick={next} label={i === 6 ? "가입하기" : "다음"}>
-        {i === 6 ? "가입하기" : "다음"}
+      <Primary y={636} disabled={busy} onClick={next} label={k === "home" ? "가입하기" : "다음"}>
+        {k === "home" ? "가입하기" : "다음"}
       </Primary>
       <Caption y={726} dark>
         가입하면 이용약관과 개인정보 처리방침에 동의하게 돼요

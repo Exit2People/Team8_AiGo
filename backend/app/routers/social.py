@@ -1,15 +1,16 @@
 """도착 예정 · 방명록 읽기 · 톡방. 익명(client · nick), 좌표 안 받음. SQL 앞 /*이름*/ 은 테스트 가짜 DB가 알아봐요."""
 
 import asyncio
+import hmac
 import math
 import re
 from datetime import timedelta
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Header, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from app import chat_safety, config, db
+from app import chat_safety, config, db, nickname
 from app.data import loader
 
 router = APIRouter()
@@ -21,7 +22,7 @@ CONTEXT_MINE = 3
 CONTEXT_OTHERS = 3
 NOT_JOINED = "톡방에 먼저 들어와 주세요"
 BLOCKED = {"code": "blocked", "message": "보낼 수 없는 말이 들어 있는 것 같아요. 고쳐서 보내 주세요"}
-_LINK = re.compile(r"https?://|www\.|\.com|\.net|\.kr|\.co", re.I)
+_LINK = re.compile(r"https?://|www\.|\.(com|net|kr|co)\b", re.I)
 _PHONE = re.compile(r"(01[016789]|0\d{1,2})[\s.\-]?\d{3,4}[\s.\-]?\d{4}")
 
 
@@ -56,6 +57,19 @@ def _cleanup() -> None:
     d = today()
     for t in ("chat_messages", "chat_members", "chat_reports", "place_expects"):
         db.run(f"/*cleanup*/ delete from {t} where day < %s", (d,))
+
+
+@router.get("/cron/daily-cleanup", include_in_schema=False)
+def daily_cleanup(authorization: str | None = Header(None)):
+    """서울 날짜가 바뀌면 Vercel Cron이 불러요 (매일 00시 KST). 어제까지의 톡방 · 멤버 · 신고 · 도착 예정을 지워요.
+    Vercel은 `CRON_SECRET`을 `Authorization: Bearer …`로 붙여 보내요. 비밀이 없거나 틀리면 거절해요."""
+    secret = config.env("CRON_SECRET")
+    if not secret:
+        raise HTTPException(503, "정리 설정이 없어요")
+    if not hmac.compare_digest(authorization or "", f"Bearer {secret}"):
+        raise HTTPException(401, "권한이 없어요")
+    _cleanup()
+    return {"ok": True, "day": today().isoformat()}
 
 
 def _expected(pid: str) -> int:
@@ -151,6 +165,8 @@ def chat_join(pid: str, body: JoinBody):
         nick = m["nick"]
     else:
         base = body.nick.strip() or "손님"
+        if nickname.check_rules(base):
+            base = "손님"  # 쓸 수 없는 이름이면 톡방에서는 '손님'으로 보여요
         taken = {r["nick"] for r in db.run("/*member_list*/ select client, nick from chat_members where day = %s "
                                            "and place_id = %s order by nick asc", (today(), pid), "all") or []}
         nick, n = base, 2
@@ -186,9 +202,10 @@ async def chat_message(pid: str, body: MessageBody):
             (today(), pid, body.client, CONTEXT_OTHERS), "all")
         mine_t = [r["body"] for r in reversed(mine or [])]
         others_t = [r["body"] for r in reversed(others or [])]
+        # 전화번호는 먼저 가려요: 외부 검사(Jev)에도 번호가 나가지 않게
+        text = _PHONE.sub("(전화번호는 가렸어요)", text)
         if await chat_safety.is_blocked(text, mine_t, others_t):
             return JSONResponse(status_code=400, content={"detail": BLOCKED})
-        text = _PHONE.sub("(전화번호는 가렸어요)", text)
     r = await asyncio.to_thread(_say, pid, body.client, m["nick"], kind, text)
     return {**_msg({**r, "client": body.client}, body.client)}
 

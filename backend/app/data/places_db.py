@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 import sqlite3
 from pathlib import Path
 
@@ -10,6 +11,16 @@ from app import config
 log = logging.getLogger("aigo.places_db")
 
 _cache: dict = {}
+_WEEKLY = re.compile(r"매주\s*([월화수목금토일])요일")
+_DAYS = "월화수목금토일"
+
+
+def _fix_closed(p: dict) -> None:
+    """쉬는 날 글에 '매주 월요일'이 있는데 closed 숫자에 빠진 곳을 채워요 (weekday: 월=0)."""
+    text = (p.get("museum") or {}).get("closedText") or ""
+    days = {_DAYS.index(d) for d in _WEEKLY.findall(text)}
+    if days - set(p.get("closed") or []):
+        p["closed"] = sorted(set(p.get("closed") or []) | days)
 
 
 def current_path() -> Path | None:
@@ -45,6 +56,8 @@ def _load(p: Path) -> dict | None:
     except sqlite3.Error as e:
         log.warning("장소 DB 읽기 오류: %s", type(e).__name__)
         return _cache.get("value")
+    for p in places:
+        _fix_closed(p)
     value = {"places": places, "meta": meta}
     _cache["key"] = key
     _cache["value"] = value

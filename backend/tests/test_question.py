@@ -34,9 +34,12 @@ def test_question_order_to_done():
     c = cond(basic={"want": "구경하기"})
     q4 = flow.next_step(c, [0, 1, 2, 3])
     assert q4["no"] == 4 and q4["source"] in ("fixed", "lead")
+    assert q4["total"] == 7
     q5 = flow.next_step(c, [0, 1, 2, 3, 4])
-    assert q5 == {"done": False, "no": 5, "needsAi": True, "fallback": None}
-    assert flow.next_step(c, [0, 1, 2, 3, 4, 5]) == {"done": True}
+    assert q5 == {"done": False, "no": 5, "needsAi": True, "fallback": None, "total": 7}
+    q6 = flow.next_step(c, [0, 1, 2, 3, 4, 5])
+    assert q6["no"] == 6 and q6["needsAi"] and q6["total"] == 7
+    assert flow.next_step(c, [0, 1, 2, 3, 4, 5, 6]) == {"done": True}
 
 
 def test_question_fixed_mode(monkeypatch):
@@ -72,7 +75,7 @@ def test_question_clean_hint():
     assert opening.clean_hint(" 한강! ") == "한강"
     assert opening.clean_hint("무릎 아픈데") is None
     assert opening.clean_hint("어디든") is None
-    assert opening.clean_hint("010 1234") is None or True
+    assert opening.clean_hint("010 1234") is None
     assert opening.clean_hint("12345") is None
     assert opening.clean_hint("아주아주아주아주긴말입니다") is None
 
@@ -149,8 +152,14 @@ def test_question_next_conditions_only_no_key():
     c = cond(basic={"want": "구경하기"})
     j = client.post("/questions/next", json=c.model_dump()).json()
     assert j["done"] is False and (j.get("question") or j.get("fallback"))
-    full = cond(ai=[{"q": "a?", "choices": [], "a": "x"}] * 3)
+    assert j["no"] == 4 and j["total"] == 7  # want을 질문으로 채웠으니 no 4
+    # 질문 7개(no 0~6)를 다 물었으면 끝: want(1) + 답 3개 = no 7 → 키 없으면 1개 더는 안 물어요
+    full = cond(basic={"want": "구경하기"}, ai=[{"q": f"q{i}?", "choices": [], "a": "x"} for i in range(3)])
     assert client.post("/questions/next", json=full.model_dump()).json() == {"done": True}
+    # 칸을 첫 말에서 채웠으면(filled) 세지 않아요 → 아직 no 6
+    heard = cond(basic={"want": "구경하기"}, filled=["want"], ai=[{"q": f"q{i}?", "choices": [], "a": "x"} for i in range(3)])
+    j = client.post("/questions/next", json=heard.model_dump()).json()
+    assert j.get("no") == 6 and (j.get("question") or j.get("fallback"))
     fb = cond(fallback=True)
     assert client.post("/questions/next", json=fb.model_dump()).json() == {"done": False, "fallback": True}
 

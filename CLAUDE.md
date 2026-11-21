@@ -6,10 +6,10 @@
 
 | 항목 | 값 | 기본값 (비어 있으면) |
 |---|---|---|
-| 저장소 주소 | https://github.com/Exit2People/Team8_AiGo.git | 리허설 `https://github.com/Exit2People/Rehearsal_D-1.git` · 본선 `https://github.com/Exit2People/FinalDestination.git` |
+| 저장소 주소 | https://github.com/Exit2People/Team8_AiGo.git | `https://github.com/Exit2People/FinalDestination.git` |
 | 이 저장소는 | 본선 | — |
-| Vercel 화면 프로젝트 | aigo-final | 리허설 `aigo-d1` · 본선 `aigo-final` |
-| Vercel 서버 프로젝트 | aigo-final-api | 리허설 `aigo-d1-api` · 본선 `aigo-final-api` |
+| Vercel 화면 프로젝트 | aigo-final | `aigo-final` |
+| Vercel 서버 프로젝트 | aigo-final-api | `aigo-final-api` |
 
 - 이름이 이미 쓰이면 에이전트가 `-2`를 붙이고 실제 주소를 이 표 아래에 적어요.
 - **실제 주소 (2026-11-21):** 화면 `https://ai-go-team8.vercel.app` (프로젝트 `aigo-final`, 보조 `aigo-final-phi.vercel.app`) · 서버 `https://ai-go-api.vercel.app` (프로젝트 `aigo-final-api`, 보조 `aigo-final-api.vercel.app`). 사용자 요청으로 `ai-go` 이름을 썼어요 (`ai-go.vercel.app`은 남이 씀)
@@ -19,15 +19,16 @@
 ## 시작
 
 모든 작업은 @/Users/kimsangjin/Desktop/PROMPTS/START_HERE.md 를 먼저 읽고 따라요.
-사용자가 "구현해줘"라고 하면 START_HERE 1절(질문 하나)부터 4절까지 끝까지 진행해요. 리허설 저장소면 끝난 뒤 `PROMPTS/SHARED/09_ACCEPTANCE.md` 전체를 점검해요.
+사용자가 "구현해줘"라고 하면 START_HERE 1절(질문 하나)부터 4절까지 끝까지 진행해요.
 
 ## 권한 (사용자 승인 2026-11-20)
 
 - 이 저장소에서 "구현해줘"는 **커밋 · push · Vercel 프로젝트 만들기 · 환경 변수 넣기 · 배포를 묻지 않고 맡긴다**는 뜻이에요.
-- 그래도 절대 안 해요: `secrets.env` · `.env*` 커밋, force push, 브랜치 지우기, 운영 DB(`aigo-testton`)에 시험 데이터 쓰기.
+- 그래도 절대 안 해요: `secrets.env` · `.env*` 커밋, force push, 브랜치 지우기, 운영 DB(`secrets.env`의 `DATABASE_URL`)에 시험 데이터 쓰기.
 
 ## 늘 지킬 것
 
 1. 키 · DB 주소 · 비밀번호를 출력 · 커밋하지 않아요. 값은 `PROMPTS/SHARED/config/secrets.env`에서 `backend/.env` · Vercel 환경 변수로만 옮겨요 (`.env*`는 `.gitignore`).
 2. 화면 글은 한국어 존댓말 "~요", 짧은 문장, 쉬운 말 (어르신 UX, `PROMPTS/SHARED/01_PRODUCT.md` 2절).
 3. Next.js는 16이에요. 화면 코드를 쓰기 전에 `frontend/node_modules/next/dist/docs/`의 안내를 먼저 읽어요 (`frontend/AGENTS.md`).
+4. **브랜치 (2026-11-21 사용자 결정):** `main` = 김상진 · BE팀 (서버 · 배포). `FE`와 그 뒤 생기는 화면 브랜치 = FE팀. 사용자가 "FE 반영해줘"처럼 지시하면 그 브랜치를 `main`에 합치고 화면 · 서버를 다시 배포해요 (`PROMPTS/SHARED/08_DEPLOY.md` 4 · 7절). `frontend/`를 고쳐야 하면 `FE` 브랜치에서 고쳐 `origin/FE`에 push하고(먼저 `git pull --ff-only`로 FE팀 커밋을 받아요, 작업 폴더는 `git worktree`로 따로), 그다음 `FE`를 `main`에 합쳐 배포해요. `main`에만 화면 수정을 올리지 않아요.

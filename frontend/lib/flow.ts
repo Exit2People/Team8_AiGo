@@ -1,6 +1,6 @@
 /** 화면 흐름 상태 모양 (11_FRONTEND_SPEC 2 · 3절) */
 import type { Candidate, Conditions, HeardItem, Me, Origin, Slot, Social } from "./types";
-import type { NearDong } from "./geo";
+import { DONGS, type NearDong } from "./geo";
 import { computeRange } from "./range";
 
 export type Step =
@@ -13,7 +13,8 @@ export type Step =
   | { k: "body"; edit?: boolean }
   | { k: "time"; edit?: boolean }
   | { k: "flex"; i: number; edit?: boolean }
-  | { k: "confirm" }
+  /** auto: "결과 보기"로 왔어요 — 채운 답을 잠깐 보여 준 뒤 저절로 가방에 담고 찾아요 (값은 찾기 결과 위에 띄울 안내) */
+  | { k: "confirm"; auto?: string }
   | { k: "result" }
   | { k: "guestbook" }
   | { k: "route" }
@@ -30,7 +31,7 @@ export type Step =
   | { k: "signup"; i: number }
   | { k: "welcome" }
   | { k: "my" }
-  | { k: "myedit"; field: "name" | "nickname" | "age" | "home1" }
+  | { k: "myedit"; field: "nickname" | "age" | "home1" }
   | { k: "mine" }
   | { k: "upload"; key: string }
   | { k: "cut"; key: string }
@@ -151,7 +152,8 @@ export function poseOf(step: Step, s: FlowState): string {
     case "start":
       return s.user ? "home" : "s1";
     case "origin":
-      return "loc";
+      // 아까 고른 동 버튼이 있으면 시트가 72 올라가니 담고도 같이 올려요 (Origin.tsx)
+      return s.origin && DONGS.some((d) => d.id === s.origin?.id) ? "locUp" : "loc";
     case "nearby":
       return "near";
     case "gu":
@@ -168,7 +170,7 @@ export function poseOf(step: Step, s: FlowState): string {
       return q.src === "ai" ? "q1" : "fb";
     }
     case "confirm":
-      return "last";
+      return step.auto !== undefined ? "fill" : "last";
     case "result":
       return s.printed[`${s.receivedAt}-${s.idx}`] ? "s4" : "s4p";
     case "guestbook":

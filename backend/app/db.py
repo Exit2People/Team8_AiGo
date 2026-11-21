@@ -60,6 +60,9 @@ def _real_run(sql: str, params=None, fetch: str = "none"):
                 _conn = None
                 if attempt == 1:
                     raise HTTPException(503, DB_FAIL)
+            except psycopg.errors.UniqueViolation:
+                # 같은 요청을 두 번 눌러 이미 들어간 경우예요. 연결 실패로 보이지 않게 409로 알려요
+                raise HTTPException(409, "이미 처리됐어요. 다시 해 주세요")
             except psycopg.Error as e:
                 log.warning("DB 오류: %s", type(e).__name__)
                 raise HTTPException(503, DB_FAIL)

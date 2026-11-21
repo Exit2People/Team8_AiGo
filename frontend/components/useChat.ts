@@ -86,7 +86,9 @@ export function useChat({ s, client, nick, note, replaceTop }: Deps) {
 
   const join = useCallback(async () => {
     try {
-      const r = await api.chatJoin(pid, client.current, nick.current);
+      // 회원 닉네임으로 들어가요(같은 이름이 이미 있으면 서버가 숫자를 붙여 줘요)
+      const want = s.user?.nickname?.trim() || nick.current;
+      const r = await api.chatJoin(pid, client.current, want);
       nick.current = r.nick ?? nick.current;
       setMyNick(nick.current);
       setJoined(true);
@@ -97,7 +99,7 @@ export function useChat({ s, client, nick, note, replaceTop }: Deps) {
     } catch {
       note("톡방에 들어가지 못했어요. 인터넷 연결을 확인해 주세요.");
     }
-  }, [pid, client, nick, merge, replaceTop, note]);
+  }, [pid, client, nick, s.user, merge, replaceTop, note]);
 
   /** 보내기: 성공 true, 실패면 {alert?|warn?} */
   const send = useCallback(
@@ -162,5 +164,5 @@ export function useChat({ s, client, nick, note, replaceTop }: Deps) {
     [note],
   );
 
-  return { pid, msgs, members, count, joined, lost, blocked, myNick: myNick || nick.current, join, send, leave, report, block, unblock, reset: () => setBlocked([]) };
+  return { pid, msgs, members, count, joined, lost, blocked, myNick: myNick || s.user?.nickname?.trim() || nick.current, join, send, leave, report, block, unblock, reset: () => setBlocked([]) };
 }

@@ -9,19 +9,21 @@ import { useEffect, useRef, useState } from "react";
 export function OriginScreen({ f }: { f: FlowApi }) {
   const o = f.s.origin;
   const dong = o ? DONGS.find((d) => d.id === o.id) : null;
+  // 아까 고른 동 버튼이 "네, 지금 위치로" 바로 위에 들어가면 시트 내용을 그만큼(버튼 62 + 간격 10) 올려요
+  const up = dong ? 72 : 0;
   return (
     <div className="content">
       <Progress on={1} text="1 / 4" />
       <Title y={112}>{"어디서\n출발하세요?"}</Title>
       <Sub y={196}>{"가까운 동을 찾아\n갈 곳을 알려 드려요"}</Sub>
-      <Sheet y={470} />
-      <div className="abs" style={{ left: 24, top: 500, display: "flex", gap: 10, alignItems: "center" }}>
+      <Sheet y={470 - up} />
+      <div className="abs" style={{ left: 24, top: 500 - up, display: "flex", gap: 10, alignItems: "center" }}>
         <PinIcon />
         <p className="t-tile">지금 있는 곳을 쓸까요?</p>
       </div>
-      <Sub y={548} mute>{"위치는 가까운 동을 찾는 데만 쓰고\n어디에도 저장하지 않아요."}</Sub>
+      <Sub y={548 - up} mute>{"위치는 가까운 동을 찾는 데만 쓰고\n어디에도 저장하지 않아요."}</Sub>
       {dong && (
-        <Secondary y={386} white onClick={() => f.setOriginDong(dong)} label={`아까 고른 ${dong.name}`}>
+        <Secondary y={564} onClick={() => f.setOriginDong(dong)} label={`아까 고른 ${dong.name}`}>
           {`아까 고른 ${dong.name}`}
         </Secondary>
       )}
@@ -118,7 +120,7 @@ export function DongScreen({ f, gu }: { f: FlowApi; gu: string }) {
       <Sub y={196}>{`${gu}에 있는\n동이에요`}</Sub>
       <div ref={ref} className="grid2" style={{ top: 266, height: 440, paddingBottom: 12 }}>
         {list.map((d) => (
-          <button key={d.id} className="pick" style={{ fontSize: d.name.length > 6 ? 15 : 18 }} onClick={() => f.setOriginDong(d)}>
+          <button key={d.id} className="pick" style={{ fontSize: `calc(${d.name.length > 6 ? 15 : 18}px * var(--fs))` }} onClick={() => f.setOriginDong(d)}>
             {d.name}
           </button>
         ))}

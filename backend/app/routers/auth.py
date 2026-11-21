@@ -16,7 +16,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
-from app import config, db
+from app import config, db, nickname
 from app.data import loader
 
 log = logging.getLogger("aigo.auth")
@@ -299,6 +299,28 @@ def parse_age(age: str | None) -> int | None:
     return int(a)
 
 
+def ok_nickname(v: str | None) -> str | None:
+    """빈 값은 지우기(None). 쓸 수 없는 닉네임이면 400에 이유 문장을 담아요."""
+    t = (v or "").strip()
+    if not t:
+        return None
+    hit = nickname.check_sync(t)
+    if hit:
+        raise HTTPException(400, hit[1])
+    return t
+
+
+class NicknameBody(BaseModel):
+    nickname: str = Field(default="", max_length=40)
+
+
+@router.post("/auth/nickname/check")
+def nickname_check(body: NicknameBody):
+    """저장하기 전에 미리 확인해요 (가입 중 닉네임 단계 · 내 정보). 로그인 없이 부를 수 있어요."""
+    hit = nickname.check_sync(body.nickname)
+    return {"ok": hit is None, "reason": hit[0] if hit else None, "message": hit[1] if hit else None}
+
+
 @router.patch("/auth/profile")
 def profile(body: ProfileBody, request: Request):
     u = require_user(request)
@@ -311,6 +333,8 @@ def profile(body: ProfileBody, request: Request):
             v = dong_id(v)
         elif f == "age":
             v = parse_age(v)
+        elif f == "nickname":
+            v = ok_nickname(v)
         else:
             v = (v or "").strip() or None
         pairs.append((cols[f], v))
@@ -566,6 +590,7 @@ def email_finish(body: EmailFinishBody, request: Request):
     if not row or not row.get("verified"):
         raise HTTPException(400, "이메일 확인부터 해 주세요")
     age = parse_age(body.age)
+    nick = ok_nickname(body.nickname)
     d1, d2 = dong_id(body.homeDong1), dong_id(body.homeDong2)
     purge_expired()
     u = db.run("/*user_by_email*/ select * from users where email = %s", (email,), "one")
@@ -577,7 +602,7 @@ def email_finish(body: EmailFinishBody, request: Request):
         raise HTTPException(409, EMAIL_TAKEN)
     new = db.run("/*user_add_email*/ insert into users (email, password_hash, name, nickname, age, home_dong1_id, "
                  "home_dong2_id) values (%s, %s, %s, %s, %s, %s, %s) returning id",
-                 (email, row["password_hash"], body.name.strip() or None, body.nickname.strip() or None, age, d1, d2),
+                 (email, row["password_hash"], body.name.strip() or None, nick, age, d1, d2),
                  "one")
     add_consents(new["id"])
     db.run("/*code_del*/ delete from email_codes where email = %s", (email,))

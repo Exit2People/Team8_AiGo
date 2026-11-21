@@ -51,6 +51,37 @@ BANK: dict[str, dict] = {
             "slot": None, "match": {"궁 · 한옥": ["궁 · 한옥", "박물관 · 기념관"], "요즘 전시": ["그림 · 사진", "만들기 체험"]}},
 }
 
+# 매번 새로운 질문 (variety): 같은 뜻 다른 말투. 선택지 · match는 은행 그대로예요. walk · inout 칸 질문은 화면과 같게 고정
+BANK_ALT: dict[str, list[str]] = {
+    "sight": ["어떤 걸 구경하고 싶으세요?", "구경은 어느 쪽이 끌리세요?"],
+    "budget": ["한 끼는 얼마쯤 생각하세요?", "밥값은 얼마까지 괜찮으세요?"],
+    "scenery": ["어떤 경치를 보고 싶으세요?", "보고 싶은 풍경이 있으세요?"],
+    "fee": ["입장료 있는 곳도 괜찮으세요?", "돈 드는 곳도 가 보실래요?"],
+    "show": ["어떤 걸 보러 가고 싶으세요?", "보고 싶은 게 있으세요?"],
+    "nature": ["어떤 자연이 좋으세요?", "자연 속이라면 어디가 좋으세요?"],
+    "rest": ["쉬기 좋은 곳은 어디가 끌리세요?", "어떤 곳에서 쉬고 싶으세요?"],
+    "festa": ["사람 많은 축제도 괜찮으세요?", "북적이는 곳은 어떠세요?"],
+    "old": ["옛날 것과 요즘 것, 어느 쪽이 좋으세요?", "옛 정취와 요즘 전시, 뭐가 끌리세요?"],
+}
+
+
+def _key(s: str) -> str:
+    import re
+
+    return re.sub(r"[\s?.!,·~]", "", s or "")
+
+
+def bank_id_of(text: str | None) -> str | None:
+    """은행 질문이나 그 다른 말투면 은행 id."""
+    k = _key(text or "")
+    if not k:
+        return None
+    for qid, b in BANK.items():
+        if _key(b["question"]) == k or any(_key(a) == k for a in BANK_ALT.get(qid, [])):
+            return qid
+    return None
+
+
 Q4_POOL = {
     "바람 쐬기": ["walk", "nature", "scenery", "festa"],
     "구경하기": ["sight", "show", "old", "festa", "fee"],
@@ -76,8 +107,7 @@ def skipped(cond: Conditions, qid: str) -> bool:
 
 
 def asked_ids(cond: Conditions) -> set[str]:
-    qs = {x.q for x in cond.ai}
-    out = {qid for qid, b in BANK.items() if b["question"] in qs}
+    out = {qid for qid in (bank_id_of(x.q) for x in cond.ai) if qid}
     if cond.basic.walk:
         out.add("walk")
     if cond.basic.inout:
@@ -136,9 +166,16 @@ def live_choices(qid: str, items: list[dict] | None) -> list[str]:
 
 
 def bank_question(qid: str, items: list[dict] | None, no: int | None = 4) -> dict:
+    from app.question import variety
+
     b = BANK[qid]
-    q = {"done": False, "id": qid, "question": b["question"], "choices": live_choices(qid, items),
-         "slot": b["slot"], "source": "fixed"}
+    text = variety.pick_text([b["question"], *BANK_ALT.get(qid, [])])
+    choices = live_choices(qid, items)
+    if not b["slot"]:
+        # '잘 모르겠어요' 같은 고르지 않는 답은 맨 뒤에 둬요
+        keep = [c for c in choices if c in ("잘 모르겠어요", "둘 다 좋아요")]
+        choices = variety.shuffle([c for c in choices if c not in keep]) + keep
+    q = {"done": False, "id": qid, "question": text, "choices": choices, "slot": b["slot"], "source": "fixed"}
     if no is not None:
         q = {"done": False, "no": no, **{k: v for k, v in q.items() if k != "done"}}
     return q
@@ -148,11 +185,11 @@ def answer_themes(cond: Conditions) -> set[str]:
     from app.question.themes import ALL_THEMES
 
     out: set[str] = set()
-    by_q = {b["question"]: b for b in BANK.values()}
     for x in cond.ai:
         if not x.a:
             continue
-        b = by_q.get(x.q)
+        qid = bank_id_of(x.q)
+        b = BANK[qid] if qid else None
         if b is not None:
             out.update((b["match"] or {}).get(x.a, []))
         elif x.a in ALL_THEMES:
@@ -184,31 +221,42 @@ def best_bank(cond: Conditions, items: list[dict] | None) -> str | None:
 
 
 def next_step(cond: Conditions, answered: list[int]) -> dict:
+    """번호로 진행하는 길 (AI 없이). 질문 수는 config.question_total()로 고정 (기본 7: no 0~6)."""
     from app.question.lead import lead_question
 
+    total = config.question_total()
     ans = set(answered)
     open_mode = config.question_start() == "open"
+
+    def stamp(q: dict) -> dict:
+        return {**q, "total": total}
+
     if open_mode and 0 not in ans:
-        return dict(OPEN_Q)
+        return stamp(dict(OPEN_Q))
     if open_mode and not cond.body and 1 not in ans:
-        return dict(BODY_Q)
+        return stamp(dict(BODY_Q))
     if open_mode and not cond.time and 2 not in ans:
-        return dict(TIME_Q)
+        return stamp(dict(TIME_Q))
     if 3 not in ans and not cond.basic.want:
-        return dict(WANT_Q)
-    if 4 not in ans:
-        items = today_items(cond)
-        lead = lead_question(cond, items or [])
-        if lead:
-            return {"done": False, "no": 4, **{k: v for k, v in lead.items() if k != "done"}}
-        qid = q4_id(cond, items)
-        if qid and qid not in asked_ids(cond):
-            return bank_question(qid, items, 4)
-    if 5 not in ans:
+        return stamp(dict(WANT_Q))
+    for no in range(config.QUESTION_FIXED, total):
+        if no in ans:
+            continue
+        if no <= 4:
+            # 3(하고 싶은 것을 이미 들었으면) · 4: 앞 말을 이어 받는 발전 질문 → 은행
+            items = today_items(cond)
+            lead = lead_question(cond, items or [])
+            if lead:
+                return stamp({"done": False, "no": no, **{k: v for k, v in lead.items() if k != "done"}})
+            qid = q4_id(cond, items)
+            if qid and qid not in asked_ids(cond):
+                return stamp(bank_question(qid, items, no))
+            if no == 3:
+                continue
         fb = None
         if config.question_mode() == "single":
             items = today_items(cond)
             fid = q5_fallback_id(cond, items)
-            fb = bank_question(fid, items, 5) if fid else None
-        return {"done": False, "no": 5, "needsAi": True, "fallback": fb}
+            fb = bank_question(fid, items, no) if fid else None
+        return stamp({"done": False, "no": no, "needsAi": True, "fallback": fb})
     return {"done": True}

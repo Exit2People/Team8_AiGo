@@ -50,7 +50,7 @@ export default function Question({ f, kind, i = 0, edit }: Props) {
   }, [kind, i, !!q]);
 
   const progress =
-    kind === "body" ? <Progress on={2} text="2 / 4" right /> : kind === "time" ? <Progress on={3} text="3 / 4" right /> : <Progress on={4} text={`질문 ${i + 1}`} right />;
+    kind === "body" ? <Progress on={2} text="2 / 4" right /> : kind === "time" ? <Progress on={3} text="3 / 4" right /> : <Progress on={4} text={`질문 ${i + 1}`} right bar={!!q && q.src !== "ai"} />; // AI가 고른 질문(과 고르는 중)엔 진행 막대를 빼요
 
   if (kind === "flex" && !q) {
     return (
@@ -147,9 +147,13 @@ export default function Question({ f, kind, i = 0, edit }: Props) {
           );
         })}
         {dkTile && (
-          <button className={`tile dontknow${cur === null ? " on" : ""}`} onClick={() => pick(null)} aria-pressed={cur === null}>
+          // "잘 모르겠어요"도 다른 선택지와 같은 모양 · 색이에요 (고르면 똑같이 검정으로)
+          <button className={`tile${cur === null ? " on" : ""}`} onClick={() => pick(null)} aria-pressed={cur === null}>
             <span className="num">{tiles.length + 1}</span>
-            <span className="ans" style={{ fontSize: 20 }}>
+            <span className="tarrow">
+              <TileArrow color={cur === null ? "#FFFFFF" : "#111111"} />
+            </span>
+            <span className="ans" style={{ fontSize: tileSize(DONT_KNOW) }}>
               {DONT_KNOW}
             </span>
           </button>

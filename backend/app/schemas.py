@@ -65,6 +65,8 @@ class NearbyRequest(BaseModel):
 class RecommendRequest(BaseModel):
     conditions: Conditions
     visited: list[str] = Field(default_factory=list)
+    # 지난 며칠 동안 보여 줬지만 고르지 않은 곳 (화면이 기기에 모아 보내요, 없어도 돼요)
+    shown: list[str] = Field(default_factory=list, max_length=60)
 
 
 class NextRequest(BaseModel):

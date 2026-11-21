@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import Body, FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
@@ -11,8 +12,23 @@ from app.data import external_api, loader, stations_api, sync, weather
 from app.routers import auth, game, social
 
 logging.basicConfig(level=logging.INFO)
+# httpx는 INFO에서 요청 주소 전체를 찍어요. 기상청 · 서울시 키가 쿼리에 있어서 로그에 키가 남아요 (09_ACCEPTANCE 7.6)
+for _noisy in ("httpx", "httpcore"):
+    logging.getLogger(_noisy).setLevel(logging.WARNING)
 
-app = FastAPI(title="AI GO")
+
+
+@asynccontextmanager
+async def _lifespan(_app):
+    # 첫 요청이 AI 라이브러리 불러오기(이 컴퓨터에서 12초 넘게)에 막히지 않게 뒤에서 미리 불러요 (app/llm/warm.py)
+    if config.has_ai():
+        from app.llm import warm
+
+        warm.start()
+    yield
+
+
+app = FastAPI(title="AI GO", lifespan=_lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -87,7 +103,7 @@ async def questions_ai(cond: Conditions):
 async def recommend(req: RecommendRequest):
     from app.recommend.service import recommend as run
 
-    return await run(req.conditions, req.visited)
+    return await run(req.conditions, req.visited, req.shown)
 
 
 @app.get("/data/status")
