@@ -147,6 +147,34 @@ h1:focus,
   outline: none;
 }
 
+/* 막대 색을 읽는 한순간만: 바탕 층(pointer-events: none)도 elementsFromPoint에 잡히게 (lib/bars.ts) */
+html.bar-probe *,
+html.bar-probe *::before,
+html.bar-probe *::after {
+  pointer-events: auto !important;
+}
+
+/* 아이폰 사파리 상태 표시줄 자리를 칠하는 띠 (Stage.tsx). 다른 기기에선 그리지 않아요 */
+.bar-band {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: max(env(safe-area-inset-top), 6px);
+  z-index: 100;
+  pointer-events: none;
+}
+html.ios .bar-band {
+  display: block;
+}
+/* 아이폰 사파리만: 화면 틀을 fixed가 아니라 absolute로. 화면 아래 끝에 고정 요소가 닿아 있으면 사파리가 그 요소(속 상자) 색으로
+   주소창 뒤를 칠해서 body 바탕색이 안 먹어요. html · body가 화면 높이에 고정(overflow: hidden)이라 크기 · 자리는 같아요 */
+html.ios .viewport {
+  position: absolute;
+}
+
+
 /* ---------- 화면 틀 ---------- */
 .viewport {
   position: fixed;
@@ -498,10 +526,6 @@ h1:focus,
   opacity: 0.6;
   margin-top: 2px;
 }
-.tile.dontknow {
-  background: var(--soft);
-  box-shadow: none;
-}
 
 .row {
   position: relative;
@@ -677,9 +701,13 @@ html.ios .textbox {
   padding: 18px 20px;
 }
 
+/* 어두운 막: 웹처럼 화면이 넓으면 앱 배경(--bleed)까지 덮어요. 폰에서는 --bleed가 0이라 그대로예요 */
 .modal-bg {
   position: absolute;
-  inset: 0;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--bleed) * -1);
+  right: calc(var(--bleed) * -1);
   z-index: 90;
   background: rgba(17, 17, 17, 0.45);
   animation: fadeIn 0.2s ease both;
@@ -691,7 +719,8 @@ html.ios .textbox {
   bottom: 0;
   background: var(--white);
   border-radius: var(--r-sheet) var(--r-sheet) 0 0;
-  padding: 28px 24px 36px;
+  /* 흰 판은 앱 바닥처럼 화면 폭 전체로, 안의 내용은 가운데 폰 폭(393)에 맞춰요 */
+  padding: 28px calc(24px + var(--bleed)) 36px;
   box-shadow: var(--sh-sheet);
 }
 .modal .btn {
