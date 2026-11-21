@@ -226,20 +226,7 @@ a {
 .damgo-tail {
   background: var(--gray);
 }
-.damgo.wag .tail-1 {
-  animation: wag1 0.9s ease-in-out infinite alternate;
-}
-.damgo.wag .tail-2 {
-  animation: wag2 0.9s ease-in-out infinite alternate;
-}
-@keyframes wag1 {
-  from { translate: 0 0; scale: 1; }
-  to { translate: -10px -18px; scale: 1.08; }
-}
-@keyframes wag2 {
-  from { translate: 0 0; scale: 1; }
-  to { translate: 6px 10px; scale: 0.92; }
-}
+/* 꼬리 살랑은 components/useTail.ts가 translate · scale로 움직여요 (불규칙하게) */
 .damgo-paw {
   background: var(--ink);
 }

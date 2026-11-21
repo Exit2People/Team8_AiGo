@@ -112,7 +112,7 @@ export default function Stage({ poseKey, pose, coral, still, inert, overlay, chi
           <div className="bg bg-coral" style={{ transform: `translateY(${bg.coralY}px)` }} />
           <div className="bg bg-deep" style={{ opacity: bg.deep }} />
           <div className="bg bg-warm" style={{ opacity: bg.warm }} />
-          <DamgoBack pose={p} blink={blink} wag={wag} />
+          <DamgoBack pose={p} blink={blink} wag={wag} still={still} />
           <div className="content-wrap" inert={inert || undefined}>
             {children}
           </div>
