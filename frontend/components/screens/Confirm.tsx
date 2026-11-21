@@ -43,7 +43,8 @@ export default function Confirm({ f }: { f: FlowApi }) {
       </div>
       <div ref={listRef} className="list scroll" style={{ top: 262, height: 382, gap: 6, padding: "4px 0 12px" }}>
         {rows.map((r, n) => (
-          <div key={n} data-pack-row className="row" style={{ minHeight: 48, padding: "6px 10px 6px 16px", visibility: packing ? "hidden" : undefined }}>
+          // 질문(항목)이 두 줄이어도 겹치지 않게 모든 줄을 60으로 키우고, 목록이 차도 줄이 눌리지 않게(flex: none) 해요. 넘치면 목록이 밀려요
+          <div key={n} data-pack-row className="row" style={{ minHeight: 60, flex: "none", padding: "6px 10px 6px 16px", visibility: packing ? "hidden" : undefined }}>
             <span style={{ width: 104, flex: "none" }}>
               <span className="t-label c-deep" style={{ display: "block" }}>
                 {String(n + 1).padStart(2, "0")}
