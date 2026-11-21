@@ -1,9 +1,12 @@
 import logging
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Body, FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import ValidationError
 
 from app import config
+from app.schemas import Conditions, ForgetRequest, NextRequest, OpenRequest
 from app.data import external_api, loader, stations_api, sync, weather
 from app.routers import auth, game, social
 
@@ -39,6 +42,45 @@ def health():
         "now": config.now().strftime("%Y-%m-%d %H:%M"),
         "weather": weather.current()["weather"],
     }
+
+
+@app.post("/questions/next")
+async def questions_next(body: dict = Body(...)):
+    from app.question import flow, service
+
+    try:
+        if "conditions" in body:
+            req = NextRequest.model_validate(body)
+            return flow.next_step(req.conditions, req.answered)
+        cond = Conditions.model_validate(body)
+    except ValidationError as e:
+        raise RequestValidationError(e.errors())
+    return await service.next_ai(cond)
+
+
+@app.post("/questions/open")
+async def questions_open(req: OpenRequest):
+    from app.question import flow, opening
+
+    cond, filled = await opening.parse_open(req.conditions, req.text)
+    return {"conditions": cond.model_dump(), "filled": filled, "heard": opening.heard(cond, filled),
+            "next": flow.next_step(cond, [0])}
+
+
+@app.post("/questions/open/forget")
+def questions_forget(req: ForgetRequest):
+    from app.question import flow, opening
+
+    cond = opening.forget(req.conditions, req.key, req.value)
+    return {"conditions": cond.model_dump(), "heard": opening.heard(cond, cond.filled),
+            "next": flow.next_step(cond, [0])}
+
+
+@app.post("/questions/ai")
+async def questions_ai(cond: Conditions):
+    from app.question import service
+
+    return await service.ask_ai(cond)
 
 
 @app.get("/data/status")
