@@ -338,7 +338,7 @@ export default function Chat({ f }: { f: FlowApi }) {
         <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
           <input
             className="textbox"
-            style={{ width: "100%", height: 56, padding: "0 58px 0 14px", fontSize: "calc(18px * var(--fs))" }}
+            style={{ width: "100%", height: 56, padding: "0 58px 0 14px", "--in-base": "18px" } as React.CSSProperties}
             maxLength={MAX}
             value={text}
             placeholder="여기에 쓰기"

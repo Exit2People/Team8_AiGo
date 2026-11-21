@@ -649,7 +649,7 @@ h1:focus,
   border: 2px solid var(--ink);
   border-radius: 16px;
   padding: 14px 16px;
-  font-size: calc(20px * var(--fs));
+  font-size: calc(var(--in-base, 20px) * var(--fs));
   font-weight: 700;
   line-height: 1.4;
   resize: none;
@@ -659,6 +659,12 @@ h1:focus,
 }
 .textbox::placeholder {
   color: var(--mute);
+}
+/* 아이폰은 그려진 글자가 16px보다 작은 입력칸을 누르면 화면을 확대해요.
+   화면 전체를 zoom으로 줄이니까 아이폰에서만 "원래 크기 × 글씨 배율"과 "16px ÷ zoom" 중 큰 값을 써요.
+   입력칸 기본 크기는 --in-base(px)로 넘겨요 (--fs는 글씨 크기 설정 배율이에요). */
+html.ios .textbox {
+  font-size: max(calc(var(--in-base, 20px) * var(--fs)), calc(16px / var(--zoom, 1)));
 }
 
 .card {
