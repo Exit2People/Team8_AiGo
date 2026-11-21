@@ -219,3 +219,35 @@ class FakeAuthDB(FakeDB):
 
     def h_user_password(self, sql, p, f):
         self.users[str(p[1])]["password_hash"] = p[0]
+
+    def _visible_scores(self):
+        out = []
+        for uid, s in self.scores.items():
+            u = self.users.get(uid)
+            if u and not u["deleted_at"] and not u["banned_at"]:
+                out.append({"user_id": uid, "steps": s["steps"], "achieved_at": s["achieved_at"],
+                            "nickname": u["nickname"]})
+        return sorted(out, key=lambda r: (-r["steps"], r["achieved_at"]))
+
+    def h_score_get(self, sql, p, f):
+        s = self.scores.get(str(p[0]))
+        return dict(s) if s else None
+
+    def h_score_upsert(self, sql, p, f):
+        uid, steps = str(p[0]), p[1]
+        s = self.scores.get(uid)
+        if s is None or steps > s["steps"]:
+            self.scores[uid] = {"steps": steps, "achieved_at": self._rt()}
+            return dict(self.scores[uid])
+        return None
+
+    def h_rank_of(self, sql, p, f):
+        steps, _, at = p
+        return {"n": sum(1 for r in self._visible_scores()
+                         if r["steps"] > steps or (r["steps"] == steps and r["achieved_at"] < at))}
+
+    def h_rank_top(self, sql, p, f):
+        return self._visible_scores()[: p[0]]
+
+    def h_rank_total(self, sql, p, f):
+        return {"n": len(self._visible_scores())}
