@@ -137,7 +137,10 @@ export function buildConditions(s: FlowState, exclude: string[] = []): Condition
     time,
     range: computeRange(body, time, walk),
     basic: { want: want === "잘 모르겠어요" ? null : want, walk, inout: ans("inout") },
-    ai: s.qs.filter((q) => q.answered && q.slot == null).map((q) => ({ q: q.question, choices: q.choices, a: q.a })),
+    // 칸 질문(걷기 · 실내외 …)에 '잘 모르겠어요'로 답한 것도 물어본 기록으로 보내요. 안 보내면 서버가 같은 질문을 또 내요
+    ai: s.qs
+      .filter((q) => q.answered && (q.slot == null || q.a == null || q.a === "잘 모르겠어요"))
+      .map((q) => ({ q: q.question, choices: q.choices, a: q.slot == null ? q.a : null })),
     freeText: null,
     extra: { mood: null, avoid: [], place: s.place, who: s.who, wish: s.wish, expanded: [] },
     filled: s.filled,

@@ -141,6 +141,17 @@ def choice_count(choice: str, cond: Conditions, items: list[dict]) -> int | None
     return False
 
 
+def same_as_asked(cond: Conditions, choices: list[str]) -> bool:
+    """글은 달라도 선택지가 앞 질문과 거의 같으면 같은 질문이에요 (예: '어디로 갈까요?' → '어디서 타고 싶으세요?')."""
+    new = {_norm(c) for c in choices}
+    for x in cond.ai:
+        old = {_norm(c) for c in x.choices}
+        same = len(new & old)
+        if same >= 2 and same >= len(new) - 1:
+            return True
+    return False
+
+
 def check_question(cond: Conditions, items: list[dict], sub: dict) -> dict | None:
     if sub.get("done") is True:
         return {"done": True}
@@ -166,6 +177,8 @@ def check_question(cond: Conditions, items: list[dict], sub: dict) -> dict | Non
         counts[ch] = n
     choices = [c for c in choices if counts[c] != 0]
     if len(choices) < 2:
+        return None
+    if same_as_asked(cond, choices):
         return None
     counted = [c for c in choices if counts[c] is not None]
     if counted and len(counted) < 2:

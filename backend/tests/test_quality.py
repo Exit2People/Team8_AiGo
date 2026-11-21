@@ -290,3 +290,28 @@ def test_recommend_accepts_shown_and_changes_list():
     ids = [x["place"]["id"] for x in first]
     again = client.post("/recommend", json={"conditions": c.model_dump(), "visited": [], "shown": ids}).json()["candidates"]
     assert again and [x["place"]["id"] for x in again] != ids  # 어제 보여 준 곳이 그대로 반복되지 않아요
+
+
+def test_paraphrased_question_is_rejected():
+    from app.question.agent import same_as_asked
+
+    c = cond(ai=[{"q": "손주와 자전거 타러 어디로 갈까요?", "choices": ["서울숲", "뚝섬한강공원", "여의도한강공원"], "a": "서울숲"}])
+    assert same_as_asked(c, ["서울숲", "뚝섬한강공원", "여의도한강공원"])  # 글만 바꾼 같은 질문
+    assert same_as_asked(c, ["서울숲", "여의도한강공원"])
+    assert not same_as_asked(c, ["숲길", "물가", "탁 트인 광장"])  # 다른 질문
+    assert not same_as_asked(c, ["서울숲", "숲길", "물가"])  # 하나만 겹치면 괜찮아요
+
+
+def test_dont_know_slot_question_not_asked_again():
+    from app.question import flow
+
+    walk_q = flow.BANK["walk"]
+    # 화면은 '잘 모르겠어요'로 답한 걷기 질문을 a=None 기록으로 보내요
+    c = cond(ai=[{"q": walk_q["question"], "choices": walk_q["choices"], "a": None}])
+    assert "walk" in flow.asked_ids(c)
+    for _ in range(3):
+        q = client.post("/questions/next", json=c.model_dump()).json()
+        if q.get("done") or q.get("fallback"):
+            break
+        assert q.get("question") != walk_q["question"]
+        c = cond(ai=[*[x.model_dump() for x in c.ai], {"q": q["question"], "choices": q.get("choices") or [], "a": None}])
