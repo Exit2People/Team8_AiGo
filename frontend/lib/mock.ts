@@ -3,6 +3,7 @@ import { ApiError } from "./errors";
 import { GUS, dongsOf } from "./geo";
 import { computeRange } from "./range";
 import type { ChatMessage, ChatState, Conditions, Me, OpenResp, QuestionResp, RankingResp, RecommendResp, ReviewsResp, Social } from "./types";
+import { nickProblem } from "./nick";
 
 export function delay(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -331,6 +332,14 @@ export function signup(homeDong1: string | null) {
 export function logout() {
   setUser(null);
 }
+/** 가짜 응답: 형식만 보고, 몇 가지 예시 낱말은 욕설로 막아요 */
+export function nicknameCheck(nickname: string) {
+  const fmt = nickProblem(nickname);
+  if (fmt) return { ok: false, reason: "format", message: fmt };
+  if (/씨발|시발|병신|미친놈/.test(nickname)) return { ok: false, reason: "욕설", message: "욕설이나 비방이 감지되어 사용할 수 없는 닉네임이에요" };
+  return { ok: true, reason: null, message: null };
+}
+
 export function patchProfile(p: Partial<MockUser>): Me {
   const u = getUser();
   if (!u) throw new ApiError(401, "로그인해 주세요");

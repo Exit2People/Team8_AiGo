@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import type { FlowApi } from "../Flow";
 import { ChevronIcon, DamgoFace } from "../Icons";
 import { Caption, Primary, Sub, Title } from "../ui";
-import Mic, { cleanName, cleanNick } from "../Mic";
+import Mic, { cleanNick } from "../Mic";
 import HomePicker from "./HomePicker";
 import * as api from "@/lib/api";
 import { backupDevice, drop, readBlocked, readStamps, readVisits, save } from "@/lib/device";
@@ -13,6 +13,7 @@ import { BadgeCard } from "../Badges";
 import { GameCard, loadBest } from "../DamgoRun";
 import { TextSizePicker } from "../TextSize";
 import { THEMES } from "@/lib/theme";
+import { nickProblem } from "@/lib/nick";
 
 function Group({ y, children }: { y?: number; children: ReactNode }) {
   return (
@@ -131,7 +132,6 @@ export function My({ f }: { f: FlowApi }) {
 
         {u && (
           <Group>
-            <Line label="이름" value={u.name || "아직 없어요"} onClick={() => f.go({ k: "myedit", field: "name" })} />
             <Line label="닉네임" value={u.nickname || "아직 없어요"} onClick={() => f.go({ k: "myedit", field: "nickname" })} />
             <Line label="나이" value={u.age ? `${u.age}세` : "아직 없어요"} onClick={() => f.go({ k: "myedit", field: "age" })} />
             {u.provider === "email" && (
@@ -208,7 +208,6 @@ export function My({ f }: { f: FlowApi }) {
 }
 
 const FIELDS = {
-  name: { label: "이름", desc: "실제 이름을 적어 주세요", ph: "예) 김영자", max: 20 },
   nickname: { label: "닉네임", desc: "우표 · 한 줄 · 톡방에서 보이는 이름이에요", ph: "2 ~ 8자 · 한글 · 영어 · 숫자", max: 8 },
   age: { label: "나이", desc: "숫자만 적어 주세요", ph: "예) 68", max: 3 },
   home1: { label: "사는 곳", desc: "비워도 돼요 · 구와 동까지만 받아요", ph: "", max: 40 },
@@ -218,14 +217,13 @@ const FIELDS = {
 export function MyEdit({ f, field }: { f: FlowApi; field: keyof typeof FIELDS }) {
   const u = f.s.user;
   const cfg = FIELDS[field];
-  const init = u ? (field === "name" ? u.name : field === "nickname" ? u.nickname : field === "age" ? u.age : u.homeDong1 ?? "") : "";
+  const init = u ? (field === "nickname" ? u.nickname : field === "age" ? u.age : u.homeDong1 ?? "") : "";
   const [v, setV] = useState(init || "");
   const [pick, setPick] = useState(false);
   const [busy, setBusy] = useState(false);
   async function saveIt() {
     const t = v.trim();
-    if (field === "name" && !t) return f.note("이름을 적어 주세요");
-    if (field === "nickname" && !/^[가-힣A-Za-z0-9]{2,8}$/.test(t)) return f.note("닉네임은 2 ~ 8자, 한글 · 영어 · 숫자만 돼요");
+    if (field === "nickname" && nickProblem(t)) return f.note(nickProblem(t)!);
     if (field === "age" && !(/^\d+$/.test(t) && +t >= 14 && +t <= 120)) return f.note("나이를 숫자로 적어 주세요");
     setBusy(true);
     try {
@@ -234,6 +232,7 @@ export function MyEdit({ f, field }: { f: FlowApi; field: keyof typeof FIELDS })
       if (m.loggedIn) f.setUser(m);
       f.backWith("저장했어요");
     } catch (e) {
+      // 닉네임이 안 되면 서버가 이유 문장(예: 욕설이 감지되어 …)을 돌려줘요
       f.note(api.errText(e));
       setBusy(false);
     }
@@ -262,12 +261,17 @@ export function MyEdit({ f, field }: { f: FlowApi; field: keyof typeof FIELDS })
               onChange={(e) => setV(e.target.value)}
               aria-label={cfg.label}
             />
-            {(field === "name" || field === "nickname") && (
+            {field === "nickname" && (
               <div style={{ position: "absolute", right: 7, top: 7 }}>
-                <Mic value={v} replace pause={1200} max={cfg.max} clean={field === "nickname" ? cleanNick : cleanName} onText={setV} />
+                <Mic value={v} replace pause={1200} max={cfg.max} clean={cleanNick} onText={setV} />
               </div>
             )}
           </div>
+        )}
+        {field === "nickname" && v.trim() && nickProblem(v) && (
+          <p className="t-caption c-deep" role="alert" style={{ marginTop: 8 }}>
+            {nickProblem(v)}
+          </p>
         )}
         {field === "home1" && v && (
           <button className="btn btn-white" style={{ position: "relative", width: "100%", marginTop: 12 }} onClick={() => setV("")}>

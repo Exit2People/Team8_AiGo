@@ -701,9 +701,13 @@ html.ios .textbox {
   padding: 18px 20px;
 }
 
+/* 어두운 막: 웹처럼 화면이 넓으면 앱 배경(--bleed)까지 덮어요. 폰에서는 --bleed가 0이라 그대로예요 */
 .modal-bg {
   position: absolute;
-  inset: 0;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--bleed) * -1);
+  right: calc(var(--bleed) * -1);
   z-index: 90;
   background: rgba(17, 17, 17, 0.45);
   animation: fadeIn 0.2s ease both;
@@ -715,7 +719,8 @@ html.ios .textbox {
   bottom: 0;
   background: var(--white);
   border-radius: var(--r-sheet) var(--r-sheet) 0 0;
-  padding: 28px 24px 36px;
+  /* 흰 판은 앱 바닥처럼 화면 폭 전체로, 안의 내용은 가운데 폰 폭(393)에 맞춰요 */
+  padding: 28px calc(24px + var(--bleed)) 36px;
   box-shadow: var(--sh-sheet);
 }
 .modal .btn {

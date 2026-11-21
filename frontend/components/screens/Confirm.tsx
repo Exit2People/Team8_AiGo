@@ -5,7 +5,7 @@ import { Caption, Primary, Progress, Title } from "../ui";
 import { buildConditions, type Step } from "@/lib/flow";
 import { rangeSentence } from "@/lib/range";
 import { SLOT_NAME } from "@/lib/questions";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Pack, { type PackRect } from "../Pack";
 
 type Row = { name: string; value: string; fix?: Step };
@@ -32,6 +32,17 @@ export default function Confirm({ f, auto, step }: { f: FlowApi; auto?: string; 
   const [packing, setPacking] = useState(false);
   const [from, setFrom] = useState<PackRect[]>([]);
   const listRef = useRef<HTMLDivElement>(null);
+  // 목록이 칸보다 길면 아래를 흐리게 하고 '아래로 밀면 더 있어요'를 보여 줘요(맨 아래까지 내리면 사라져요)
+  const [more, setMore] = useState(false);
+  const checkMore = useCallback(() => {
+    const el = listRef.current;
+    if (el) setMore(el.scrollHeight - el.scrollTop - el.clientHeight > 6);
+  }, []);
+  useEffect(() => {
+    checkMore();
+    window.addEventListener("resize", checkMore);
+    return () => window.removeEventListener("resize", checkMore);
+  }, [checkMore, rows.length]);
   const go = () => {
     if (packing) return;
     if (f.still) return f.search("push");
@@ -59,10 +70,22 @@ export default function Confirm({ f, auto, step }: { f: FlowApi; auto?: string; 
         <Progress on={4} text="확인" />
         <Title y={112}>{"이대로\n찾아볼까요?"}</Title>
       </div>
-      <div ref={listRef} className="list scroll" style={{ top: 262, height: 382, gap: 6, padding: "4px 0 12px" }}>
+      <div
+        ref={listRef}
+        onScroll={checkMore}
+        className="list scroll"
+        style={{
+          top: 262,
+          height: 382,
+          gap: 6,
+          padding: "4px 0 12px",
+          ...(more && !packing ? { maskImage: "linear-gradient(to bottom, #000 80%, transparent)", WebkitMaskImage: "linear-gradient(to bottom, #000 80%, transparent)" } : {}),
+        }}
+      >
         {rows.map((r, n) => (
-          // 질문(항목)이 두 줄이어도 겹치지 않게 모든 줄을 60으로 키우고, 목록이 차도 줄이 눌리지 않게(flex: none) 해요. 넘치면 목록이 밀려요
-          <div key={n} data-pack-row className="row" style={{ minHeight: 60, flex: "none", padding: "6px 10px 6px 16px", visibility: packing ? "hidden" : undefined }}>
+          // 질문(항목)이 두 줄이어도 겹치지 않게 모든 줄을 60으로 같이 키우고,
+          // flex: none — 목록 칸에 맞춰 줄이 눌려 글자가 줄 밖으로 삐져나오지 않게(넘치면 목록을 밀어서 봐요)
+          <div key={n} data-pack-row className="row" style={{ flex: "none", minHeight: 60, padding: "6px 10px 6px 16px", visibility: packing ? "hidden" : undefined }}>
             <span style={{ width: 104, flex: "none" }}>
               <span className="t-label c-deep" style={{ display: "block" }}>
                 {String(n + 1).padStart(2, "0")}
@@ -71,7 +94,7 @@ export default function Confirm({ f, auto, step }: { f: FlowApi; auto?: string; 
                 {r.name}
               </span>
             </span>
-            <span className="main t-answer" style={{ wordBreak: "keep-all" }}>
+            <span className="main t-answer" style={{ wordBreak: "keep-all", overflowWrap: "anywhere", lineHeight: 1.25 }}>
               {r.value}
             </span>
             {r.fix && (
@@ -81,10 +104,15 @@ export default function Confirm({ f, auto, step }: { f: FlowApi; auto?: string; 
             )}
           </div>
         ))}
-        <p className="t-sub c-sub" style={{ marginTop: 8, wordBreak: "keep-all", opacity: packing ? 0 : 1, transition: "opacity .3s" }}>
+        <p className="t-sub c-sub" style={{ flex: "none", marginTop: 8, wordBreak: "keep-all", opacity: packing ? 0 : 1, transition: "opacity .3s" }}>
           {rangeSentence(s.origin?.name ?? "", cond.range)}
         </p>
       </div>
+      {more && !packing && (
+        <p className="abs center-x t-caption" aria-hidden="true" style={{ top: 622, pointerEvents: "none", color: "var(--ink)", fontWeight: 800 }}>
+          아래로 밀면 더 있어요 ↓
+        </p>
+      )}
       {!packing && (
         <>
           <Primary y={662} onClick={go}>

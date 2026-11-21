@@ -31,7 +31,7 @@ export type Step =
   | { k: "signup"; i: number }
   | { k: "welcome" }
   | { k: "my" }
-  | { k: "myedit"; field: "name" | "nickname" | "age" | "home1" }
+  | { k: "myedit"; field: "nickname" | "age" | "home1" }
   | { k: "mine" }
   | { k: "upload"; key: string }
   | { k: "cut"; key: string }
