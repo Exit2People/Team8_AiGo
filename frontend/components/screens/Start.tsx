@@ -4,19 +4,21 @@ import type { FlowApi } from "../Flow";
 import { CheckIcon } from "../Icons";
 import { Caption, Primary, Sheet } from "../ui";
 import { readStamps, readVisits } from "@/lib/device";
-import { photoIll } from "@/lib/illust";
+import { wideIll } from "@/lib/illust";
 import { useEffect, useState } from "react";
-import type { Visit } from "@/lib/device";
+import type { Stamp, Visit } from "@/lib/device";
 
 export default function Start({ f }: { f: FlowApi }) {
   const { s } = f;
   const user = s.user;
   const [visits, setVisits] = useState<Visit[]>([]);
-  const [stampN, setStampN] = useState(0);
+  const [stamps, setStamps] = useState<Record<string, Stamp>>({});
   useEffect(() => {
     setVisits(readVisits());
-    setStampN(Object.keys(readStamps()).length);
+    setStamps(readStamps());
   }, [user]);
+  const stampN = Object.keys(stamps).length;
+  const stamped = visits.filter((v) => stamps[`${v.id}@${v.date}`]?.photo);
 
   return (
     <div className="content">
@@ -35,17 +37,29 @@ export default function Start({ f }: { f: FlowApi }) {
               우표 {stampN}장 · 모두 보기 ›
             </span>
           </div>
-          {visits.length ? (
+          {/* 우표를 만든 곳만 보여 줘요 (올린 사진을 톱니 우표로, 살짝 기울게) */}
+          {stamped.length ? (
             <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-              {visits.slice(0, 3).map((v) => (
+              {stamped.slice(0, 3).map((v, i) => (
                 <div key={v.id + v.date} style={{ width: 108 }}>
-                  <img src={photoIll(v.kind, v.name)} alt="" width={108} height={70} style={{ objectFit: "cover", borderRadius: 12, display: "block", background: "var(--soft)" }} />
+                  <div className="visit-stamp-slot">
+                    <span className="stamp-wrap" style={{ transform: `rotate(${[-4, 3, -2][i % 3]}deg)` }}>
+                      <span className="stamp-paper" style={{ width: 84, height: 60 }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={stamps[`${v.id}@${v.date}`].photo} alt={`${v.name} 우표`} onError={(e) => (e.currentTarget.src = wideIll(v.kind, v.name))} />
+                      </span>
+                    </span>
+                  </div>
                   <p className="t-item" style={{ marginTop: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {v.name}
                   </p>
                 </div>
               ))}
             </div>
+          ) : visits.length ? (
+            <p className="t-sub c-mute" style={{ marginTop: 10 }}>
+              아직 우표가 없어요. 다녀온 곳에서 사진으로 우표를 만들어 봐요
+            </p>
           ) : (
             <p className="t-sub c-mute" style={{ marginTop: 10 }}>
               아직 다녀온 곳이 없어요. 오늘 첫 나들이를 찾아봐요
