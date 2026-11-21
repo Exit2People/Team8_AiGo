@@ -5,8 +5,8 @@ import { Caption, Primary, Progress, Title } from "../ui";
 import { buildConditions, type Step } from "@/lib/flow";
 import { rangeSentence } from "@/lib/range";
 import { SLOT_NAME } from "@/lib/questions";
-import { useState } from "react";
-import Pack from "../Pack";
+import { useRef, useState } from "react";
+import Pack, { type PackRect } from "../Pack";
 
 type Row = { name: string; value: string; fix?: Step };
 
@@ -25,20 +25,25 @@ export default function Confirm({ f }: { f: FlowApi }) {
   });
   const cond = buildConditions(s);
   const [packing, setPacking] = useState(false);
+  const [from, setFrom] = useState<PackRect[]>([]);
+  const listRef = useRef<HTMLDivElement>(null);
   const go = () => {
     if (packing) return;
     if (f.still) return f.search("push");
+    setFrom(measureRows(listRef.current));
     setPacking(true);
   };
 
   return (
     <div className="content">
-      <div style={{ opacity: packing ? 0.15 : 1, transition: "opacity .4s" }}>
-      <Progress on={4} text="확인" />
-      <Title y={112}>{"이대로\n찾아볼까요?"}</Title>
-      <div className="list scroll" style={{ top: 262, height: 382, gap: 6, padding: "4px 0 12px" }}>
+      {/* 가방에 담을 때: 제목은 흐리게(0.2), 답 줄은 그 자리에서 가방 카드로 바뀌니 원래 줄은 감춰요 */}
+      <div style={{ opacity: packing ? 0.2 : 1, transition: "opacity .4s" }}>
+        <Progress on={4} text="확인" />
+        <Title y={112}>{"이대로\n찾아볼까요?"}</Title>
+      </div>
+      <div ref={listRef} className="list scroll" style={{ top: 262, height: 382, gap: 6, padding: "4px 0 12px" }}>
         {rows.map((r, n) => (
-          <div key={n} className="row" style={{ minHeight: 48, padding: "6px 10px 6px 16px" }}>
+          <div key={n} data-pack-row className="row" style={{ minHeight: 48, padding: "6px 10px 6px 16px", visibility: packing ? "hidden" : undefined }}>
             <span style={{ width: 104, flex: "none" }}>
               <span className="t-label c-deep" style={{ display: "block" }}>
                 {String(n + 1).padStart(2, "0")}
@@ -57,10 +62,9 @@ export default function Confirm({ f }: { f: FlowApi }) {
             )}
           </div>
         ))}
-        <p className="t-sub c-sub" style={{ marginTop: 8, wordBreak: "keep-all" }}>
+        <p className="t-sub c-sub" style={{ marginTop: 8, wordBreak: "keep-all", opacity: packing ? 0 : 1, transition: "opacity .3s" }}>
           {rangeSentence(s.origin?.name ?? "", cond.range)}
         </p>
-      </div>
       </div>
       {!packing && (
         <>
@@ -74,7 +78,8 @@ export default function Confirm({ f }: { f: FlowApi }) {
       )}
       {packing && (
         <Pack
-          rows={rows}
+          rows={rows.map((r) => ({ name: r.name, value: r.value, fix: !!r.fix }))}
+          from={from}
           onPose={f.setPoseOv}
           onDone={() => {
             f.setPoseOv(null);
@@ -85,4 +90,23 @@ export default function Confirm({ f }: { f: FlowApi }) {
       )}
     </div>
   );
+}
+
+/** 답 줄 자리를 화면(393 × 852) 좌표로 재요. 목록 칸은 (24, 262, 345 × 382)이라 그 크기로 배율을 구해요.
+ *  목록이 스크롤돼 안 보이던 줄은 vis: false */
+const LIST = { x: 24, y: 262, h: 382 };
+function measureRows(list: HTMLDivElement | null): PackRect[] {
+  if (!list) return [];
+  const lr = list.getBoundingClientRect();
+  const k = lr.height / LIST.h || 1; // 화면 배율(zoom)
+  return [...list.querySelectorAll<HTMLElement>("[data-pack-row]")].map((el) => {
+    const r = el.getBoundingClientRect();
+    return {
+      x: LIST.x + (r.left - lr.left) / k,
+      y: LIST.y + (r.top - lr.top) / k,
+      w: r.width / k,
+      h: r.height / k,
+      vis: r.bottom > lr.top + 4 && r.top < lr.bottom - 4,
+    };
+  });
 }

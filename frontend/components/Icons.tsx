@@ -60,7 +60,17 @@ export function DamgoFace({ size = 52 }: { size?: number }) {
 }
 
 /** 티켓 프린터 (345×84, 화면 24·652) */
-export function Printer({ led = true }: { led?: boolean }) {
+/** 출력 입구 틈의 세로 가운데 (프린터 위에서부터). 티켓은 여기서 잘려 나와요 (figma-plugin printerFront: y 680 · 높이 8) */
+export const PRINTER_SLOT_Y = 32;
+
+/**
+ * 티켓 프린터 (345 × 84).
+ * part="body"는 몸체만(티켓 뒤), part="front"는 출력 입구 · 테두리 · 표시등만(티켓 앞) 그려요.
+ * 둘을 티켓 앞뒤로 겹쳐 두면 티켓이 입구 틈에서 정확히 나오는 것처럼 보여요.
+ */
+export function Printer({ led = true, part = "all" }: { led?: boolean; part?: "all" | "body" | "front" }) {
+  const body = part !== "front";
+  const front = part !== "body";
   return (
     <svg width="345" height="84" viewBox="0 0 345 84" aria-hidden="true" style={{ display: "block" }}>
       <defs>
@@ -74,10 +84,14 @@ export function Printer({ led = true }: { led?: boolean }) {
           <stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <rect width="345" height="84" rx="22" fill="url(#pr-body)" />
-      <rect x="12" y="28" width="321" height="8" rx="4" fill="#000000" />
-      <rect x="12" y="35" width="321" height="6" rx="3" fill="url(#pr-lip)" />
-      <circle cx="315" cy="56" r="4" fill="#F2A33A" style={{ opacity: led ? 1 : 0.25, transition: "opacity .2s" }} />
+      {body && <rect width="345" height="84" rx="22" fill="url(#pr-body)" />}
+      {front && (
+        <>
+          <rect x="12" y="28" width="321" height="8" rx="4" fill="#000000" />
+          <rect x="12" y="35" width="321" height="6" rx="3" fill="url(#pr-lip)" />
+          <circle cx="315" cy="56" r="4" fill="#F2A33A" style={{ opacity: led ? 1 : 0.25, transition: "opacity .2s" }} />
+        </>
+      )}
     </svg>
   );
 }

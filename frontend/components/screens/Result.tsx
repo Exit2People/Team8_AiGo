@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import type { FlowApi } from "../Flow";
-import { Barcode, Printer, TicketPaper } from "../Icons";
+import { Barcode, Printer, PRINTER_SLOT_Y, TicketPaper } from "../Icons";
 import { Caption, Secondary } from "../ui";
 import { lastLeg, linesText, placeNameSize } from "@/lib/format";
 import { wideIll } from "@/lib/illust";
@@ -22,7 +22,8 @@ export function Ticket({ c, i, n, closed, expected }: { c: Candidate; i: number;
   const size = placeNameSize(name);
   const transfers = c.route?.transfers ?? 0;
   return (
-    <div style={{ position: "relative", width: 313, height: 584, filter: "drop-shadow(0 10px 16px rgba(89,20,15,.3))" }}>
+    // 티켓은 칸 위치가 정해진 인쇄물 모양이라 글씨 크기 설정과 상관없이 기준 크기로 그려요(넘치거나 겹치지 않게)
+    <div style={{ position: "relative", width: 313, height: 584, filter: "drop-shadow(0 10px 16px rgba(89,20,15,.3))", ["--fs" as string]: 1, ["--fs-t" as string]: 1 }}>
       <TicketPaper />
       <div style={{ position: "absolute", left: 12, top: 12, width: 289, height: 170, borderRadius: 12, overflow: "hidden", background: "var(--chip)" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -78,8 +79,11 @@ export function Ticket({ c, i, n, closed, expected }: { c: Candidate; i: number;
         ["걷기", `약 ${last?.walkMin ?? 0}분`],
       ].map(([k, v], n2) => (
         <div key={k} className="abs" style={{ left: 24 + n2 * 89, top: 440, width: 86 }}>
-          <span className="t-tlabel c-tgray">{k}</span>
-          <p className="t-tvalue" style={{ marginTop: 6, fontSize: v.length > 5 ? 16 : 22, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <span className="t-tlabel c-tgray" style={{ display: "block" }}>
+            {k}
+          </span>
+          {/* 가이드: 칸 이름 y 440 · 칸 값 y 456 (22 / 줄 높이 1) */}
+          <p className="t-tvalue" style={{ position: "absolute", top: 16, left: 0, width: 86, fontSize: v.length > 5 ? 16 : 22, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {v}
           </p>
         </div>
@@ -88,8 +92,9 @@ export function Ticket({ c, i, n, closed, expected }: { c: Candidate; i: number;
         ["타는 곳", first?.station ?? "출발 동"],
         ["갈아타기", transfers ? `${transfers}번` : "없음"],
         ["운영 상황", closed ? "닫음" : c.open?.today ?? "운영 시간 확인 필요"],
+        // 가이드: 칸 값(456 ~ 478) 아래 489부터 19씩, 바코드(548) 위에서 끝나요
       ].map(([k, v], n2) => (
-        <div key={k} className="abs" style={{ left: 24, right: 24, top: 482 + n2 * 19, display: "flex", justifyContent: "space-between", gap: 8 }}>
+        <div key={k} className="abs" style={{ left: 24, right: 24, top: 489 + n2 * 19, height: 15, alignItems: "center", display: "flex", justifyContent: "space-between", gap: 8 }}>
           <span className="t-tmeta c-tgray" style={{ flex: "none" }}>
             {k}
           </span>
@@ -104,6 +109,18 @@ export function Ticket({ c, i, n, closed, expected }: { c: Candidate; i: number;
     </div>
   );
 }
+
+/** 티켓 절취선 높이 (티켓 위에서부터, 양끝 반원 홈 가운데) */
+const TEAR_Y = 422;
+/** 뜯긴 자리의 잔 톱니: 위 · 아래 조각이 같은 톱니로 맞물려요. 그림자까지 담기게 티켓 밖으로 넉넉히 잡아요 */
+const TEAR_CLIP = (() => {
+  const zig: string[] = [];
+  for (let x = -24, k = 0; x <= 337; x += 5, k++) zig.push(`${x}px ${TEAR_Y + (k % 2 ? 3 : -3)}px`);
+  return {
+    top: `polygon(-24px -24px, 337px -24px, ${[...zig].reverse().join(", ")})`,
+    bottom: `polygon(${zig.join(", ")}, 337px 640px, -24px 640px)`,
+  };
+})();
 
 /** 결과 (4.4 result) */
 export default function Result({ f }: { f: FlowApi }) {
@@ -126,14 +143,21 @@ export default function Result({ f }: { f: FlowApi }) {
       return;
     }
     setPhase("wait");
-    const t1 = setTimeout(() => setPhase("up"), 900);
+    // 담고가 한 손으로 프린터 단추를 누르고(press) → 티켓이 나오기 시작하면 사라져요(s4)
+    f.setPoseOv("press");
+    const t1 = setTimeout(() => {
+      setPhase("up");
+      f.setPoseOv("s4");
+    }, 900);
     const t2 = setTimeout(() => {
       setPhase("done");
       f.set((p) => ({ printed: { ...p.printed, [key]: true } }));
+      f.setPoseOv(null);
     }, 900 + 3000);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
+      f.setPoseOv(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
@@ -144,28 +168,28 @@ export default function Result({ f }: { f: FlowApi }) {
   const lastOne = s.idx >= s.cands.length - 1;
   const y = phase === "wait" ? 584 : 0;
   const shown = phase === "done";
+  const gone = s.tearing || shown;
+  // 티켓이 다 나오면 프린터는 아래로 내려가며 완전히 사라져요 (몸체 · 입구 같이)
+  const printerStyle: CSSProperties = {
+    left: 24,
+    top: 652,
+    opacity: gone ? 0 : 1,
+    visibility: gone ? "hidden" : "visible",
+    transform: gone ? "translateY(120px)" : "none",
+    // 사라질 때만 천천히, 다음 후보에서 다시 나올 땐 바로 보여요
+    transition: gone ? "opacity .6s, transform .7s, visibility 0s .7s" : "none",
+    filter: "drop-shadow(0 14px 26px rgba(89,20,15,.45))",
+  };
 
   return (
     <div className="content">
-      {/* 티켓 영역: 프린터 입구(y 684) 아래는 잘려요 */}
-      <div className="abs" style={{ left: 24, top: 62, width: 345, height: 622, overflow: "hidden" }}>
-        {s.tearing ? (
-          (["top", "bottom"] as const).map((part) => (
-            <div
-              key={part}
-              className={`tear-${part}`}
-              style={{
-                position: "absolute",
-                left: 16,
-                top: 38,
-                clipPath: part === "top" ? "inset(0 0 162px 0)" : "inset(422px 0 0 0)",
-                transformOrigin: part === "top" ? "20% 422px" : "80% 422px",
-              }}
-            >
-              <Ticket c={c} i={s.idx} n={s.cands.length} closed={closed} expected={soc?.expectedToday ?? 0} />
-            </div>
-          ))
-        ) : (
+      {/* 프린터 몸체 (티켓 뒤) */}
+      <div className="abs" style={printerStyle}>
+        <Printer part="body" />
+      </div>
+      {/* 티켓 영역: 프린터 출력 입구 틈(y 652 + 32 = 684) 아래는 잘려서, 티켓이 틈에서 나오는 것처럼 보여요 */}
+      <div className="abs" style={{ left: 24, top: 62, width: 345, height: 652 + PRINTER_SLOT_Y - 62, overflow: "hidden" }}>
+        {!s.tearing && (
           <div
             style={{
               position: "absolute",
@@ -179,15 +203,35 @@ export default function Result({ f }: { f: FlowApi }) {
           </div>
         )}
       </div>
+      {/* 프린터 입구 · 표시등 (티켓 앞) */}
+      <div className="abs" style={{ ...printerStyle, filter: "none" }}>
+        <Printer part="front" led={phase !== "wait"} />
+      </div>
+      {/* 티켓 뜯기: 잘리는 칸 밖에서, 프린터보다 위에 온전한 티켓을 절취선(톱니)대로 위아래로 나눠 그려요 */}
+      {s.tearing &&
+        (["top", "bottom"] as const).map((part) => (
+          <div
+            key={part}
+            className={`abs tear-${part}`}
+            style={{
+              left: 24 + 16,
+              top: 62 + 38,
+              zIndex: 5,
+              clipPath: TEAR_CLIP[part],
+              transformOrigin: part === "top" ? `20% ${TEAR_Y}px` : `80% ${TEAR_Y}px`,
+            }}
+          >
+            <Ticket c={c} i={s.idx} n={s.cands.length} closed={closed} expected={soc?.expectedToday ?? 0} />
+          </div>
+        ))}
+      {/* 찌익: 벌어지는 절취선 자리, 조각들 위에 */}
       {s.tearing && (
-        <span className="abs center-x t-title tear-word" style={{ top: 470, color: "var(--ink)" }} aria-hidden="true">
+        <span className="abs center-x t-title tear-word" style={{ top: 62 + 38 + TEAR_Y - 20, zIndex: 6, color: "var(--ink)" }} aria-hidden="true">
           찌익
         </span>
       )}
-      <div className="abs" style={{ left: 24, top: 652, opacity: s.tearing ? 0 : shown ? 0.25 : 1, transform: s.tearing ? "translateY(120px)" : "none", transition: "opacity .6s, transform .7s", filter: "drop-shadow(0 14px 26px rgba(89,20,15,.45))" }}>
-        <Printer led={phase !== "wait"} />
-      </div>
-      {shown && (
+      {/* 뜯는 동안엔 방명록 칩 · 버튼을 감춰 아래 조각이 그 뒤로 지나가지 않게 해요 */}
+      {shown && !s.tearing && (
         <>
           <div className="abs center-x" style={{ top: 704, display: "flex", justifyContent: "center" }}>
             {closed ? (

@@ -90,6 +90,12 @@ export default function Stage({ poseKey, pose, coral, still, inert, overlay, chi
   useEffect(() => {
     setThemeColor(bar);
   }, [bar]);
+  useEffect(() => {
+    // 아이폰 · 아이패드(데스크톱 모드 포함)에만 ios 클래스 → 입력칸 확대 막기 (globals.css)
+    const ua = navigator.userAgent;
+    const ios = !/Android/.test(ua) && (/iPhone|iPod|iPad/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+    document.documentElement.classList.toggle("ios", ios);
+  }, []);
 
   const style = fit
     ? ({
@@ -112,7 +118,7 @@ export default function Stage({ poseKey, pose, coral, still, inert, overlay, chi
           <div className="bg bg-coral" style={{ transform: `translateY(${bg.coralY}px)` }} />
           <div className="bg bg-deep" style={{ opacity: bg.deep }} />
           <div className="bg bg-warm" style={{ opacity: bg.warm }} />
-          <DamgoBack pose={p} blink={blink} wag={wag} />
+          <DamgoBack pose={p} blink={blink} wag={wag} still={still} />
           <div className="content-wrap" inert={inert || undefined}>
             {children}
           </div>

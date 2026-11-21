@@ -176,7 +176,7 @@ function Faces({ names }: { names: string[] }) {
             textAlign: "center",
             lineHeight: "38px",
             fontWeight: 800,
-            fontSize: 17,
+            fontSize: "calc(17px * var(--fs))",
           }}
         >
           {n.slice(0, 1)}

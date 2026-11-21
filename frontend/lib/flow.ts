@@ -1,6 +1,6 @@
 /** 화면 흐름 상태 모양 (11_FRONTEND_SPEC 2 · 3절) */
 import type { Candidate, Conditions, HeardItem, Me, Origin, Slot, Social } from "./types";
-import type { NearDong } from "./geo";
+import { DONGS, type NearDong } from "./geo";
 import { computeRange } from "./range";
 
 export type Step =
@@ -151,7 +151,8 @@ export function poseOf(step: Step, s: FlowState): string {
     case "start":
       return s.user ? "home" : "s1";
     case "origin":
-      return "loc";
+      // 아까 고른 동 버튼이 있으면 시트가 72 올라가니 담고도 같이 올려요 (Origin.tsx)
+      return s.origin && DONGS.some((d) => d.id === s.origin?.id) ? "locUp" : "loc";
     case "nearby":
       return "near";
     case "gu":

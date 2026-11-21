@@ -4,6 +4,7 @@ import type { FlowApi } from "../Flow";
 import { CheckIcon, KakaoIcon } from "../Icons";
 import { Caption, Secondary, Sheet, Sub, Title } from "../ui";
 import { KAKAO_START, isMock } from "@/lib/api";
+import { saveResume } from "@/lib/resume";
 
 /** 로그인 · 회원가입 (4.1 login) */
 export default function Login({ f }: { f: FlowApi }) {
@@ -32,6 +33,8 @@ export default function Login({ f }: { f: FlowApi }) {
         className="btn btn-kakao"
         style={{ left: 24, top: 586, width: 345, borderRadius: 12, justifyContent: "center", gap: 10 }}
         onClick={() => {
+          // 머물던 화면(예: 도착 화면)에서 왔으면, 카카오에서 돌아온 뒤 그 자리로 이어 가요
+          if (f.backTo.current) saveResume(f.backTo.current, f.sRef.current);
           if (isMock()) {
             // 가짜 응답: 카카오 대신 처음 가입처럼 돌아와요
             try {
