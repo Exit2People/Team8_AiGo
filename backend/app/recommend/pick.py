@@ -49,6 +49,8 @@ def rule_score(item: dict, cond: Conditions) -> float:
             s += 1
     if matches_place(p, cond.extra.place):
         s += 5
+        if cond.extra.place.replace(" ", "") in (p.get("name") or "").replace(" ", ""):
+            s += 2  # 이름이 딱 맞는 곳(서울숲)을 '그 근처'(서울숲역 옆 박물관)보다 앞에
     elif item.get("visited"):
         s -= config.VISITED_PENALTY  # 다녀온 곳은 조금 뒤로 (직접 말한 곳이면 깎지 않아요)
     wishes = list(cond.extra.wish)

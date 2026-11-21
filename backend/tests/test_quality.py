@@ -240,3 +240,22 @@ def test_rule_pick_keeps_one_familiar_slot():
     # 잘 안 맞는 다녀온 곳은 억지로 넣지 않아요
     got = [p["item"]["place"]["id"] for p in pick_by_rule([*fits, it("W", "박물관", [], True)], c)]
     assert "W" not in got
+
+
+def test_named_place_first_even_if_visited():
+    sf = [p["id"] for p in loader.places() if p.get("name") == "서울숲"]
+    assert sf
+    c = cond(extra={"place": "서울숲"})
+    for visited in ([], sf):  # 기록 없음 · 어제 다녀옴 모두
+        j = client.post("/recommend", json={"conditions": c.model_dump(), "visited": visited}).json()
+        assert j["candidates"][0]["place"]["name"] == "서울숲"
+        assert j["candidates"][0]["reason"].startswith("말씀하신 서울숲")
+
+
+def test_open_place_without_ai():
+    from app.question.opening import place_only
+
+    c, f = asyncio.run(opening.parse_open(cond(), "서울숲 가고 싶어"))
+    assert c.extra.place == "서울숲" and "place" in f and "place" in c.filled
+    assert place_only(cond(), "오늘 바람 쐬러 공원 가고 싶어요")[0].extra.place is None
+    assert place_only(cond(extra={"place": "한강"}), "서울숲 가고 싶어")[1] == []  # 이미 있으면 덮지 않아요
