@@ -200,9 +200,10 @@ async def chat_message(pid: str, body: MessageBody):
             (today(), pid, body.client, CONTEXT_OTHERS), "all")
         mine_t = [r["body"] for r in reversed(mine or [])]
         others_t = [r["body"] for r in reversed(others or [])]
+        # 전화번호는 먼저 가려요: 외부 검사(Jev)에도 번호가 나가지 않게
+        text = _PHONE.sub("(전화번호는 가렸어요)", text)
         if await chat_safety.is_blocked(text, mine_t, others_t):
             return JSONResponse(status_code=400, content={"detail": BLOCKED})
-        text = _PHONE.sub("(전화번호는 가렸어요)", text)
     r = await asyncio.to_thread(_say, pid, body.client, m["nick"], kind, text)
     return {**_msg({**r, "client": body.client}, body.client)}
 
