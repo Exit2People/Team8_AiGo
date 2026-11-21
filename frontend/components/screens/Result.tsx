@@ -107,6 +107,18 @@ export function Ticket({ c, i, n, closed, expected }: { c: Candidate; i: number;
   );
 }
 
+/** 티켓 절취선 높이 (티켓 위에서부터, 양끝 반원 홈 가운데) */
+const TEAR_Y = 422;
+/** 뜯긴 자리의 잔 톱니: 위 · 아래 조각이 같은 톱니로 맞물려요. 그림자까지 담기게 티켓 밖으로 넉넉히 잡아요 */
+const TEAR_CLIP = (() => {
+  const zig: string[] = [];
+  for (let x = -24, k = 0; x <= 337; x += 5, k++) zig.push(`${x}px ${TEAR_Y + (k % 2 ? 3 : -3)}px`);
+  return {
+    top: `polygon(-24px -24px, 337px -24px, ${[...zig].reverse().join(", ")})`,
+    bottom: `polygon(${zig.join(", ")}, 337px 640px, -24px 640px)`,
+  };
+})();
+
 /** 결과 (4.4 result) */
 export default function Result({ f }: { f: FlowApi }) {
   const { s } = f;
@@ -174,23 +186,7 @@ export default function Result({ f }: { f: FlowApi }) {
       </div>
       {/* 티켓 영역: 프린터 출력 입구 틈(y 652 + 32 = 684) 아래는 잘려서, 티켓이 틈에서 나오는 것처럼 보여요 */}
       <div className="abs" style={{ left: 24, top: 62, width: 345, height: 652 + PRINTER_SLOT_Y - 62, overflow: "hidden" }}>
-        {s.tearing ? (
-          (["top", "bottom"] as const).map((part) => (
-            <div
-              key={part}
-              className={`tear-${part}`}
-              style={{
-                position: "absolute",
-                left: 16,
-                top: 38,
-                clipPath: part === "top" ? "inset(0 0 162px 0)" : "inset(422px 0 0 0)",
-                transformOrigin: part === "top" ? "20% 422px" : "80% 422px",
-              }}
-            >
-              <Ticket c={c} i={s.idx} n={s.cands.length} closed={closed} expected={soc?.expectedToday ?? 0} />
-            </div>
-          ))
-        ) : (
+        {!s.tearing && (
           <div
             style={{
               position: "absolute",
@@ -204,16 +200,35 @@ export default function Result({ f }: { f: FlowApi }) {
           </div>
         )}
       </div>
-      {s.tearing && (
-        <span className="abs center-x t-title tear-word" style={{ top: 470, color: "var(--ink)" }} aria-hidden="true">
-          찌익
-        </span>
-      )}
       {/* 프린터 입구 · 표시등 (티켓 앞) */}
       <div className="abs" style={{ ...printerStyle, filter: "none" }}>
         <Printer part="front" led={phase !== "wait"} />
       </div>
-      {shown && (
+      {/* 티켓 뜯기: 잘리는 칸 밖에서, 프린터보다 위에 온전한 티켓을 절취선(톱니)대로 위아래로 나눠 그려요 */}
+      {s.tearing &&
+        (["top", "bottom"] as const).map((part) => (
+          <div
+            key={part}
+            className={`abs tear-${part}`}
+            style={{
+              left: 24 + 16,
+              top: 62 + 38,
+              zIndex: 5,
+              clipPath: TEAR_CLIP[part],
+              transformOrigin: part === "top" ? `20% ${TEAR_Y}px` : `80% ${TEAR_Y}px`,
+            }}
+          >
+            <Ticket c={c} i={s.idx} n={s.cands.length} closed={closed} expected={soc?.expectedToday ?? 0} />
+          </div>
+        ))}
+      {/* 찌익: 벌어지는 절취선 자리, 조각들 위에 */}
+      {s.tearing && (
+        <span className="abs center-x t-title tear-word" style={{ top: 62 + 38 + TEAR_Y - 20, zIndex: 6, color: "var(--ink)" }} aria-hidden="true">
+          찌익
+        </span>
+      )}
+      {/* 뜯는 동안엔 방명록 칩 · 버튼을 감춰 아래 조각이 그 뒤로 지나가지 않게 해요 */}
+      {shown && !s.tearing && (
         <>
           <div className="abs center-x" style={{ top: 704, display: "flex", justifyContent: "center" }}>
             {closed ? (
