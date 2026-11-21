@@ -55,7 +55,7 @@ NICK_OK = ("고추잠자리", "고추장", "고추밭", "고추꽃", "고춧가�
            "고추전", "고추냉이", "시바견", "시바이누", "수도꼭지", "젖소", "섹션", "슬롯머신", "대포항", "미친듯",
            "토토로", "토토리", "꼭지점", "꼭짓점", "도박사의", "대마도", "개새우", "정액제", "젖병",
            "꼰대리", "게이트", "게이지", "섹터", "색소폰", "호로록", "후레쉬", "새끼고양이",
-           "새끼강아지", "새끼오리", "호모사피엔스", "마약김밥", "마약떡볶이")
+           "새끼강아지", "새끼오리", "호모사피엔스", "마약김밥", "마약떡볶이", "살인미소")
 # korcen(오픈소스, Apache-2.0) 갈래 → 우리 이유 갈래
 _KORCEN_GROUP = {"sexual": "성적", "politics": "정치", "general": "욕설", "minor": "욕설", "belittle": "욕설",
                  "race": "욕설", "parent": "욕설"}
@@ -109,7 +109,7 @@ def check_rules(nickname: str | None) -> tuple[str, str] | None:
     if t.isdigit():
         return "digits", MSG["digits"]
     if chat_safety.has_banned_word(t):
-        g = _group(t)
+        g = slang_group(t) or _group(t)  # 은어 표가 더 정확한 갈래(비하 …)를 알면 그 이유를 써요
         return g, MSG[g]
     g = slang_group(t)
     if g:
