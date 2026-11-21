@@ -751,6 +751,7 @@ export default function Flow() {
 
   return (
     <Stage
+      scene={`${s.stack.length}:${step.k}:${s.busy ?? ""}`}
       poseKey={poseKey}
       pose={getPose(shownKey)}
       blink={idle.blink}
