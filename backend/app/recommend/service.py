@@ -1,6 +1,6 @@
 """추천 전체 순서: 거르기 → (넓혀 찾기 · 실제 길) → 고르기 → 확인 → 보여 주기 전 다시 재기 → 정보 붙이기.
 
-추천 에이전트(LangGraph, AIGO_AGENT=1)는 오늘 만들지 않았어요 → 켜져 있어도 한 번 호출(pick_by_ai)로 가요 (START_HERE 4.1 5번).
+고르기 사슬: 추천 에이전트(AIGO_AGENT=1, 화면 대기 20초 안에 끝나게 시간을 나눠요) → 실패 · 늦음이면 Claude 한 번(pick_by_ai) → 규칙.
 """
 
 import asyncio
@@ -18,6 +18,8 @@ from app.recommend.wish import place_text
 from app.schemas import Conditions
 
 log = logging.getLogger("aigo.recommend")
+
+AGENT_RESERVE = 8.0  # 에이전트가 실패해도 한 번 호출(6초) + 다시 재기 · 정보 붙이기가 들어갈 자리
 
 
 def _https(url: str | None) -> str | None:
@@ -52,7 +54,9 @@ def _finish(c: dict, it: dict) -> None:
 
 async def recommend(cond: Conditions, visited: list[str]) -> dict:
     t0 = time.monotonic()
-    total = config.RECOMMEND_TOTAL
+    agent_mode = config.agent_on() and config.has_ai()
+    # 에이전트를 쓰면 8초 대신 화면 대기(REC_FAIL 20초) − 1초 안에서 끝내요
+    total = config.REC_WAIT - 1.0 if agent_mode else config.RECOMMEND_TOTAL
 
     def left(margin: float = 0.0) -> float:
         return total - (time.monotonic() - t0) - margin
@@ -107,7 +111,25 @@ async def recommend(cond: Conditions, visited: list[str]) -> dict:
     verified: list[dict] = []
     external: list[dict] = []
     asked_external = False
-    if pool:
+    if agent_mode:
+        from app.recommend.agent.graph import pick_by_agent
+
+        everything = [x for x in items if not x.get("overEstimate")]
+        budget = min(config.AGENT_TIMEOUT, left(AGENT_RESERVE))
+        r = await pick_by_agent(pool, work_cond, visited, now, wtext, budget, everything)
+        if r is not None:
+            by = "agent"
+            picks, seen = r
+            seen_ids = {x["place"]["id"] for x in seen}
+            pool = seen + [x for x in pool if x["place"]["id"] not in seen_ids]
+            verified = await confirm_by_jev(verify_picks(picks, seen))
+            if len(verified) < config.MAX_CANDIDATES:
+                used = {v["item"]["place"]["id"] for v in verified}
+                rest = [x for x in pool if x["place"]["id"] not in used and not x.get("overEstimate")]
+                if not verified:
+                    by = "rule"
+                verified += pick_by_rule(rest, work_cond, config.MAX_CANDIDATES - len(verified))
+    if pool and by != "agent" and not verified:
         picks = await pick_by_ai(pool, work_cond, min(config.RECOMMEND_AI_MAX, left(0.5)))
         if picks is not None:
             by = "ai"
@@ -168,7 +190,13 @@ async def _measure_shown(shown: list[dict], cond: Conditions, now, budget: float
     todo = [v for v in shown if v["item"]["route"].get("source") not in ("tmap", "seoul")]
     if not todo or budget <= 0.3 or not transit.enabled():
         return shown
-    measured = await transit.measure_all([v["item"] for v in todo], cond, now, budget)
+    wide = cond.model_copy(deep=True)
+    wide.range.oneWayMin = cond.range.oneWayMin + config.AGENT_RELAX_MIN
+    plain = [v["item"] for v in todo if not v["item"].get("relaxed")]
+    relaxed = [v["item"] for v in todo if v["item"].get("relaxed")]
+    a, b = await asyncio.gather(transit.measure_all(plain, cond, now, budget),
+                                transit.measure_all(relaxed, wide, now, budget))
+    measured = a + [{**m, "relaxed": True} for m in b]
     if not measured:
         # 재지 못했으면 어림 길 그대로 (어림으로 범위 안인 곳만 여기까지 와요)
         return shown

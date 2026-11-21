@@ -51,6 +51,7 @@ SESSION_DAYS = 30
 CONSENT_VERSION = "2026-11-20"
 RETENTION_DAYS = 90
 EST_SLACK_MIN = 15
+REC_WAIT = 20.0  # 화면 REC_FAIL (04_CONSTANTS 3절)
 
 
 def env(name: str, default: str | None = None) -> str | None:

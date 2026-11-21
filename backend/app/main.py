@@ -38,7 +38,7 @@ def health():
         "jev": config.has_jev(),
         "model": config.model(),
         "question": config.question_mode(),
-        "agent": False,  # 추천 에이전트(LangGraph)는 만들지 않았어요 → 늘 한 번 호출
+        "agent": config.agent_on(),
         "now": config.now().strftime("%Y-%m-%d %H:%M"),
         "weather": weather.current()["weather"],
     }
