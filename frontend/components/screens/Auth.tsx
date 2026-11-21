@@ -98,9 +98,10 @@ export function Agree({ f }: { f: FlowApi }) {
   );
 }
 
-function HomeRow({ y, value, onPick }: { y: number; value: string; onPick: () => void }) {
+function HomeRow({ y, value, onPick, inFlow }: { y: number; value: string; onPick: () => void; inFlow?: boolean }) {
   return (
-    <div className="row abs" style={{ left: 24, top: y, minHeight: 64 }}>
+    // inFlow: 이미 왼쪽 여백이 있는 칸 안에 놓을 때는 흐름대로(왼쪽 여백을 두 번 넣지 않게)
+    <div className={inFlow ? "row" : "row abs"} style={inFlow ? { width: "100%", minHeight: 64 } : { left: 24, top: y, minHeight: 64 }}>
       <span className="main">
         <span className="t-item c-mute" style={{ display: "block" }}>
           사는 곳 · 비워도 돼요
@@ -238,7 +239,10 @@ function Field({
 }: { label: string; value: string; onChange: (v: string) => void; type?: string; mode?: "email" | "numeric" | "text"; max?: number; placeholder?: string; onEnter?: () => void }) {
   return (
     <label style={{ display: "block", marginTop: 14 }}>
-      <span className="t-label c-deep">{label}</span>
+      {/* 블록으로 둬야 이름표가 글자 높이만큼만 자리를 차지해요(줄 안에 두면 위아래로 더 커져 아래 버튼과 겹쳐요) */}
+      <span className="t-label c-deep" style={{ display: "block" }}>
+        {label}
+      </span>
       <input
         className="textbox"
         style={{ marginTop: 6, height: 58 }}
@@ -280,7 +284,7 @@ export function Elogin({ f }: { f: FlowApi }) {
       <Title y={112}>{"이메일로\n로그인해요"}</Title>
       <Sub y={196}>{"가입할 때 쓴\n이메일이에요"}</Sub>
       <Sheet y={440} />
-      <div className="abs" style={{ left: 24, top: 446, width: 345 }}>
+      <div className="abs" style={{ left: 24, top: 440, width: 345 }}>
         <Field label="이메일" type="email" mode="email" value={email} onChange={setEmail} placeholder="damgo@aigo.kr" />
         <Field label="비밀번호" type="password" value={pw} onChange={setPw} onEnter={login} />
       </div>
@@ -387,7 +391,7 @@ export function Signup({ f, i }: { f: FlowApi; i: number }) {
 
   const input =
     i === 6 ? (
-      <HomeRow y={0} value={v} onPick={() => setPick(true)} />
+      <HomeRow y={0} inFlow value={v} onPick={() => setPick(true)} />
     ) : (
       <div style={{ position: "relative" }}>
         <input
@@ -413,7 +417,25 @@ export function Signup({ f, i }: { f: FlowApi; i: number }) {
   return (
     <div className="content">
       <Title y={112}>회원가입</Title>
-      <Sub y={160}>{`일곱 가지 가운데 ${i + 1}번째`}</Sub>
+      {/* 진행 표시: 7칸 막대 + '4 / 7 단계' (질문 화면의 진행 막대와 같은 모양) */}
+      <div
+        className="abs"
+        style={{ left: 24, top: 166, display: "flex", alignItems: "center", gap: 12 }}
+        role="progressbar"
+        aria-valuemin={1}
+        aria-valuemax={STEPS.length}
+        aria-valuenow={i + 1}
+        aria-label={`회원가입 ${STEPS.length}단계 중 ${i + 1}단계, ${st.name}`}
+      >
+        <span className="progress-bar" aria-hidden="true">
+          {STEPS.map((_, n) => (
+            <i key={n} className={n <= i ? "on" : ""} style={{ width: 22 }} />
+          ))}
+        </span>
+        <span className="t-answer" aria-hidden="true">
+          {i + 1} / {STEPS.length} 단계
+        </span>
+      </div>
       <Sheet y={240} />
       <div className="abs" style={{ left: 24, top: 266, width: 345 }}>
         <p className="t-tile">{st.name}</p>
