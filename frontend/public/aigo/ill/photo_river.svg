@@ -1,0 +1,3 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="120" viewBox="0 0 100 120">
+<rect width="100" height="120" fill="#DEDEDE"/><circle cx="70" cy="36" r="13" fill="#FF5A4F"/><rect x="0" y="74" width="100" height="46" fill="#111111"/><path d="M0 74 C14 60 30 60 44 74 C58 60 72 60 86 74 C92 68 96 66 100 66" stroke="#FFFFFF" stroke-width="3" fill="none"/><rect x="0" y="72" width="100" height="3" fill="#FFFFFF"/><path d="M10 92 H34 M52 100 H78 M20 108 H44" stroke="#DEDEDE" stroke-width="2"/>
+</svg>
