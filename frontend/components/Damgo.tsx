@@ -57,6 +57,7 @@ function paw([cx, cy, rx, ry, rot, on]: Pose["p"][number]): CSSProperties {
 export function DamgoBack({ pose, blink, wag, still }: { pose: Pose; blink?: boolean; wag?: boolean; still?: boolean }) {
   const baseRef = useRef<HTMLDivElement>(null);
   const tipRef = useRef<HTMLDivElement>(null);
+  const headRef = useRef<HTMLDivElement>(null);
   const mode: TailMode = still || pose.x ? "off" : wag ? "think" : "idle";
   const b = pose.t[0];
   const t = pose.t[1] ?? b;
@@ -64,13 +65,13 @@ export function DamgoBack({ pose, blink, wag, still }: { pose: Pose; blink?: boo
     () => ({ base: [b[0], b[1], b[2]], tip: [t[0], t[1], t[2]], head: [pose.h[0], pose.h[1]] }),
     [b, t, pose.h],
   );
-  useTail(baseRef, tipRef, mode, geom);
+  useTail(baseRef, tipRef, mode, geom, headRef);
   return (
     <div className={`damgo${blink || pose.e[2] ? " blink" : ""}`} style={{ opacity: pose.x ? 0 : 1 }} aria-hidden="true">
       {pose.t.map(([cx, cy, d, on], i) => (
         <div key={i} ref={i === 0 ? baseRef : i === 1 ? tipRef : undefined} className={`damgo-tail tail-${i + 1}`} style={circle(cx, cy, d, on)} />
       ))}
-      <div className="damgo-head" style={headStyle(pose)}>
+      <div ref={headRef} className="damgo-head" style={headStyle(pose)}>
         <DamgoHeadSvg look={[pose.e[0], pose.e[1]]} />
       </div>
     </div>

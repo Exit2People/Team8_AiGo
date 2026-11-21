@@ -19,38 +19,45 @@ const POSES = raw as unknown as Record<string, Pose>;
 const UP = new Map<Pose, Pose>();
 
 /**
- * 꼬리는 늘 위를 향해요: 큰 원(꼬리 뿌리) 위에 작은 원(꼬리 끝)이 오도록 고쳐요.
- * - 끝이 뿌리보다 아래 있는 자세는 뿌리를 기준으로 위로 뒤집어요.
- * - 원이 하나뿐인 자세는 뿌리 위에 끝 원(0.8배)을 더해요.
- * poses.json은 그대로 두고 불러올 때만 고쳐요.
+ * 꼬리 모양 (2026-11-21 사용자 그림): 작은 원 = 머리 쪽에 붙은 꼬리 뿌리,
+ * 큰 원 = 뿌리에서 위 · 바깥쪽으로 이어져 부푼 꼬리 끝.
+ * 그림 속 두 원의 비율 · 자리(큰 원 지름 80 기준): 작은 원은 큰 원 가운데에서 머리 쪽으로 10, 아래로 47, 지름 58.
+ * 큰 원은 화면마다 디자인에서 꼬리를 둔 자리(poses.json 첫 원)에서 지름의 0.3배만큼 위로 올려 머리 위로 부푼 끝이 보이게 두고,
+ * 작은 원을 그림 비율대로 그 아래 · 머리 쪽에 붙여요
+ * → 화면 가장자리의 담고도 꼬리가 예전만큼 보여요.
  */
-function tailUp(p: Pose): Pose {
+const TIP_D = 80;
+/** 메인(시작) 화면은 머리가 아주 커서 꼬리가 가려져요 → 꼬리만 오른쪽 위(오른쪽 귀 너머)로 빼요 [x, y] */
+const TAIL_NUDGE: Record<string, [number, number]> = { s1: [28, -70], home: [28, -70], s1i: [28, -70] };
+const NUDGED = new Map<Pose, [number, number]>(Object.entries(TAIL_NUDGE).filter(([k]) => POSES[k]).map(([k, v]) => [POSES[k], v]));
+const ROOT_FROM_TIP: [number, number, number] = [-10, 47, 58]; // [바깥쪽 +x, 아래 +y, 지름]
+
+/** 꼬리 두 원을 [뿌리(작은 원), 끝(큰 원)]으로 다시 놓아요. poses.json은 그대로 두고 불러올 때만 고쳐요. */
+function tailShape(p: Pose): Pose {
   const cached = UP.get(p);
   if (cached) return cached;
-  const [base, tip, ...rest] = p.t;
+  const [base, , ...rest] = p.t;
   let out = p;
   if (base && base[3]) {
-    const side = base[0] >= p.h[0] ? 1 : -1; // 꼬리가 머리 오른쪽이면 1
-    let up: Pose["t"][number];
-    if (tip && tip[3]) {
-      up = tip[1] > base[1] ? [tip[0], base[1] - (tip[1] - base[1]), tip[2], 1] : tip;
-    } else {
-      up = [base[0] + side * base[2] * 0.08, base[1] - base[2] * 0.62, Math.round(base[2] * 0.8), 1];
-    }
-    // 두 원은 늘 하나로 붙어 있어요: 가운데 사이가 두 반지름 합의 0.7배를 넘지 않게 끝 원을 당겨요
-    const dx = up[0] - base[0];
-    const dy = up[1] - base[1];
-    const dist = Math.hypot(dx, dy);
-    const max = ((base[2] + up[2]) / 2) * 0.7;
-    if (dist > max) up = [base[0] + (dx * max) / dist, base[1] + (dy * max) / dist, up[2], 1];
-    out = { ...p, t: [base, up, ...rest] };
+    const [hx, , , r] = p.h;
+    const side = base[0] >= hx ? 1 : -1; // 꼬리가 머리 오른쪽이면 1
+    const k = base[2] / TIP_D;
+    const nudge = NUDGED.get(p) ?? [0, 0];
+    const tx = base[0] + nudge[0];
+    const ty = base[1] - base[2] * 0.3 + nudge[1];
+    const a = (r * Math.PI) / 180; // 머리가 기울면 꼬리도 같이
+    const x = side * ROOT_FROM_TIP[0] * k;
+    const y = ROOT_FROM_TIP[1] * k;
+    const root: Pose["t"][number] = [tx + x * Math.cos(a) - y * Math.sin(a), ty + x * Math.sin(a) + y * Math.cos(a), ROOT_FROM_TIP[2] * k, 1];
+    const tip: Pose["t"][number] = [tx, ty, base[2], 1];
+    out = { ...p, t: [root, tip, ...rest] };
   }
   UP.set(p, out);
   return out;
 }
 
 export function getPose(key: string): Pose {
-  return tailUp(POSES[key] ?? POSES[key.replace(/(In|Top)$/, "")] ?? POSES.s1);
+  return tailShape(POSES[key] ?? POSES[key.replace(/(In|Top)$/, "")] ?? POSES.s1);
 }
 
 export function hasPose(key: string): boolean {
@@ -64,7 +71,7 @@ const FLAT = new Set([
   "stamped", "nextp", "next", "nextd",
 ]);
 const END_Y: Record<string, number> = {
-  loc: 450, locUp: 378, near: 260, gu: 260, st: 260, body: 320, time: 320, q1: 320, fb: 320, ask: 520, ask2: 520,
+  loc: 450, locUp: 378, near: 260, gu: 260, st: 260, open: 260, body: 320, time: 320, q1: 320, fb: 320, ask: 520, ask2: 520,
   last: 250, fill: 480, tear: 700, route: 250, none: 520, off: 520, end: 520, mine: 220, mine2: 220,
   chat: 160, chatmenu: 160, my: 160, del: 160, su1: 250, myedit: 160, upload: 220, cut: 230, review: 220,
   sdetail: 220, nudge: 250, voice: 520,

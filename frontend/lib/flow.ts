@@ -162,7 +162,8 @@ export function poseOf(step: Step, s: FlowState): string {
     case "gu":
     case "dong":
     case "open":
-      return step.k === "dong" ? "st" : "gu";
+      // 자유 입력은 받칠 목록이 없어서 앞발을 숨긴 자세(open)예요
+      return step.k === "dong" ? "st" : step.k === "open" ? "open" : "gu";
     case "body":
       return "body";
     case "time":

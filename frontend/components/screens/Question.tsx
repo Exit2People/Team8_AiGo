@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { FlowApi } from "../Flow";
 import { TileArrow } from "../Icons";
-import { Caption, Dots, Primary, Progress, Sheet, Sub } from "../ui";
+import { Dots, Progress, Sheet, Sub } from "../ui";
 import { BODY, DONT_KNOW, TIME, tileSize, titleSize, twoLines } from "@/lib/questions";
 import { later } from "@/lib/pause";
 
@@ -80,6 +80,7 @@ export default function Question({ f, kind, i = 0, edit }: Props) {
   const tiles = choices.slice(0, 4);
   const dkTile = dk && tiles.length <= 3;
   const dkButton = dk && tiles.length === 4;
+  const heard = s.heard.length > 0;
 
   return (
     <div className="content">
@@ -105,68 +106,75 @@ export default function Question({ f, kind, i = 0, edit }: Props) {
       <Sub y={140 + lines.length * size * 1.22 + 10} align="right" style={{ left: 170, opacity: phase === "in" ? 0 : 1, transition: "opacity .4s" }}>
         {"하나를\n눌러 주세요"}
       </Sub>
-      <div className="abs" style={{ opacity: phase === "base" ? 1 : 0, transition: "opacity .4s", right: 24, top: 296, left: 150, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-        {kind === "flex" && q!.src === "ai" && <span className="chip">AI가 고른 질문</span>}
-        {s.heard.length > 0 && (
-          <>
-            <span className="t-item" style={{ textAlign: "right", lineHeight: 1.3, background: "var(--white)", borderRadius: 10, padding: "5px 8px" }}>
-              이렇게 들었어요 · 틀리면 눌러서 지워요
-            </span>
-            <span style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 6 }}>
+      {kind === "flex" && q!.src === "ai" && (
+        <span className="abs chip" style={{ right: 24, top: 296, opacity: phase === "base" ? 1 : 0, transition: "opacity .4s" }}>
+          AI가 고른 질문
+        </span>
+      )}
+      {/* 담고 머리 · 앞발 아래로 한 줄로 쌓아요: (들은 말 상자) → 선택지 → 잘 모르겠어요 → 안내.
+          들은 말이 있으면 그만큼 선택지가 자연스럽게 아래로 내려가요 */}
+      <div className={`qStack${heard && dkButton ? " tight" : ""}`} style={{ top: heard ? 404 : 424 }}>
+        {heard && (
+          <section className="heardBox" aria-label="이렇게 들었어요" style={{ opacity: phase === "base" ? 1 : 0, transition: "opacity .4s" }}>
+            <p className="heardLabel">이렇게 들었어요 · 틀리면 눌러서 지워요</p>
+            <div className="heardChips">
               {s.heard.map((h) => (
-                <button key={h.key + h.value} className="chip" style={{ background: "var(--white)", color: "var(--ink)" }} onClick={() => f.forget(h)} aria-label={`${h.label} 지우기`}>
-                  {h.label} ✕
+                <button key={h.key + h.value} className="chip heardChip" onClick={() => f.forget(h)} aria-label={`${h.label} 지우기`}>
+                  {h.label}
+                  <span aria-hidden="true">✕</span>
                 </button>
               ))}
-            </span>
-          </>
+            </div>
+          </section>
         )}
-      </div>
-      <div
-        className="tiles"
-        style={{
-          top: 404,
-          opacity: phase === "base" ? 1 : 0,
-          transform: phase === "base" ? "none" : "translateY(60px)",
-          transition: "opacity .45s ease, transform .55s cubic-bezier(.22,1,.36,1)",
-        }}
-      >
-        {tiles.map((c, n) => {
-          const hint = kind === "time" ? TIME.hints[c] : undefined;
-          const on = cur === c;
-          return (
-            <button key={c} className={`tile${on ? " on" : ""}`} onClick={() => pick(c)} aria-pressed={on}>
-              <span className="num">{n + 1}</span>
+        <div
+          className="tiles"
+          style={{
+            opacity: phase === "base" ? 1 : 0,
+            transform: phase === "base" ? "none" : "translateY(60px)",
+            transition: "opacity .45s ease, transform .55s cubic-bezier(.22,1,.36,1)",
+          }}
+        >
+          {tiles.map((c, n) => {
+            const hint = kind === "time" ? TIME.hints[c] : undefined;
+            const on = cur === c;
+            return (
+              <button key={c} className={`tile${on ? " on" : ""}`} onClick={() => pick(c)} aria-pressed={on}>
+                <span className="num">{n + 1}</span>
+                <span className="tarrow">
+                  <TileArrow color={on ? "#FFFFFF" : "#111111"} />
+                </span>
+                <span className="ans" style={{ fontSize: tileSize(c) }}>
+                  {c}
+                  {hint && <span className="hint">{hint}</span>}
+                </span>
+              </button>
+            );
+          })}
+          {dkTile && (
+            // "잘 모르겠어요"도 다른 선택지와 같은 모양 · 색이에요 (고르면 똑같이 검정으로)
+            <button className={`tile${cur === null ? " on" : ""}`} onClick={() => pick(null)} aria-pressed={cur === null}>
+              <span className="num">{tiles.length + 1}</span>
               <span className="tarrow">
-                <TileArrow color={on ? "#FFFFFF" : "#111111"} />
+                <TileArrow color={cur === null ? "#FFFFFF" : "#111111"} />
               </span>
-              <span className="ans" style={{ fontSize: tileSize(c) }}>
-                {c}
-                {hint && <span className="hint">{hint}</span>}
+              <span className="ans" style={{ fontSize: tileSize(DONT_KNOW) }}>
+                {DONT_KNOW}
               </span>
             </button>
-          );
-        })}
-        {dkTile && (
-          // "잘 모르겠어요"도 다른 선택지와 같은 모양 · 색이에요 (고르면 똑같이 검정으로)
-          <button className={`tile${cur === null ? " on" : ""}`} onClick={() => pick(null)} aria-pressed={cur === null}>
-            <span className="num">{tiles.length + 1}</span>
-            <span className="tarrow">
-              <TileArrow color={cur === null ? "#FFFFFF" : "#111111"} />
-            </span>
-            <span className="ans" style={{ fontSize: tileSize(DONT_KNOW) }}>
-              {DONT_KNOW}
-            </span>
-          </button>
-        )}
-      </div>
-      <div style={{ opacity: phase === "base" ? 1 : 0, transition: "opacity .4s" }}>
-        {dkButton && (
-          <Primary y={650} onClick={() => pick(null)}>
-            {DONT_KNOW}
-          </Primary>
-        )}
-        <Caption y={dkButton ? 732 : 664}>{edit ? "하나를 누르면 확인으로 돌아가요" : "하나를 누르면 다음으로 넘어가요"}</Caption>
+          )}
+        </div>
+        <div style={{ opacity: phase === "base" ? 1 : 0, transition: "opacity .4s" }}>
+          {dkButton && (
+            <button className="btn btn-primary qDk" onClick={() => pick(null)}>
+              <span>{DONT_KNOW}</span>
+              <span className="arrow" aria-hidden="true">
+                →
+              </span>
+            </button>
+          )}
+          <p className={`t-caption pre c-sub qCaption${dkButton ? " withDk" : ""}`}>{edit ? "하나를 누르면 확인으로 돌아가요" : "하나를 누르면 다음으로 넘어가요"}</p>
+        </div>
       </div>
     </div>
   );

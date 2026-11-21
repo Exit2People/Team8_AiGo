@@ -58,8 +58,14 @@ export function Mine({ f }: { f: FlowApi }) {
   const n = Object.keys(stamps).length;
   const left = visits.filter((v) => !stamps[`${v.id}@${v.date}`]).length;
   const now = new Date();
-  const y = now.getFullYear();
-  const m = now.getMonth();
+  // 달력 달 옮기기: 0 = 이번 달, -1 = 지난달, 1 = 다음 달 … (기록이 없는 달도 자유롭게 옮겨 봐요)
+  const [mo, setMo] = useState(0);
+  const shown = new Date(now.getFullYear(), now.getMonth() + mo, 1);
+  const y = shown.getFullYear();
+  const m = shown.getMonth();
+  const thisMonth = mo === 0;
+  const moveMonth = (d: number) => setMo((x) => x + d);
+  const swipe = useRef<number | null>(null);
   const first = new Date(y, m, 1).getDay();
   const days = new Date(y, m + 1, 0).getDate();
   const ym = `${y}-${String(m + 1).padStart(2, "0")}`;
@@ -71,58 +77,84 @@ export function Mine({ f }: { f: FlowApi }) {
     <div className="content">
       <Title y={104}>다녀온 곳</Title>
       <Sub y={150}>{`우표 ${n}장${left ? ` · ${left}곳은 아직 기록 전` : "을 모았어요"}`}</Sub>
-      <div className="list" style={{ top: 196, height: 300, gap: 8 }}>
-        {visits.length === 0 && <p className="t-sub c-sub">아직 다녀온 곳이 없어요. 오늘 첫 나들이를 찾아봐요</p>}
-        {visits.map((v) => {
-          const key = `${v.id}@${v.date}`;
-          const st = stamps[key];
-          return (
-            <button
-              key={key}
-              className="row"
-              style={{ minHeight: 98, alignItems: "stretch", padding: "12px 12px 12px 16px" }}
-              onClick={() => {
-                if (st) return f.go({ k: "sdetail", key });
-                if (!f.s.user) {
-                  f.note("우표는 로그인하면 모을 수 있어요");
-                  return f.go({ k: "login" });
-                }
-                pending.photo = "";
-                pending.text = "";
-                f.go({ k: "upload", key });
-              }}
-            >
-              <span className="main" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                <span className="chip" style={{ alignSelf: "flex-start", background: v.date === today() ? "var(--coral)" : "var(--chip)", color: v.date === today() ? "#fff" : "var(--ink)" }}>
-                  {md(v.date)}
-                  {v.date === today() ? " · 오늘" : ""}
+      {/* 스크롤 틀(높이 300) 안에 높이를 정하지 않은 grid를 둬요: 가장 긴 칸(이름이 두 줄 등)의 글자 높이에 맞춰
+          모든 칸이 같은 높이로 함께 커져요. 칸에 min-height를 주면 grid가 그 값만 보고 글자를 무시해서 .main에 줘요 */}
+      <div className="list" style={{ top: 196, height: 300 }}>
+        <div style={{ display: "grid", gridAutoRows: "1fr", gap: 8, flex: "none" }}>
+          {visits.length === 0 && <p className="t-sub c-sub">아직 다녀온 곳이 없어요. 오늘 첫 나들이를 찾아봐요</p>}
+          {visits.map((v) => {
+            const key = `${v.id}@${v.date}`;
+            const st = stamps[key];
+            return (
+              <button
+                key={key}
+                className="row"
+                style={{ minHeight: "auto", alignItems: "stretch", padding: "12px 12px 12px 16px" }}
+                onClick={() => {
+                  if (st) return f.go({ k: "sdetail", key });
+                  if (!f.s.user) {
+                    f.note("우표는 로그인하면 모을 수 있어요");
+                    return f.go({ k: "login" });
+                  }
+                  pending.photo = "";
+                  pending.text = "";
+                  f.go({ k: "upload", key });
+                }}
+              >
+                <span className="main" style={{ minHeight: 74, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                  <span className="chip" style={{ alignSelf: "flex-start", background: v.date === today() ? "var(--coral)" : "var(--chip)", color: v.date === today() ? "#fff" : "var(--ink)" }}>
+                    {md(v.date)}
+                    {v.date === today() ? " · 오늘" : ""}
+                  </span>
+                  <span className="t-answer" style={{ margin: "6px 0 4px", lineHeight: 1.2, wordBreak: "keep-all" }}>
+                    {v.name}
+                  </span>
+                  <span className="t-item c-mute">{v.from ? `${v.from}에서 ${v.min}분` : v.kind}</span>
                 </span>
-                <span className="t-answer">{v.name}</span>
-                <span className="t-item c-mute">{v.from ? `${v.from}에서 ${v.min}분` : v.kind}</span>
-              </span>
-              <span style={{ width: 88, borderRadius: 14, background: "var(--soft)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 4 }}>
-                {st ? (
-                  <StampPic src={st.photo} w={50} h={60} tilt={-3} />
-                ) : (
-                  <>
-                    <span style={{ width: 26, height: 26, borderRadius: 13, background: "var(--coral)", color: "#fff", lineHeight: "26px", fontWeight: 900, textAlign: "center" }}>+</span>
-                    <span className="t-label">기록 남기기</span>
-                  </>
-                )}
-              </span>
-            </button>
-          );
-        })}
+                <span style={{ width: 88, borderRadius: 14, background: "var(--soft)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 4 }}>
+                  {st ? (
+                    <StampPic src={st.photo} w={50} h={60} tilt={-3} />
+                  ) : (
+                    <>
+                      <span style={{ width: 26, height: 26, borderRadius: 13, background: "var(--coral)", color: "#fff", lineHeight: "26px", fontWeight: 900, textAlign: "center" }}>+</span>
+                      <span className="t-label">기록 남기기</span>
+                    </>
+                  )}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
       <Sheet y={512} />
-      <div className="abs" style={{ left: 24, right: 24, top: 532, display: "flex", alignItems: "baseline", gap: 10 }}>
+      <div className="abs" style={{ left: 24, right: 24, top: 526, display: "flex", alignItems: "center", gap: 6 }}>
+        <button className="cal-nav" onClick={() => moveMonth(-1)} aria-label="지난달">
+          ‹
+        </button>
         <span className="t-label c-mute">{y}</span>
-        <span className="t-tvalue">{m + 1}월</span>
+        <span className="t-tvalue" style={{ minWidth: 44, textAlign: "center" }}>
+          {m + 1}월
+        </span>
+        <button className="cal-nav" onClick={() => moveMonth(1)} aria-label="다음 달">
+          ›
+        </button>
         <span className="t-count" style={{ marginLeft: "auto" }}>
-          이번 달 우표 {monthStamps}장
+          {thisMonth ? "이번" : "이"} 달 우표 {monthStamps}장
         </span>
       </div>
-      <div className="abs" style={{ left: 24, right: 24, top: 566, display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: 4, textAlign: "center" }}>
+      {/* 달력을 옆으로 밀어도 달이 바뀌어요 (왼쪽으로 밀면 다음 달) */}
+      <div
+        key={`${y}-${m}`}
+        className="abs cal-grid"
+        style={{ left: 24, right: 24, top: 566, display: "grid", gridTemplateColumns: "repeat(7, 1fr)", rowGap: 4, textAlign: "center", touchAction: "pan-y" }}
+        onPointerDown={(e) => (swipe.current = e.clientX)}
+        onPointerUp={(e) => {
+          const x0 = swipe.current;
+          swipe.current = null;
+          if (x0 == null || Math.abs(e.clientX - x0) < 50) return;
+          moveMonth(e.clientX < x0 ? 1 : -1);
+        }}
+      >
         {"일월화수목금토".split("").map((d) => (
           <span key={d} className="t-label c-mute" style={{ paddingBottom: 6 }}>
             {d}
@@ -139,7 +171,7 @@ export function Mine({ f }: { f: FlowApi }) {
               {x && "photo" in x ? (
                 <StampPic src={x.photo} w={24} h={30} tilt={d % 2 ? -4 : 4} />
               ) : (
-                <span className="t-tmeta" style={{ color: x ? "var(--coral-deep)" : d === now.getDate() ? "var(--ink)" : "var(--mute)", fontWeight: x || d === now.getDate() ? 900 : 600 }}>
+                <span className="t-tmeta" style={{ color: x ? "var(--coral-deep)" : thisMonth && d === now.getDate() ? "var(--ink)" : "var(--mute)", fontWeight: x || (thisMonth && d === now.getDate()) ? 900 : 600 }}>
                   {d}
                 </span>
               )}

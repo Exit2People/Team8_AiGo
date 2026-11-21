@@ -30,7 +30,7 @@ function Line({ label, value, onClick, danger, disabled, on }: { label: string; 
       disabled={disabled}
       className="myLine"
       aria-current={on || undefined}
-      style={{ display: "flex", width: "100%", alignItems: "center", minHeight: 54, padding: "0 16px 0 20px", gap: 8, borderBottom: "1.5px solid var(--soft)", textAlign: "left" }}
+      style={{ display: "flex", width: "100%", alignItems: "center", minHeight: 54, padding: "0 16px 0 20px", gap: 8, textAlign: "left" }}
     >
       <span className="t-answer" style={{ flex: 1, color: danger ? "var(--coral-deep)" : undefined, fontSize: "calc(17px * var(--fs))" }}>
         {label}
@@ -55,6 +55,7 @@ export function My({ f, active }: { f: FlowApi; active?: string }) {
   // PC 옆 패널은 창을 여닫는 동안 그대로 떠 있어서, 화면이 바뀔 때마다 숫자(최고 기록 · 우표 · 배지)를 다시 읽어요
   const depth = f.s.stack.length;
   const [ask, setAsk] = useState(false);
+  const [askOut, setAskOut] = useState(false); // 로그아웃 한 번 더 묻기
   const [busy, setBusy] = useState(false);
   const [stats, setStats] = useState({ stamps: 0, visits: 0, blocked: 0, best: 0 });
   const [badges, setBadges] = useState<BadgeState[]>([]);
@@ -140,12 +141,7 @@ export function My({ f, active }: { f: FlowApi; active?: string }) {
           <Group>
             <Line label="닉네임" value={u.nickname || "아직 없어요"} onClick={() => f.go({ k: "myedit", field: "nickname" })} on={active === "myedit-nickname"} />
             <Line label="나이" value={u.age ? `${u.age}세` : "아직 없어요"} onClick={() => f.go({ k: "myedit", field: "age" })} on={active === "myedit-age"} />
-            {u.provider === "email" && (
-              <>
-                <Line label="이메일" value={u.email} disabled />
-                <Line label="비밀번호 바꾸기" onClick={() => f.note("비밀번호 바꾸기는 아직 준비 중이에요")} />
-              </>
-            )}
+            {u.provider === "email" && <Line label="이메일" value={u.email} disabled />}
           </Group>
         )}
         <Group>
@@ -155,22 +151,43 @@ export function My({ f, active }: { f: FlowApi; active?: string }) {
         </Group>
         {u && (
           <Group>
-            <Line
-              label="로그아웃"
+            <Line label="로그아웃" onClick={() => setAskOut(true)} />
+            <Line label="계정 지우기" danger onClick={() => setAsk(true)} />
+          </Group>
+        )}
+      </div>
+      {askOut && u && (
+        <div className="modal-bg" onClick={() => !busy && setAskOut(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="ask-out-title">
+            <h2 id="ask-out-title" className="t-title pre">{"정말\n로그아웃할까요?"}</h2>
+            <p className="t-sub c-mute pre" style={{ marginTop: 10 }}>
+              {"다시 로그인하면\n이어서 쓸 수 있어요"}
+            </p>
+            <button className="btn btn-secondary" style={{ marginTop: 18 }} onClick={() => setAskOut(false)} disabled={busy}>
+              그만둘래요
+            </button>
+            <button
+              className="btn btn-primary"
+              style={{ justifyContent: "center" }}
+              disabled={busy}
               onClick={async () => {
+                setBusy(true);
                 try {
                   await api.logout();
                 } catch {
                   /* 실패해도 기기에서는 로그아웃 */
                 }
+                setBusy(false);
+                setAskOut(false);
                 f.setUser(null);
                 f.landHome("로그아웃했어요");
               }}
-            />
-            <Line label="계정 지우기" danger onClick={() => setAsk(true)} />
-          </Group>
-        )}
-      </div>
+            >
+              로그아웃할게요
+            </button>
+          </div>
+        </div>
+      )}
       {ask && u && (
         <div className="modal-bg" onClick={() => setAsk(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
