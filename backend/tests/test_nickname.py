@@ -14,8 +14,10 @@ BAD = {
     "ㅋㅋ": "jamo", "하ㅏ": "jamo",
     "꽃🌸": "emoji", "봄 바람": "symbol", "봄!": "symbol", "a": "length", "가나다라마바사아자": "length", "12345": "digits",
     "운영자": "staff", "admin1": "staff", "": "empty",
+    # korcen이 잡아 주는 것 · 닉네임 전용 낮춤말
+    "보지털": "성적", "자지왕": "성적", "개년": "욕설", "등신": "욕설", "찐따": "욕설", "애미": "욕설",
 }
-GOOD = ["봄나들이", "솔바람7", "개나리", "한강", "보리", "장미꽃", "고추", "Grace", "시바견"]
+GOOD = ["봄나들이", "솔바람7", "개나리", "한강", "보리", "장미꽃", "고추", "Grace", "시바견", "보지마", "자지마", "섹션", "대한민국", "산책왕"]
 
 
 @pytest.mark.parametrize("nick,code", BAD.items())
@@ -95,3 +97,10 @@ def test_chat_join_bad_nick_becomes_guest(monkeypatch):
     p = loader.places()[0]["id"]
     assert cl.post(f"/chat/{p}/join", json={"client": "client-aaaa", "nick": "씨발이"}).json()["nick"] == "손님"
     assert cl.post(f"/chat/{p}/join", json={"client": "client-bbbb", "nick": "봄나들이"}).json()["nick"] == "봄나들이"
+
+
+def test_works_without_korcen(monkeypatch):
+    # korcen을 못 불러와도 우리 사전 · Jev로 그대로 돌아가요
+    monkeypatch.setattr(nickname, "_KORCEN", [None])
+    assert nickname.check_rules("씨발이")[0] == "욕설" and nickname.check_rules("봄나들이") is None
+    assert nickname.check_rules("보지털") is None  # korcen만 잡던 것은 이때 Jev 몫
