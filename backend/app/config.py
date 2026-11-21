@@ -55,8 +55,10 @@ REC_WAIT = 20.0  # 화면 REC_FAIL (04_CONSTANTS 3절)
 
 
 def env(name: str, default: str | None = None) -> str | None:
+    # Vercel에 파이프로 넣은 값 끝의 줄바꿈 · 공백을 떼요 ("1\n"을 꺼짐으로 읽거나 키 인증이 깨지지 않게)
     v = os.environ.get(name)
-    return v if v not in (None, "") else default
+    v = v.strip() if v is not None else None
+    return v if v else default
 
 
 def flag(name: str, default: bool = False) -> bool:
@@ -72,7 +74,7 @@ def cors_origins() -> list[str]:
 
 
 def cors_regex() -> str:
-    return env("AIGO_CORS_REGEX", r"https://aigo-final[a-z0-9-]*\.vercel\.app") or ""
+    return env("AIGO_CORS_REGEX", r"https://(aigo-final|ai-go-team8)[a-z0-9-]*\.vercel\.app") or ""
 
 
 def model() -> str:

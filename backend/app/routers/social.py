@@ -22,7 +22,7 @@ CONTEXT_MINE = 3
 CONTEXT_OTHERS = 3
 NOT_JOINED = "톡방에 먼저 들어와 주세요"
 BLOCKED = {"code": "blocked", "message": "보낼 수 없는 말이 들어 있는 것 같아요. 고쳐서 보내 주세요"}
-_LINK = re.compile(r"https?://|www\.|\.com|\.net|\.kr|\.co", re.I)
+_LINK = re.compile(r"https?://|www\.|\.(com|net|kr|co)\b", re.I)
 _PHONE = re.compile(r"(01[016789]|0\d{1,2})[\s.\-]?\d{3,4}[\s.\-]?\d{4}")
 
 
