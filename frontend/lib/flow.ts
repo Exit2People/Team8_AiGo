@@ -13,7 +13,8 @@ export type Step =
   | { k: "body"; edit?: boolean }
   | { k: "time"; edit?: boolean }
   | { k: "flex"; i: number; edit?: boolean }
-  | { k: "confirm" }
+  /** auto: "결과 보기"로 왔어요 — 채운 답을 잠깐 보여 준 뒤 저절로 가방에 담고 찾아요 (값은 찾기 결과 위에 띄울 안내) */
+  | { k: "confirm"; auto?: string }
   | { k: "result" }
   | { k: "guestbook" }
   | { k: "route" }
@@ -169,7 +170,7 @@ export function poseOf(step: Step, s: FlowState): string {
       return q.src === "ai" ? "q1" : "fb";
     }
     case "confirm":
-      return "last";
+      return step.auto !== undefined ? "fill" : "last";
     case "result":
       return s.printed[`${s.receivedAt}-${s.idx}`] ? "s4" : "s4p";
     case "guestbook":
