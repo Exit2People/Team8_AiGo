@@ -737,6 +737,41 @@ a {
   to { opacity: 1; transform: none; }
 }
 
+/* 가방 담기: 카드가 들어갈 때마다 가방이 살짝 출렁해요 (Pack.tsx) — 다시 틀려고 이름 두 개를 번갈아 써요 */
+.pack-bump0 {
+  animation: packBump0 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.pack-bump1 {
+  animation: packBump1 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes packBump0 {
+  0% { transform: none; }
+  40% { transform: scale(1.04, 0.96); }
+  100% { transform: none; }
+}
+@keyframes packBump1 {
+  0% { transform: none; }
+  40% { transform: scale(1.04, 0.96); }
+  100% { transform: none; }
+}
+/* 가방이 프린터가 될 때 똑딱이가 표시등으로 바뀌며 끝 무렵 사라져요 (Pack.tsx, 0.85초) */
+.pack-led {
+  animation: packLed 0.85s linear forwards;
+}
+@keyframes packLed {
+  0%, 70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+/* 쏙 · 딸깍 소리 글자: 톡 튀어나왔다가 사라져요 */
+.pack-sound {
+  animation: packSound 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes packSound {
+  0% { opacity: 0; transform: scale(0.6); }
+  30% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 1; transform: none; }
+}
+
 /* 움직임 줄이기 */
 @media (prefers-reduced-motion: reduce) {
   *,
