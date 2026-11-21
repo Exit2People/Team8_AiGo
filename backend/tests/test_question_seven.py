@@ -75,9 +75,11 @@ def test_agent_drives_all_four_then_skips_extra(on, monkeypatch):
     seen_no = []
     script = [
         ("손주랑 한강에서 뭘 해 보고 싶으세요?", ["물가", "자전거", "꽃 · 정원"]),
-        ("물가는 어디가 좋으세요?", names[:2]),
+        ("물가에서는 뭘 하고 싶으세요?", ["자전거", "공원"]),  # 주제(물가) 안에서 경험 묻기 (이름만 바꿔 되묻지 않아요)
         ("한강에서 무엇을 보고 싶으세요?", ["꽃 · 정원", "전망"]),
-        ("돈 내는 곳도 괜찮으세요?", ["괜찮아요", "무료인 곳만요"]),
+        # 앞 답으로 한강공원까지 좁혀지면 모두 무료라 요금 은행 질문은 후보를 못 나눠요 (bank_available 이 걸러요).
+        # 그래서 마지막은 좁힌 후보를 나누는 장소 고르기예요 (이름 목록은 이 대화에서 처음)
+        ("그럼 한강은 어디가 끌리세요?", names[:2]),
     ]
     for i, (q, ch) in enumerate(script):
         fake = use(monkeypatch, [call("submit_question", {"question": q, "choices": ch, "follows": "한강"})])
@@ -88,7 +90,6 @@ def test_agent_drives_all_four_then_skips_extra(on, monkeypatch):
         assert "남은 질문 수" in first and "이어 받을 말" in first
         if i == 3:
             assert "마지막 질문" in first
-            assert r.get("id") == "fee"  # 은행 질문을 그대로 골랐어요
         seen_no.append(r["no"])
         c = answer(c, r)
     assert seen_no == [3, 4, 5, 6]

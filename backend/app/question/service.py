@@ -159,7 +159,9 @@ async def next_ai(cond: Conditions) -> dict:
         r = await _capped(qa.ask_agent(cond, items, no, total, timeout=budget()), budget())
         if r is not None and not r.get("done"):
             return stamp(r)
-        # done이어도 질문 수는 채워요 → 아래의 더 좁히는 질문으로
+        if r is not None and r.get("early"):
+            return {**r, "no": no, "total": total}  # 이미 충분히 좁혀졌어요 (진행 표시는 그대로, 화면이 why 를 보여 줘요)
+        # early 가 아닌 done이어도 질문 수는 채워요 → 아래의 더 좁히는 질문으로
     fallback_items = flow.narrowed_items(cond, items)
     lead = lead_question(cond, fallback_items or [])
     if lead:

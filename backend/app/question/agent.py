@@ -38,11 +38,19 @@ SYSTEM = """너는 'AI GO'의 질문 에이전트야. 서울에 사는 어르신
 도구는 어르신이 기다리니 꼭 필요할 때만 써: find_places(다른 말로 찾아보기), count_choices(새로 만든 선택지마다 오늘 남는 곳 수), look_bank.
 
 질문 고르기
-1. 이어 받을 말이 있으면 그 말을 더 구체적으로 좁히는 질문을 먼저 만들어. 찾은 곳 이름이 2곳 이상이면 그 이름을 선택지로 써도 좋아.
+1. 이어 받을 말이 있으면 그 말을 더 구체적으로 좁히는 질문을 먼저 만들어.
 2. 이어 받을 말이 없으면(처음 말이 "잘 모르겠어요" 등) 주제별 곳 수를 보고, 어르신이 대답하기 쉬운 것부터 물어.
-3. 은행 질문이 지금 대화에 잘 맞으면 써도 돼 (그대로 쓰거나, 뜻은 두고 바꿔 말해도 돼). 아니면 새로 만들어.
-4. 남은 질문이 적을수록(특히 마지막 질문) 오늘 후보를 크게 가르는 질문을 골라. 선택지마다 남는 곳 수가 고르게 나뉘면 좋아.
-5. 질문 수는 정해져 있어. 이미 좁혀졌어도 done 으로 끝내지 말고, 남은 후보를 더 좁히는 질문을 내.
+3. 어르신이 주제(시장 · 궁 · 물가 · 숲 같은)를 고르면, 그 주제는 지키고 그 안에서 하고 싶은 경험을 물어:
+   먹거리, 분위기(조용한 · 북적이는), 구경하며 걷기 / 앉아서 먹기 같은 것. 다른 주제(경치 · 자연 …)로 넘어가지 마.
+   같은 주제를 이름만 바꿔 되묻지 마. 나쁜 예: "시장" 다음에 "어떤 시장이 끌리세요?" [남성사계시장, 신중부시장, 동부시장]
+   좋은 예: "시장에서는 뭘 하고 싶으세요?" [먹거리 맛보기, 구경하며 걷기, 앉아서 먹기]
+4. 장소 이름 목록(곳 이름을 선택지로 늘어놓기)은 어르신이 모르는 이름이 많아. 한 대화에서 많아야 한 번,
+   어르신이 가고 싶은 곳을 직접 말했을 때만 써. 두 번째 이름 목록 · 주제를 고른 바로 뒤의 이름 목록은 코드가 버려.
+5. 은행 질문이 지금 대화에 잘 맞으면 써도 돼 (그대로 쓰거나, 뜻은 두고 바꿔 말해도 돼). 아니면 새로 만들어.
+6. 남은 질문이 적을수록(특히 마지막 질문) 오늘 후보를 크게 가르는 질문을 골라. 선택지마다 남는 곳 수가 고르게 나뉘면 좋아.
+7. 질문 수(진행 표시)는 정해져 있어. 후보가 아직 여럿이면 더 좁히는 질문을 내.
+   하지만 이미 충분히 좁혀졌으면(어르신이 갈 곳을 골랐거나, 받은 '일찍 끝내기' 안내가 있으면) 억지 질문을 만들지 말고
+   done=true 와 why(왜 끝내는지 해요체 한 줄, 예: "가고 싶은 곳이 정해졌어요.")로 일찍 끝내. 3번 질문에서는 끝내지 마.
 
 선택지 규칙 (코드가 확인해. 어기면 버려져)
 - 2~4개, 각각 14자 안쪽, 서로 겹치지 않게. "잘 모르겠어요"는 화면이 붙이니 넣지 마.
@@ -68,13 +76,13 @@ SCHEMAS = [
     {"name": "count_choices", "description": "새로 만든 선택지마다 오늘 남는 곳 수를 세요. '근거 없음'이면 그 선택지는 못 써요.",
      "input_schema": {"type": "object", "properties": {
          "choices": {"type": "array", "items": {"type": "string"}, "maxItems": 4}}, "required": ["choices"]}},
-    {"name": "submit_question", "description": "다음 질문 하나를 내고 끝내요. '1개 더'에서 물을 게 없으면 done=true.",
+    {"name": "submit_question", "description": "다음 질문 하나를 내고 끝내요. '1개 더'에서 물을 게 없거나, 이미 충분히 좁혀져 일찍 끝내면 done=true.",
      "input_schema": {"type": "object", "properties": {
          "done": {"type": "boolean"}, "question": {"type": "string"},
          "choices": {"type": "array", "items": {"type": "string"}, "maxItems": 4},
          "bank": {"type": "string", "description": "은행 질문을 그대로 썼으면 그 질문 글"},
          "follows": {"type": "string", "description": "이어 받은 말 (어르신 말 · 앞 답), 없으면 빈 글"},
-         "why": {"type": "string", "description": "기록용 한 줄 (1개 더면 꼭 필요한 이유)"}},
+         "why": {"type": "string", "description": "한 줄 (1개 더면 꼭 필요한 이유, 일찍 끝내면 왜 끝내는지 해요체로)"}},
          "required": ["question", "choices"]}},
 ]
 
@@ -212,6 +220,98 @@ def missing_wishes(cond: Conditions, items: list[dict]) -> list[str]:
             if specific_terms([w]) and not any(direct_specific(it["place"], [w]) for it in items)]
 
 
+def _today_names(items: list[dict]) -> set[str]:
+    return {short_name(it["place"]) for it in items}
+
+
+def _is_name_list(choices: list[str], names: set[str]) -> bool:
+    """선택지 2개 이상이 오늘 갈 곳 이름이면 '장소 이름 목록'이에요."""
+    return sum(1 for c in choices if c in names) >= 2
+
+
+def names_used(cond: Conditions, items: list[dict]) -> bool:
+    """이 대화에서 장소 이름 목록을 이미 한 번 물었는지."""
+    names = _today_names(items)
+    return any(_is_name_list([c for c in x.choices if c != "잘 모르겠어요"], names) for x in cond.ai)
+
+
+def last_theme(cond: Conditions) -> tuple[str, set[str]] | None:
+    """바로 앞 답이 주제(시장 · 궁 · 물가 …)였으면 (그 답, 그 주제들)."""
+    if not cond.ai or not cond.ai[-1].a or cond.ai[-1].a in NEUTRAL:
+        return None
+    ts = flow.answer_themes(cond.model_copy(update={"ai": [cond.ai[-1]]}))
+    return (cond.ai[-1].a, ts) if ts else None
+
+
+def _experience(choice: str) -> bool:
+    """주제 안에서 하는 일을 말하는 선택지 (먹거리 맛보기 · 구경하며 걷기 · 앉아서 먹기 · 골목 구경)."""
+    return choice.endswith("기") or choice.endswith("구경")
+
+
+def name_list_bad(cond: Conditions, items: list[dict], choices: list[str]) -> str | None:
+    """장소 이름 목록 규칙을 어기면 그 이유: 한 대화에 한 번만, 주제를 고른 바로 뒤에 그 주제 이름만 늘어놓지 않기."""
+    names = _today_names(items)
+    if not _is_name_list(choices, names):
+        return None
+    if names_used(cond, items):
+        return "name_list_repeat"
+    lt = last_theme(cond)
+    if lt and not cond.extra.place:  # 가고 싶은 곳(한강)을 직접 말했으면 그 안의 이름 목록 한 번은 돼요
+        by = {}
+        for it in items:
+            by.setdefault(short_name(it["place"]), set()).update(themes_of(it["place"]))
+        picked = [c for c in choices if c in names]
+        if all(by.get(c, set()) & lt[1] for c in picked):
+            return "theme_renamed"
+    return None
+
+
+def early_done(cond: Conditions, items: list[dict], no: int) -> dict | None:
+    """이미 충분히 좁혀졌으면 정해진 질문을 다 채우지 않고 끝내요 (no 4부터). 에이전트를 부르지 않아 빨라요.
+
+    {"done": True, "early": True, "why": 왜 끝났는지}. 진행 표시(no · total)는 부르는 쪽이 붙여요.
+    """
+    if no < config.EARLY_MIN_NO or no >= config.question_total():
+        return None
+    last = cond.ai[-1].a if cond.ai and cond.ai[-1].a and cond.ai[-1].a not in NEUTRAL else None
+    if last and last in _today_names(items):
+        return {"done": True, "early": True, "why": "가고 싶은 곳을 골라 주셨어요.", "_reason": "place_chosen"}
+    left = len(narrowed(cond, items))
+    if left <= config.EARLY_LEFT:
+        return {"done": True, "early": True, "why": f"맞는 곳이 {left}곳으로 좁혀졌어요.", "_reason": "narrowed_small"}
+    th = theme_answer(cond)
+    if th and cond.ai[-1].a != th and unsplit(cond, items):
+        # 주제를 고르고 그 안의 경험도 한 번 물었는데, 남은 곳을 주제로 더 나눌 수 없어요 (시장 125곳은 다 시장 · 먹거리)
+        return {"done": True, "early": True, "why": f"원하신 {th} 쪽으로 정해졌어요.", "_reason": "theme_unsplit"}
+    return None
+
+
+def theme_answer(cond: Conditions) -> str | None:
+    """주제로 좁힌 가장 최근 답 (예: '시장 · 거리')."""
+    for x in reversed(cond.ai):
+        if x.a and x.a not in NEUTRAL and flow.answer_themes(cond.model_copy(update={"ai": [x]})):
+            return x.a
+    return None
+
+
+def unsplit(cond: Conditions, items: list[dict]) -> bool:
+    """답한 주제로 좁힌 곳을 다른 주제로 더는 고르게 나눌 수 없는지 (다른 주제가 10% 안쪽뿐)."""
+    ts = flow.answer_themes(cond)
+    if not ts:
+        return False
+    left = narrowed(cond, items)
+    other = Counter(t for it in left for t in themes_of(it["place"])
+                    if t in ALL_THEMES and t not in ts and t not in ("무료", "유료"))
+    return not other or other.most_common(1)[0][1] < max(2, len(left) / 10)
+
+
+def may_end_early(cond: Conditions, items: list[dict], no: int) -> bool:
+    """에이전트가 done 을 내면 일찍 끝내도 되는 때: no 4부터, 가고 싶은 곳을 말했거나 좁힌 곳이 1개 더 기준보다 적을 때."""
+    if no < config.EARLY_MIN_NO or no >= config.question_total():
+        return False
+    return bool(cond.extra.place) or len(narrowed(cond, items)) < config.EXTRA_MIN_LEFT or unsplit(cond, items)
+
+
 def first_message(cond: Conditions, items: list[dict], no: int | None = None, total: int | None = None,
                   extra: bool = False) -> dict:
     th = Counter(t for it in items for t in themes_of(it["place"]) if t in ALL_THEMES)
@@ -219,14 +319,24 @@ def first_message(cond: Conditions, items: list[dict], no: int | None = None, to
     last = cond.ai[-1].a if cond.ai and cond.ai[-1].a and cond.ai[-1].a not in NEUTRAL else None
     if last and last not in clues and not word_ok(last):
         clues.append(last)
+    no_names = names_used(cond, items) or last_theme(cond) is not None
+    found = {c: find_places_by(items, c) for c in clues}
+    if no_names:  # 이름 목록을 못 쓰는 때는 이름을 보여 주지 않아요 (늘어놓고 싶어지지 않게)
+        found = {c: {k: v for k, v in f.items() if k not in ("가까운 곳 이름", "점수")} for c, f in found.items()}
     msg = {
         "조건": strip_for_ai(cond), "아직 모르는 기본 칸": unknown_slots(cond),
         "이어 받을 말": follow_sources(cond) or ["(없어요. 처음 말이 막연했어요)"],
         "오늘 갈 수 있는 곳 수": len(items), "답으로 좁힌 곳 수": len(narrowed(cond, items)),
         "주제별 곳 수": dict(th.most_common()),
-        "단서 · 앞 답으로 미리 찾은 곳 (find_places 결과)": {c: find_places_by(items, c) for c in clues},
+        "단서 · 앞 답으로 미리 찾은 곳 (find_places 결과)": found,
         "은행 질문 (look_bank 결과)": look_bank(cond, items),
+        "장소 이름 목록": ("이미 한 번 썼거나 주제를 막 고르셨어요. 이번엔 곳 이름을 선택지로 쓰지 마요." if no_names
+                     else "곳 이름을 선택지로 늘어놓는 건 한 대화에 한 번만, 가고 싶은 곳을 직접 말했을 때만 써요."),
     }
+    lt = last_theme(cond)
+    if lt:
+        msg["앞 답 주제"] = (f"'{lt[0]}'를 고르셨어요. 이 주제는 지키고, 그 안에서 경험(먹거리 · 분위기 · 걸으며 구경 / 앉아서 먹기 …)을 "
+                         "물어요. 다른 주제로 넘어가거나 이름만 바꿔 되묻지 마요.")
     missing = missing_wishes(cond, items)
     if missing:
         msg["바람과 바로 맞는 곳 없음"] = (f"{', '.join(missing)}과(와) 바로 맞는 곳이 오늘은 없어요. 바람을 접지 말고 이어 받아, "
@@ -238,6 +348,9 @@ def first_message(cond: Conditions, items: list[dict], no: int | None = None, to
             msg["안내"] = "이번이 정해진 마지막 질문이에요. 오늘 후보를 가장 크게 가르는 질문을 골라요."
     if extra:
         msg["1개 더"] = EXTRA_SYSTEM_NOTE
+    elif no is not None and may_end_early(cond, items, no):
+        msg["일찍 끝내기"] = (f"답으로 좁힌 곳이 {len(narrowed(cond, items))}곳이에요. 어르신이 원한 곳으로 이미 충분히 좁혀졌으면 "
+                         "억지 질문 말고 done=true, why 에 왜 끝내는지 해요체 한 줄로 내요.")
     if variety.on():
         msg["매번 새롭게"] = ("최근에 다른 어르신들께 낸 질문과 같은 문장은 피해요. 같은 뜻이어도 말투 · 낱말 · 선택지 순서를 바꿔요. "
                          "은행 질문도 뜻은 그대로 두고 바꿔 말해도 돼요.")
@@ -392,8 +505,12 @@ def check_question(cond: Conditions, items: list[dict], sub: dict) -> dict | Non
     if len(choices) < 2:
         return reject("answered_choices")
     counts = {}
+    # 주제(시장)를 막 고른 뒤 그 안의 경험(구경하며 걷기 · 앉아서 먹기)은 곳 수로 셀 수 없어도 돼요
+    in_theme = last_theme(cond) is not None
     for ch in choices:
         n = choice_count(ch, cond, items)
+        if n is False and in_theme and not word_ok(ch) and _experience(ch):
+            n = None
         if n is False:
             return reject("ungrounded_choice")
         counts[ch] = n
@@ -408,8 +525,12 @@ def check_question(cond: Conditions, items: list[dict], sub: dict) -> dict | Non
                     and not flow.bank_available(cond, qid, items))):
         return reject("bank_not_available")
     counted = [c for c in choices if counts[c] is not None]
-    if counted and len(counted) < 2:
+    if counted and len(counted) < 2 and not in_theme:
         return reject("uncountable_split")
+    bad = name_list_bad(cond, items, choices)
+    if bad:
+        # 고정 이유 코드만 남겨요 (장소 이름 · 질문은 남기지 않아요)
+        return reject("name_list")
     # 단서를 말하면서 장소 이름을 고르게 하면, 그 이름은 그 단서로 찾은 곳이어야 해요
     today_names = {short_name(it["place"]) for it in items}
     place_choices = [c for c in choices if c in today_names]
@@ -483,6 +604,12 @@ async def ask_agent(cond: Conditions, items: list[dict], no: int | None = None, 
         if left < config.EXTRA_MIN_LEFT:
             log.info("질문 에이전트: 1개 더 안 물어요 (좁힌 곳 %s곳)", left)
             return {"done": True}
+    else:
+        e = early_done(cond, items, no)
+        if e:
+            reason = e.pop("_reason")
+            log.info("질문 에이전트: no %s/%s 일찍 끝내요 (%s)", no, total, reason)
+            return e
     budget = config.QUESTION_AGENT_TIMEOUT if timeout is None else min(config.QUESTION_AGENT_TIMEOUT, timeout)
     if budget <= 0.5:
         return None
@@ -507,6 +634,10 @@ async def ask_agent(cond: Conditions, items: list[dict], no: int | None = None, 
     if q.get("done"):
         if extra:
             log.info("질문 에이전트: 1개 더 필요 없음 (이유 있음 %s)", bool(why))
+        elif may_end_early(cond, items, no):
+            why = why if why.endswith("요.") or why.endswith("요") else "원하신 곳으로 충분히 좁혀졌어요."
+            log.info("질문 에이전트: no %s/%s 일찍 끝내요 (agent_done)", no, total)
+            return {"done": True, "early": True, "why": why}
         return q
     if extra and not why:
         log.info("질문 에이전트: 1개 더인데 이유가 없어서 안 물어요")
