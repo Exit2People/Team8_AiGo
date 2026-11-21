@@ -98,6 +98,10 @@ def validate_single(cond: Conditions, v: dict) -> dict | None:
         return None
     if asks_body(q, choices):
         return None
+    from app.question.agent import same_as_asked
+
+    if same_as_asked(cond, choices):
+        return None
     return {"done": False, "question": q, "choices": choices, "slot": slot}
 
 

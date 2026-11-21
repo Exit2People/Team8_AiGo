@@ -24,12 +24,32 @@ def _key(s: str) -> str:
     return re.sub(r"\s+", "", s or "").lower()
 
 
+_INDOOR = ("박물관", "미술관", "전시", "과학관", "기념관", "체험관", "공연장", "도서관", "아쿠아리움", "문화원", "갤러리")
+_OUTDOOR = ("공원", "수목원", "식물원", "정원", "유원지", "둘레길", "산책로", "숲", "호수", "해변")
+
+
+def guess_inout(category: str | None) -> str | None:
+    """카카오 분류 글로 실내 · 바깥을 짐작해요. 모르면 None."""
+    c = category or ""
+    if any(w in c for w in _INDOOR):
+        return "실내"
+    if any(w in c for w in _OUTDOOR):
+        return "바깥"
+    return None
+
+
 def can_resolve(cond: Conditions, weather: str | None) -> bool:
-    if selected(cond) or wants_free_only(cond) or weather in ("비", "눈"):
-        return False
-    if cond.basic.inout in ("실내가 좋아요", "바깥이 좋아요"):
+    # 실내 · 바깥 · 날씨는 막지 않고, 찾은 뒤 짐작한 실내 · 바깥으로 걸러요 (keep_inout)
+    if selected(cond) or wants_free_only(cond):
         return False
     return not (cond.range.avoid or cond.extra.avoid)
+
+
+def keep_inout(p: dict, cond: Conditions, weather: str | None) -> bool:
+    need = {"실내가 좋아요": "실내", "바깥이 좋아요": "바깥"}.get(cond.basic.inout or "")
+    if weather in ("비", "눈"):
+        need = "실내"
+    return need is None or p.get("inout") == need
 
 
 def to_place(d: dict) -> dict | None:
@@ -50,7 +70,7 @@ def to_place(d: dict) -> dict | None:
         "terrain": [], "closed": [], "always": False, "elevatorExit": None, "lat": lat, "lng": lng, "source": "kakao",
         "info": {"photo": None, "fee": {"free": None, "text": None}, "phone": d.get("phone") or None,
                  "homepage": f"https://place.map.kakao.com/{d['id']}"},
-        "inout": None, "inoutBy": None, "wants": [], "mood": [],
+        "inout": guess_inout(d.get("category_name")), "inoutBy": "category", "wants": [], "mood": [],
     }
 
 
@@ -100,7 +120,7 @@ async def resolve(names: list[str], cond: Conditions, now, weather: str | None, 
             continue
         dup = any(_key(q.get("name")) == _key(p["name"]) and q.get("lat") is not None
                   and geo.distance_m(q["lat"], q["lng"], p["lat"], p["lng"]) <= 500 for q in db)
-        if not dup:
+        if not dup and keep_inout(p, cond, weather):
             places.append(p)
     # 이름 두 개가 같은 곳을 가리키면 하나로, 다녀온 곳은 빼요
     places = list({p["id"]: p for p in places}.values())

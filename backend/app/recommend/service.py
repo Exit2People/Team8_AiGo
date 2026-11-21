@@ -285,8 +285,14 @@ async def recommend(cond: Conditions, visited: list[str], shown: list[str] | Non
 
     shown = verified[: config.MAX_CANDIDATES]
     late = time.monotonic() - t0 > total
+    early: dict[str, dict] = {}  # 장소 id → 미리 붙인 정보 (사진 · 요금 · 전화)
     if not late:
-        shown = await _measure_shown(shown, work_cond, now, min(config.TRANSIT_TIMEOUT, left(1.5)))
+        # 길 다시 재기와 정보 붙이기는 서로 기다릴 필요가 없어서 함께 돌려요 (추천 시간 약 1초 줄임)
+        pre = [_candidate(v) for v in shown]
+        shown, _ = await asyncio.gather(
+            _measure_shown(shown, work_cond, now, min(config.TRANSIT_TIMEOUT, left(1.5))),
+            info.attach(pre, [v["item"] for v in shown], min(config.INFO_TIMEOUT, left(1.5))))
+        early = {c["place"]["id"]: c["info"] for c in pre if c.get("info")}
     shown = limit_revisits(shown, work_cond)  # 다녀온 곳을 줄였으면 아래에서 새로운 곳으로 채워요
     # 늦었어도 이미 고른 곳은 버리지 않아요: 길 다시 재기 · 정보 붙이기만 건너뛰어요
     if not late and len(shown) < config.MAX_CANDIDATES:
@@ -309,8 +315,13 @@ async def recommend(cond: Conditions, visited: list[str], shown: list[str] | Non
     shown = _fix_wish_reasons(shown, work_cond)
     wish_later = _wish_later(work_cond, shown, now)
     cands = [_candidate(v) for v in shown]
-    # 늦었으면 시간 0으로 불러 자료에 있는 기본 정보(사진 · 요금)만 붙여요
-    await info.attach(cands, [v["item"] for v in shown], 0 if late else min(config.INFO_TIMEOUT, left(0.3)))
+    todo = [(c, v["item"]) for c, v in zip(cands, shown) if c["place"]["id"] not in early]
+    for c in cands:
+        if c["place"]["id"] in early:
+            c["info"] = early[c["place"]["id"]]
+    if todo:
+        # 새로 채운 곳만 붙여요. 늦었으면 시간 0으로 불러 자료에 있는 기본 정보(사진 · 요금)만
+        await info.attach([c for c, _ in todo], [it for _, it in todo], 0 if late else min(config.INFO_TIMEOUT, left(0.3)))
     for c, v in zip(cands, shown):
         _finish(c, v["item"])
     return done({
