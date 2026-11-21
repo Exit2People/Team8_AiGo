@@ -59,7 +59,7 @@ def rule_score(item: dict, cond: Conditions) -> float:
     if matched_wish(p, wishes):
         s += 3
     elif cond.extra.expanded and any(e in place_text(p) for e in cond.extra.expanded):
-        s += 1
+        s += 4  # 넓힌 말(공룡 → 자연사 · 과학관)은 어르신 바람을 바꿔 말한 것: 바람 없이 붙는 큰 박물관 점수(+2.5)보다 크게
     if matches_who(p, cond.extra.who):
         s += 2
     s -= r.get("transfers", 0)
