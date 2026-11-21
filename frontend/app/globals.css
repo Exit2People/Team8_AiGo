@@ -125,6 +125,11 @@ a {
   outline: 3px solid var(--ink);
   outline-offset: 2px;
 }
+/* 화면이 바뀔 때 코드로 초점만 옮기는 제목(tabIndex -1)은 테두리를 그리지 않아요 */
+[tabindex="-1"]:focus,
+[tabindex="-1"]:focus-visible {
+  outline: none;
+}
 
 /* ---------- 화면 틀 ---------- */
 .viewport {
