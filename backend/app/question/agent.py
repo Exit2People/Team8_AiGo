@@ -575,7 +575,9 @@ async def jev_ok(cond: Conditions, q: dict, deadline: float) -> bool:
     if cond.ai and cond.ai[-1].a:
         clue["바로 앞 답"] = cond.ai[-1].a
     state = {"질문": q["question"], "선택지": q["choices"], "단서": clue}
-    t = min(config.JEV_TIMEOUT, left)
+    t = min(config.JEV_TIMEOUT, left - 0.5)  # 뒤 계산(follows) 자리를 남겨요. 늦으면 None → 통과 (실측: Jev 가 한도를 넘겨 6/10 버려짐)
+    if t <= 0.2:
+        return True
     nat, fit = await asyncio.gather(jev.ask_yes(state, JEV_NATURAL, t), jev.ask_yes(state, JEV_FIT, t))
     if nat is not None and nat < config.QUESTION_JEV_NATURAL_MIN:
         log.info("question_fallback reason=jev_natural")
