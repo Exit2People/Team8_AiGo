@@ -11,6 +11,9 @@ from app.data import external_api, loader, stations_api, sync, weather
 from app.routers import auth, game, social
 
 logging.basicConfig(level=logging.INFO)
+# httpx는 INFO에서 요청 주소 전체를 찍어요. 기상청 · 서울시 키가 쿼리에 있어서 로그에 키가 남아요 (09_ACCEPTANCE 7.6)
+for _noisy in ("httpx", "httpcore"):
+    logging.getLogger(_noisy).setLevel(logging.WARNING)
 
 app = FastAPI(title="AI GO")
 
