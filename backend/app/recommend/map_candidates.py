@@ -79,7 +79,8 @@ async def _lookup(c: httpx.AsyncClient, name: str) -> dict | None:
     return d
 
 
-async def resolve(names: list[str], cond: Conditions, now, weather: str | None, timeout: float) -> list[dict]:
+async def resolve(names: list[str], cond: Conditions, now, weather: str | None, timeout: float,
+                  visited: list[str] | tuple = ()) -> list[dict]:
     if timeout <= 0 or not names or not config.env("KAKAO_REST_API_KEY") or not can_resolve(cond, weather):
         return []
     try:
@@ -101,4 +102,6 @@ async def resolve(names: list[str], cond: Conditions, now, weather: str | None, 
                   and geo.distance_m(q["lat"], q["lng"], p["lat"], p["lng"]) <= 500 for q in db)
         if not dup:
             places.append(p)
-    return filter_places(cond, now, weather, [], places=places) if places else []
+    # 이름 두 개가 같은 곳을 가리키면 하나로, 다녀온 곳은 빼요
+    places = list({p["id"]: p for p in places}.values())
+    return filter_places(cond, now, weather, list(visited), places=places) if places else []

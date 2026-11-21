@@ -74,9 +74,8 @@ async def recommend(cond: Conditions, visited: list[str]) -> dict:
         wide.range.oneWayMin = cond.range.oneWayMin + config.AGENT_RELAX_MIN
         items = [x for x in fp.filter_places(wide, now, wtext, visited) if not x.get("overEstimate")]
         if items:
+            # cond 자체를 넓혔으니 곳마다 relaxed를 달지 않아요 (달면 다시 잴 때 +20분을 한 번 더 해요)
             relaxed = True
-            for x in items:
-                x["relaxed"] = True
             cond = wide
 
     expanded = None
@@ -97,7 +96,7 @@ async def recommend(cond: Conditions, visited: list[str]) -> dict:
         search_all = [x for x in items if any(wd in place_text(x["place"]) for wd in words)]
         added = []
         if places:
-            added = await map_candidates.resolve(places, work_cond, now, wtext, left(3.0))
+            added = await map_candidates.resolve(places, work_cond, now, wtext, left(3.0), visited)
             added = [a for a in added if a["place"]["id"] not in have]
             if added:
                 measured = await transit.measure_all(added, work_cond, now, min(config.TRANSIT_TIMEOUT, left(3.0)))
@@ -143,7 +142,7 @@ async def recommend(cond: Conditions, visited: list[str]) -> dict:
             names = names[:3]
             if names:
                 asked_external = True
-                ext_items = await map_candidates.resolve(names, work_cond, now, wtext, left(0.5))
+                ext_items = await map_candidates.resolve(names, work_cond, now, wtext, left(0.5), visited)
                 ext = verify_picks([{"id": x["place"]["id"], "reason": rule_reason(x, work_cond)} for x in ext_items],
                                    ext_items)
                 have = {v["item"]["place"]["id"] for v in verified}
