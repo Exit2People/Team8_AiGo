@@ -9,7 +9,7 @@ import time
 
 from app import config
 from app.data import preferences, weather
-from app.question import flow
+from app.question import flow, variety
 from app.question.lead import lead_question
 from app.question.opening import BODY_WORDS, has_banned
 from app.schemas import Conditions, strip_for_ai, want_of
@@ -125,10 +125,12 @@ async def next_ai(cond: Conditions) -> dict:
         if agent_ok:
             r = await qa.ask_agent(cond, items, no, total, extra=True, timeout=budget())
             if r is not None and not r.get("done"):
+                variety.remember(r.get("question"))
                 return {**r, "no": no, "total": total + 1, "extra": True}
         return {"done": True}
 
     def stamp(q: dict) -> dict:
+        variety.remember(q.get("question"))
         return {**q, "no": no, "total": total}
 
     if agent_ok:

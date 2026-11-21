@@ -13,7 +13,7 @@ import time
 from collections import Counter
 
 from app import config
-from app.question import flow
+from app.question import flow, variety
 from app.question.opening import BODY_WORDS, has_banned
 from app.question.search import NAME_MIN, place_scores, word_ok
 from app.question.themes import ALL_THEMES, short_name, themes_of, wish_themes
@@ -37,7 +37,7 @@ SYSTEM = """너는 'AI GO'의 질문 에이전트야. 서울에 사는 어르신
 질문 고르기
 1. 이어 받을 말이 있으면 그 말을 더 구체적으로 좁히는 질문을 먼저 만들어. 찾은 곳 이름이 2곳 이상이면 그 이름을 선택지로 써도 좋아.
 2. 이어 받을 말이 없으면(처음 말이 "잘 모르겠어요" 등) 주제별 곳 수를 보고, 어르신이 대답하기 쉬운 것부터 물어.
-3. 은행 질문이 지금 대화에 잘 맞으면 그대로 써도 돼 (bank 칸에 은행 질문 글을 그대로 적어). 아니면 새로 만들어.
+3. 은행 질문이 지금 대화에 잘 맞으면 써도 돼 (그대로 쓰거나, 뜻은 두고 바꿔 말해도 돼). 아니면 새로 만들어.
 4. 남은 질문이 적을수록(특히 마지막 질문) 오늘 후보를 크게 가르는 질문을 골라. 선택지마다 남는 곳 수가 고르게 나뉘면 좋아.
 5. 질문 수는 정해져 있어. 이미 좁혀졌어도 done 으로 끝내지 말고, 남은 후보를 더 좁히는 질문을 내.
 
@@ -221,6 +221,14 @@ def first_message(cond: Conditions, items: list[dict], no: int | None = None, to
             msg["안내"] = "이번이 정해진 마지막 질문이에요. 오늘 후보를 가장 크게 가르는 질문을 골라요."
     if extra:
         msg["1개 더"] = EXTRA_SYSTEM_NOTE
+    if variety.on():
+        msg["매번 새롭게"] = ("최근에 다른 어르신들께 낸 질문과 같은 문장은 피해요. 같은 뜻이어도 말투 · 낱말 · 선택지 순서를 바꿔요. "
+                         "은행 질문도 뜻은 그대로 두고 바꿔 말해도 돼요.")
+        a = variety.angle()
+        if a:
+            msg["이번 각도 (어울리면)"] = a
+        if variety.recent():
+            msg["최근에 낸 질문"] = variety.recent()
     return msg
 
 
@@ -305,12 +313,15 @@ def check_question(cond: Conditions, items: list[dict], sub: dict) -> dict | Non
     if has_banned(" ".join([q, *choices]), BODY_WORDS):
         return None
     # 은행 질문을 그대로 골랐으면 은행 선택지(오늘 남는 것만)를 써요. 은행 질문은 미리 검사한 거예요
-    bank_id = next((k for k, b in flow.BANK.items() if _norm(b["question"]) == _norm(q)), None)
+    bank_id = flow.bank_id_of(q)
     if bank_id and bank_id not in ("walk", "inout"):
         if bank_id in flow.asked_ids(cond) or flow.skipped(cond, bank_id):
             return None
-        return {"done": False, "question": flow.BANK[bank_id]["question"],
-                "choices": flow.live_choices(bank_id, items), "slot": flow.BANK[bank_id]["slot"]}
+        live = flow.live_choices(bank_id, items)
+        # 은행 질문(또는 그 다른 말투)은 은행 선택지로. 에이전트가 고른 순서를 따르고 나머지는 뒤에
+        mine = [c for c in choices if c in live]
+        return {"done": False, "question": q, "choices": mine + [c for c in live if c not in mine],
+                "slot": flow.BANK[bank_id]["slot"]}
     if not 2 <= len(choices) <= 4 or any(len(c) > 14 for c in choices):
         return None
     if len({_norm(c) for c in choices}) != len(choices):
@@ -435,7 +446,7 @@ async def ask_agent(cond: Conditions, items: list[dict], no: int | None = None, 
     if not await jev_ok(cond, q, deadline):
         return None
     out = {**q, "source": "agent"}
-    bank_id = next((k for k, b in flow.BANK.items() if _norm(b["question"]) == _norm(q["question"])), None)
+    bank_id = flow.bank_id_of(q["question"])
     if bank_id:
         out["id"] = bank_id
     f = follows(cond, items, q["question"], q["choices"])
