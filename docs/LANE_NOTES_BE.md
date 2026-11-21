@@ -9,7 +9,7 @@
 | S3 뼈대 · 조건 묶음 · 역 · 구동 · DB 모듈 | ✅ | `/districts` 25, `/stations/nearby` 가까운 순 4곳, `DATABASE_URL` 없이 `/health` ok |
 | S4 질문 흐름 (A안) | ✅ | 키 없이 질문 0 → 몸 · 시간 → 하고 싶은 것 → 질문 4 → 질문 5 → done |
 | S5 규칙 추천 | ✅ | 키 없이 3곳, 비 오면 바깥 장소 빠짐 |
-| S6 AI 추천 · Jev · 말 넓히기 | ✅ (에이전트 빼고) | 실제 키 1번: **4.49초**, `by: ai`, 3곳 모두 서울시 실제 길 |
+| S6 AI 추천 · Jev · 말 넓히기 | ✅ | 한 번 호출 실측 **4.49초** (`by: ai`). 추천 에이전트 실측 **7.98초** (`by: agent`, 도구 1번) |
 | S7 도착 예정 · 톡방 · 방명록 | ✅ | |
 | S8 쿠키 · 세션 · 카카오 | ✅ | |
 | S9 탈퇴 보관 · 되살리기 · 밴 | ✅ | |
@@ -19,13 +19,15 @@
 - 테스트 144개 (`uv run pytest -q`), 키 · DB 없이 돌아요. DB 쓰는 테스트는 `tests/fakedb.py`(SQL 앞 `/*이름*/`로 알아봄).
 - 서버 SQL 전체(소셜 · 카카오 가입 · 내 정보 · 게임 · 탈퇴 · 되살리기 · 이메일)를 **로컬 임시 Postgres**(`schema.sql` 적용)에서 실제 psycopg로 한 바퀴 돌려 봤어요. 운영 Neon에는 아무것도 쓰지 않았어요.
 
-## 2. 뺀 것 (START_HERE 4.1)
+## 2. 에이전트 (10:05에 되살림) · 뺀 것
 
-| 뺀 것 | 대신 | 영향 |
+| 무엇 | 동작 | 실측 (실제 키 1번씩) |
 |---|---|---|
-| 추천 에이전트(LangGraph, `AIGO_AGENT=1`) | `AIGO_AGENT`가 켜져 있어도 Claude 한 번(`PICK_SYSTEM`) → 실패면 규칙 | `/health`의 `agent`는 늘 `false`. 추천은 8초 안 (실측 4.5초) |
-| 질문 에이전트(LangGraph) | 조건 묶음만 온 `/questions/next`: 발전 질문 → Claude 한 번(`AI_QUESTION_SYSTEM`, 3.5초) → 가장 잘 나누는 은행 질문 → `fallback` | 계약 모양은 같아요 |
-| 매일 장소 DB 받기(sync) | 스냅숏 `data/snapshot/aigo.db` 고정 (`/data/status`는 동작) | `AIGO_SYNC_FREEZE`와 같은 동작 |
+| 질문 에이전트 (`question/agent.py`, LangGraph) | 조건 묶음만 온 `/questions/next` · `/questions/ai`의 첫 시도. 6초 · 도구 2번 → 코드 검사 → Jev 2개(`AIGO_QUESTION_JEV`). 실패 · 늦음이면 발전 질문 → 은행 → fallback (에이전트를 못 썼을 때만 Claude 한 번). `AIGO_QUESTION_AGENT=0`이면 끔 | **3.92초**, 도구 0번, `source: agent` |
+| 추천 에이전트 (`recommend/agent/`, LangGraph) | `AIGO_AGENT=1`일 때. 전체를 화면 대기 20초 − 1초 안에 끝내려고 에이전트에 `min(30초, 남은 시간 − 8초)`(대략 10초)만 줘요. 실패 · 늦음이면 Claude 한 번(6초) → 규칙. `/health.agent`가 이 스위치를 그대로 보여요 | **7.98초**, 도구 1번, 3곳 냈고 이유 검사에서 2곳이 빠져 규칙으로 채움 |
+| 매일 장소 DB 받기(sync) | 뺐어요. 스냅숏 고정 (`/data/status`는 동작) | — |
+
+- ⚠️ 추천 에이전트는 `effort: low`로 불러요 (06_AI_PROMPTS 0절은 안 넘김 = high). 20초 안에 끝내려고 바꿨어요.
 
 ## 3. 계약과 다른 점 (모두 칸을 **더한** 것, 뺀 칸 없음)
 

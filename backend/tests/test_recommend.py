@@ -11,7 +11,6 @@ from app.llm import client as llm
 from app.llm import jev
 from app.main import app
 from app.recommend import expand as ex
-from app.recommend import service
 from app.recommend.pick import diverse_pool, pick_by_rule, rank_by_rule, rule_reason
 from app.recommend.verify import check, verify_picks
 from app.schemas import Conditions
