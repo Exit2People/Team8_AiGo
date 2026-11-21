@@ -58,8 +58,9 @@ export function Caption({ y, children, onClick, dark }: { y: number; children: R
 }
 
 /** 진행 막대 (4칸) + 글 */
-export function Progress({ on, text, right }: { on: number; text: string; right?: boolean }) {
-  const bar = (
+/** 진행 표시. bar={false}면 막대 없이 글자("질문 1")만 보여요 (AI가 고른 질문은 몇 개일지 정해져 있지 않아서) */
+export function Progress({ on, text, right, bar: showBar = true }: { on: number; text: string; right?: boolean; bar?: boolean }) {
+  const bar = showBar && (
     <span className="progress-bar" aria-hidden="true">
       {[1, 2, 3, 4].map((i) => (
         <i key={i} className={i <= on ? "on" : ""} />
