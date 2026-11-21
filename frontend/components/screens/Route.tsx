@@ -85,7 +85,7 @@ export default function Route({ f }: { f: FlowApi }) {
               {i + 1}
             </div>
             {k.car && (
-              <span className="chip" style={{ position: "absolute", right: 16, top: 10, height: 32, lineHeight: "32px", fontSize: 16, borderRadius: 16 }}>
+              <span className="chip" style={{ position: "absolute", right: 16, top: 10, height: 32, lineHeight: "32px", fontSize: "calc(16px * var(--fs))", borderRadius: 16 }}>
                 {k.car}
               </span>
             )}
@@ -129,6 +129,7 @@ export default function Route({ f }: { f: FlowApi }) {
               style={{ marginTop: 18 }}
               onClick={() => {
                 setNudge(false);
+                f.backTo.current = [...f.s.stack]; // 로그인 · 가입이 끝나면 이 길 안내로 돌아와요
                 f.go({ k: "login" });
               }}
             >

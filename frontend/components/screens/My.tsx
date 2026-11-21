@@ -7,10 +7,12 @@ import { Caption, Primary, Sub, Title } from "../ui";
 import Mic, { cleanName, cleanNick } from "../Mic";
 import HomePicker from "./HomePicker";
 import * as api from "@/lib/api";
-import { backupDevice, drop, load, readBlocked, readStamps, readVisits, save } from "@/lib/device";
-import { BADGES, badgeImg, recOf } from "@/lib/badges";
+import { backupDevice, drop, readBlocked, readStamps, readVisits, save } from "@/lib/device";
+import { HIDDEN_IMG, badgeStates, type BadgeState } from "@/lib/badges";
+import { BadgeCard } from "../Badges";
+import { GameCard, loadBest } from "../DamgoRun";
+import { TextSizePicker } from "../TextSize";
 import { THEMES } from "@/lib/theme";
-import { fmtNum } from "@/lib/format";
 
 function Group({ y, children }: { y?: number; children: ReactNode }) {
   return (
@@ -27,7 +29,7 @@ function Line({ label, value, onClick, danger, disabled }: { label: string; valu
       disabled={disabled}
       style={{ display: "flex", width: "100%", alignItems: "center", minHeight: 54, padding: "0 16px 0 20px", gap: 8, borderBottom: "1.5px solid var(--soft)", textAlign: "left" }}
     >
-      <span className="t-answer" style={{ flex: 1, color: danger ? "var(--coral-deep)" : undefined, fontSize: 17 }}>
+      <span className="t-answer" style={{ flex: 1, color: danger ? "var(--coral-deep)" : undefined, fontSize: "calc(17px * var(--fs))" }}>
         {label}
       </span>
       {value != null && (
@@ -41,7 +43,7 @@ function Line({ label, value, onClick, danger, disabled }: { label: string; valu
 }
 
 export function gameBest(uid?: string | null): number {
-  return load<number>(uid ? `aigo.game.best.${uid}` : "aigo.game.best", 0);
+  return loadBest(uid);
 }
 
 /** 내 정보 (4.5 my) */
@@ -49,16 +51,16 @@ export function My({ f }: { f: FlowApi }) {
   const u = f.s.user;
   const [ask, setAsk] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [stats, setStats] = useState({ stamps: 0, visits: 0, blocked: 0, best: 0, got: [] as string[] });
+  const [stats, setStats] = useState({ stamps: 0, visits: 0, blocked: 0, best: 0 });
+  const [badges, setBadges] = useState<BadgeState[]>([]);
   useEffect(() => {
     const st = readStamps();
     const vs = readVisits();
-    const got = u ? Object.entries(recOf(u.id).got).sort((a, b) => b[1] - a[1]).map(([id]) => id) : [];
-    setStats({ stamps: Object.keys(st).length, visits: vs.length, blocked: readBlocked().length, best: gameBest(u?.id), got });
+    setStats({ stamps: Object.keys(st).length, visits: vs.length, blocked: readBlocked().length, best: gameBest(u?.id) });
+    setBadges(u ? badgeStates(u.id, !!u.homeDong1) : []);
   }, [u]);
   const theme = THEMES.find((t) => t.color === f.s.coral)?.name ?? "코랄";
   const unrecorded = Math.max(0, stats.visits - stats.stamps);
-  const recent = stats.got.slice(0, 3).map((id) => BADGES.find((b) => b.id === id)!).filter(Boolean);
 
   return (
     <div className="content">
@@ -81,6 +83,14 @@ export function My({ f }: { f: FlowApi }) {
           </span>
         </button>
 
+        {/* 글씨 크기: 찾기 쉽게 내 정보 맨 위쪽에 바로 둬요 */}
+        <section aria-labelledby="myTextSize" style={{ background: "var(--white)", borderRadius: 24, boxShadow: "var(--sh-row)", padding: 16, marginTop: 14 }}>
+          <h2 id="myTextSize" className="t-answer" style={{ marginBottom: 12 }}>
+            글씨 크기
+          </h2>
+          <TextSizePicker />
+        </section>
+
         <button
           style={{ display: "flex", width: "100%", alignItems: "center", gap: 14, background: "var(--ink)", color: "#fff", borderRadius: 24, padding: "20px 16px", marginTop: 14, textAlign: "left" }}
           onClick={() => f.go({ k: "mine" })}
@@ -98,41 +108,26 @@ export function My({ f }: { f: FlowApi }) {
           </span>
         </button>
 
-        <button
-          style={{ display: "flex", width: "100%", alignItems: "center", gap: 12, background: "var(--white)", borderRadius: 24, padding: "16px", marginTop: 14, textAlign: "left", boxShadow: "var(--sh-row)" }}
-          onClick={() => f.go(u ? { k: "badges" } : { k: "login" })}
-        >
-          <span style={{ display: "flex" }}>
-            {(recent.length ? recent : [null]).map((b, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={i} src={b ? badgeImg(b, true) : "/aigo/badges/_hidden.svg"} alt="" width={44} height={44} style={{ marginLeft: i ? -12 : 0 }} />
-            ))}
-          </span>
-          <span style={{ flex: 1 }}>
-            <span className="t-answer" style={{ display: "block" }}>
-              {u ? `업적 ${stats.got.length}개를 모았어요` : "업적 배지"}
-            </span>
-            <span className="t-caption c-mute" style={{ display: "block", marginTop: 6 }}>
-              {u ? `${recent[0] ? `최근: ${recent[0].name}` : "첫 나들이를 하면 배지가 생겨요"} · 전체 30개` : "로그인하면 나들이마다 배지를 모아요"}
-            </span>
-          </span>
-          <span className="chip chip-soft">{u ? "보기" : "시작"}</span>
-        </button>
-
-        <button
-          style={{ display: "flex", width: "100%", alignItems: "center", gap: 12, background: "var(--white)", borderRadius: 24, padding: "16px 16px 16px 20px", marginTop: 14, textAlign: "left", boxShadow: "var(--sh-row)" }}
-          onClick={() => f.go({ k: "game" })}
-        >
-          <span style={{ flex: 1 }}>
-            <span className="t-answer" style={{ display: "block" }}>
-              담고 달리기
-            </span>
-            <span className="t-caption c-mute" style={{ display: "block", marginTop: 6 }}>
-              {stats.best ? `최고 ${fmtNum(stats.best)}걸음 · 한 판 더 할까요?` : "쉬는 틈에 폴짝폴짝 한 판"}
-            </span>
-          </span>
-          <span className="chip">시작</span>
-        </button>
+        <div style={{ marginTop: 14 }}>
+          {u ? (
+            <BadgeCard states={badges} onOpen={() => f.go({ k: "badges" })} />
+          ) : (
+            <button className="badgeCard" onClick={() => f.go({ k: "login" })}>
+              <span className="bcThumbs" aria-hidden="true">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={HIDDEN_IMG} alt="" style={{ scale: "1.1" }} />
+              </span>
+              <span className="profileText">
+                <b>업적 배지</b>
+                <span>로그인하면 나들이마다 배지를 모아요</span>
+              </span>
+              <span className="pillWhite">시작</span>
+            </button>
+          )}
+        </div>
+        <div style={{ marginTop: 14 }}>
+          <GameCard best={stats.best} onOpen={() => f.go({ k: "game" })} />
+        </div>
 
         {u && (
           <Group>
@@ -323,7 +318,7 @@ export function Theme({ f }: { f: FlowApi }) {
                   if (t.id === "A") drop("aigo.theme");
                   else save("aigo.theme", t.id);
                 }}
-                style={{ height: 64, borderRadius: 18, background: t.color, color: "#fff", fontSize: 24, fontWeight: 900, outline: on ? "3px solid var(--ink)" : "none", outlineOffset: 2 }}
+                style={{ height: 64, borderRadius: 18, background: t.color, color: "#fff", fontSize: "calc(24px * var(--fs-t))", fontWeight: 900, outline: on ? "3px solid var(--ink)" : "none", outlineOffset: 2 }}
               >
                 {on ? "✓" : ""}
               </button>

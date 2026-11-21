@@ -16,8 +16,41 @@ export type Pose = {
 
 const POSES = raw as unknown as Record<string, Pose>;
 
+const UP = new Map<Pose, Pose>();
+
+/**
+ * 꼬리는 늘 위를 향해요: 큰 원(꼬리 뿌리) 위에 작은 원(꼬리 끝)이 오도록 고쳐요.
+ * - 끝이 뿌리보다 아래 있는 자세는 뿌리를 기준으로 위로 뒤집어요.
+ * - 원이 하나뿐인 자세는 뿌리 위에 끝 원(0.8배)을 더해요.
+ * poses.json은 그대로 두고 불러올 때만 고쳐요.
+ */
+function tailUp(p: Pose): Pose {
+  const cached = UP.get(p);
+  if (cached) return cached;
+  const [base, tip, ...rest] = p.t;
+  let out = p;
+  if (base && base[3]) {
+    const side = base[0] >= p.h[0] ? 1 : -1; // 꼬리가 머리 오른쪽이면 1
+    let up: Pose["t"][number];
+    if (tip && tip[3]) {
+      up = tip[1] > base[1] ? [tip[0], base[1] - (tip[1] - base[1]), tip[2], 1] : tip;
+    } else {
+      up = [base[0] + side * base[2] * 0.08, base[1] - base[2] * 0.62, Math.round(base[2] * 0.8), 1];
+    }
+    // 두 원은 늘 하나로 붙어 있어요: 가운데 사이가 두 반지름 합의 0.7배를 넘지 않게 끝 원을 당겨요
+    const dx = up[0] - base[0];
+    const dy = up[1] - base[1];
+    const dist = Math.hypot(dx, dy);
+    const max = ((base[2] + up[2]) / 2) * 0.7;
+    if (dist > max) up = [base[0] + (dx * max) / dist, base[1] + (dy * max) / dist, up[2], 1];
+    out = { ...p, t: [base, up, ...rest] };
+  }
+  UP.set(p, out);
+  return out;
+}
+
 export function getPose(key: string): Pose {
-  return POSES[key] ?? POSES[key.replace(/(In|Top)$/, "")] ?? POSES.s1;
+  return tailUp(POSES[key] ?? POSES[key.replace(/(In|Top)$/, "")] ?? POSES.s1);
 }
 
 export function hasPose(key: string): boolean {
@@ -31,7 +64,7 @@ const FLAT = new Set([
   "stamped", "nextp", "next", "nextd",
 ]);
 const END_Y: Record<string, number> = {
-  loc: 450, near: 260, gu: 260, st: 260, body: 320, time: 320, q1: 320, fb: 320, ask: 520, ask2: 520,
+  loc: 450, locUp: 378, near: 260, gu: 260, st: 260, body: 320, time: 320, q1: 320, fb: 320, ask: 520, ask2: 520,
   last: 250, fill: 480, tear: 700, route: 250, none: 520, off: 520, end: 520, mine: 220, mine2: 220,
   chat: 160, chatmenu: 160, my: 160, del: 160, su1: 250, myedit: 160, upload: 220, cut: 230, review: 220,
   sdetail: 220, nudge: 250, voice: 520,

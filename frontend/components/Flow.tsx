@@ -18,6 +18,11 @@ import { THEMES } from "@/lib/theme";
 import { useChat, type ChatApi } from "./useChat";
 import Celebrate, { canCelebrate, useBadges } from "./Celebrate";
 import { WAG, useIdle } from "./useIdle";
+import { setPaused } from "@/lib/pause";
+import { takeResume } from "@/lib/resume";
+import { randomNick } from "@/lib/nick";
+import { applyTextSize, readTextSize } from "@/lib/textSize";
+import { TextSizeSheet } from "./TextSize";
 import { clockText } from "@/lib/format";
 
 const NICKS = ["봄나들이", "햇살마중", "솔바람", "도란도란", "꽃마중", "느림보", "새벽길", "산들바람"];
@@ -115,6 +120,7 @@ function useFlow() {
 
   const home = useCallback(() => {
     abortReq();
+    backTo.current = null; // 로그인 뒤 예전 화면으로 돌아가지 않게
     set((p) => ({
       ...initialState(),
       origin: p.origin,
@@ -190,6 +196,7 @@ function useFlow() {
     client.current = uuid();
     nick.current = NICKS[Math.floor(Math.random() * NICKS.length)];
     sweepBackups();
+    applyTextSize(readTextSize()); // 이 기기에서 고른 글씨 크기
     const theme = load<string>("aigo.theme", "A");
     const coral = THEMES.find((t) => t.id === theme)?.color ?? THEMES[0].color;
     const cached = load<User | null>("aigo.user", null);
@@ -205,10 +212,21 @@ function useFlow() {
       qp.delete("restore");
       history.replaceState(null, "", url.pathname + (qp.toString() ? `?${qp}` : "") + url.hash);
     }
+    // 카카오로 넘어가기 전 머물던 흐름(예: 도착 화면)이 있으면 되살려요
+    const resume = qp.has("login") || qp.has("signup") || qp.has("restore") || toKwait ? takeResume() : null;
+    if (resume) {
+      set(resume.state);
+      // 되살린 화면 수만큼 브라우저 뒤로 가기 자리를 만들어요(뒤로 가기가 앱 안에서 한 칸씩 돌아가게)
+      for (let i = 1; i < resume.stack.length; i++) history.pushState({ aigo: 1 }, "");
+    }
     if (toKwait) {
-      set({ stack: [{ k: "start" }, { k: "kwait" }] });
+      if (resume) {
+        backTo.current = resume.stack; // 로그인 · 가입이 끝나면 이 화면으로 돌아가요(landAuthed)
+        set({ stack: [...resume.stack, { k: "kwait" }] }); // 실패해서 뒤로 가도 머물던 화면이에요
+      } else set({ stack: [{ k: "start" }, { k: "kwait" }] });
       history.pushState({ aigo: 2 }, "");
     } else {
+      if (resume) set({ stack: resume.stack });
       if (login === "fail") setTimeout(() => note("카카오 로그인을 하지 못했어요. 다시 해 주세요."), 50);
       if (login === "banned") setTimeout(() => note("이용이 제한된 계정이에요. 궁금한 점은 운영자에게 문의해 주세요"), 50);
       api.me().then(
@@ -481,7 +499,7 @@ function useFlow() {
 
   /* ---------- 찾기 (8.1) ---------- */
   const search = useCallback(
-    async (how: "push" | "stay", keepSeen = false) => {
+    async (how: "push" | "stay", keepSeen = false, lead = "") => {
       const p = sRef.current;
       abortReq();
       const ctrl = new AbortController();
@@ -517,8 +535,12 @@ function useFlow() {
           seen: Array.from(new Set([...(keepSeen ? q.seen : []), ...ids])),
           weather: r.weather?.weather ?? "",
         }));
+        // note()는 앞 안내를 덮어써서, 결과 보기 안내(lead)까지 한 줄로 합쳐요
+        const told: string[] = lead ? [lead] : [];
         if (r.expanded?.from?.length && r.expanded.words?.length)
-          setTimeout(() => note(`${r.expanded!.from.join(" · ")} → ${r.expanded!.words.join(" · ")}으로 넓혀 찾았어요`), 60);
+          told.push(`${r.expanded.from.join(" · ")} → ${r.expanded.words.join(" · ")}으로 넓혀 찾았어요`);
+        if (r.relaxed) told.push("가까운 곳이 없어서 조금 더 먼 곳까지 찾았어요");
+        if (told.length) setTimeout(() => note(told.join(" · ")), 60);
         window.dispatchEvent(new CustomEvent("aigo:badge", { detail: { ev: "recommend" } }));
         if (how === "push" || top().k !== "result") go({ k: "result" });
       } catch (e) {
@@ -540,12 +562,13 @@ function useFlow() {
     const filled = [...p.filled];
     const told: string[] = [];
     const patch: Partial<FlowState> = { preparing: -1, qNotice: false };
-    if (p.body == null) {
+    // undefined = 아직 안 물어봄. null(잘 모르겠어요)은 조건 없음으로 두고 덮어쓰지 않아요
+    if (p.body === undefined) {
       patch.body = "좀 무거워요";
       filled.push("body");
       told.push("몸 → 좀 무거워요");
     }
-    if (p.time == null) {
+    if (p.time === undefined) {
       patch.time = "반나절";
       filled.push("time");
       told.push("시간 → 반나절");
@@ -557,10 +580,8 @@ function useFlow() {
     patch.filled = Array.from(new Set(filled));
     patch.qs = p.qs.filter((q) => q.answered);
     set(patch);
-    search("push").then(() => {
-      if (told.length) note(`답하지 않은 건 무난하게 정했어요 · ${told.join(" · ")}`);
-    });
-  }, [abortReq, note, search, set]);
+    search("push", false, told.length ? `답하지 않은 건 무난하게 정했어요 · ${told.join(" · ")}` : "");
+  }, [abortReq, search, set]);
 
   /* ---------- 결과 · 고르기 (8.2 · 8.3) ---------- */
   const cand = (): Candidate | undefined => sRef.current.cands[sRef.current.idx];
@@ -627,6 +648,29 @@ function useFlow() {
     setUser(u);
     return u;
   }, [setUser]);
+
+  /* 닉네임 없이 가입한 회원: 이름을 지어 프로필에 남겨요(톡방 · 랭킹 · 한 줄에 이 이름이 보여요) */
+  const naming = useRef<string | null>(null);
+  useEffect(() => {
+    const u = s.user;
+    if (!u || u.nickname?.trim() || naming.current === u.id) return;
+    naming.current = u.id;
+    (async () => {
+      for (let tries = 0; tries < 3; tries++) {
+        const nickname = randomNick();
+        try {
+          const m = await api.patchProfile({ nickname });
+          if (sRef.current.user?.id !== u.id) return; // 그 사이 로그아웃 · 다른 계정
+          setUser(m && m.loggedIn ? m : { ...u, nickname });
+          setTimeout(() => note(`닉네임을 '${nickname}'(으)로 지어 드렸어요. 내 정보에서 바꿀 수 있어요`), 400);
+          return;
+        } catch {
+          /* 같은 이름이 있거나 잠깐 실패: 다른 이름으로 한 번 더 */
+        }
+      }
+      naming.current = null; // 다음에 다시 해 봐요
+    })();
+  }, [s.user, setUser, note]);
 
   /** 도착했어요 (9.1) */
   const arrive = useCallback(() => {
@@ -697,6 +741,10 @@ export default function Flow() {
   const shownKey = idle.key;
   const isResult = poseKey === "s4" || poseKey === "s4p";
   const cele = badges.queue.length && canCelebrate(s) ? badges.queue[0] : null;
+  useEffect(() => {
+    setPaused(!!cele); // 축하 화면이 떠 있는 동안 게임을 그 자리에 멈춰요
+    return () => setPaused(false);
+  }, [cele]);
 
   return (
     <Stage
@@ -715,6 +763,7 @@ export default function Flow() {
               {s.note}
             </div>
           ) : null}
+          <TextSizeSheet />
           {cele && (
             <Celebrate
               b={cele}

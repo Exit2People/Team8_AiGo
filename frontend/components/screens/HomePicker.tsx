@@ -50,7 +50,7 @@ export default function HomePicker({ onPick, onClose }: { onPick: (v: string) =>
                   <button
                     key={name}
                     className="pick"
-                    style={{ background: "var(--soft)", boxShadow: "none", fontSize: name.length > 6 ? 15 : 17 }}
+                    style={{ background: "var(--soft)", boxShadow: "none", fontSize: `calc(${name.length > 6 ? 15 : 17}px * var(--fs))` }}
                     onClick={() => {
                       if (!gu) {
                         setDongs(null);

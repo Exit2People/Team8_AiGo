@@ -8,6 +8,7 @@ import Mic, { cleanName, cleanNick } from "../Mic";
 import HomePicker from "./HomePicker";
 import * as api from "@/lib/api";
 import { discardDevice, restoreDevice } from "@/lib/device";
+import { isNick, randomNick } from "@/lib/nick";
 
 /** 이메일 가입 중인 값 (화면 사이에서 이어져요, 기기에 남기지 않아요) */
 const draft = { email: "", pw: "", pw2: "", code: "", name: "", nick: "", age: "", home: "" as string, provider: "kakao" as "kakao" | "email" };
@@ -55,7 +56,7 @@ function Bullets({ y, items }: { y: number; items: string[] }) {
           <span style={{ flex: "none", marginTop: 1 }}>
             <CheckIcon size={22} />
           </span>
-          <span className="t-answer" style={{ lineHeight: 1.35, fontSize: 16 }}>
+          <span className="t-answer" style={{ lineHeight: 1.35, fontSize: "calc(16px * var(--fs))" }}>
             {t}
           </span>
         </div>
@@ -305,9 +306,9 @@ export function Elogin({ f }: { f: FlowApi }) {
 const STEPS = [
   { name: "이메일", desc: "로그인할 때 써요" },
   { name: "비밀번호", desc: "8자 이상, 글자와 숫자를 섞어요" },
-  { name: "이메일 확인", desc: "메일로 보낸 숫자 6자리를 넣어 주세요\n(데모: 아무 숫자 6자리나 돼요)" },
+  { name: "이메일 확인", desc: "메일로 보낸 숫자 6자리를 넣어 주세요\n(메일이 안 보이면 스팸함도 봐 주세요)" },
   { name: "이름", desc: "실제 이름을 적어 주세요" },
-  { name: "닉네임", desc: "우표 · 한 줄 · 톡방에서 보이는 이름이에요" },
+  { name: "닉네임", desc: "한 줄 · 톡방 · 랭킹에서 보이는 이름이에요\n비워 두면 예쁜 이름을 지어 드려요" },
   { name: "나이", desc: "숫자만 적어 주세요" },
   { name: "사는 곳", desc: "골라도 되고 비워도 돼요 · 구와 동까지만 받아요" },
 ];
@@ -331,6 +332,22 @@ export function Signup({ f, i }: { f: FlowApi; i: number }) {
     if (i === 6) draft.home = x;
   }
 
+  /** 확인 숫자 다시 받기: 서버에 다시 보내 달라고 해요 */
+  async function resend() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await api.emailStart(draft.email.trim(), draft.pw);
+      draft.code = "";
+      setV("");
+      f.note("숫자를 다시 보냈어요");
+    } catch (e) {
+      f.note(api.errText(e, "다시 보내지 못했어요"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function next() {
     if (busy) return;
     const t = v.trim();
@@ -340,7 +357,12 @@ export function Signup({ f, i }: { f: FlowApi; i: number }) {
       if (v !== pw2) return f.note("두 비밀번호가 달라요. 다시 확인해 주세요");
     }
     if (i === 3 && !t) return f.note("이름을 적어 주세요");
-    if (i === 4 && !/^[가-힣A-Za-z0-9]{2,8}$/.test(t)) return f.note("닉네임은 2 ~ 8자, 한글 · 영어 · 숫자만 돼요");
+    if (i === 4 && !t) {
+      // 비워 두면 이름을 지어 줘요(가입 규칙 2 ~ 8자에 맞아요)
+      const made = randomNick();
+      store(made);
+      f.note(`닉네임을 '${made}'(으)로 지어 드렸어요. 내 정보에서 바꿀 수 있어요`);
+    } else if (i === 4 && !isNick(t)) return f.note("닉네임은 2 ~ 8자, 한글 · 영어 · 숫자만 돼요");
     if (i === 5 && !(/^\d+$/.test(t) && +t >= 14 && +t <= 120)) return f.note("나이를 숫자로 적어 주세요");
     setBusy(true);
     try {
@@ -350,7 +372,7 @@ export function Signup({ f, i }: { f: FlowApi; i: number }) {
         if (r.restorable) return f.go({ k: "restore" });
       }
       if (i === 6) {
-        await api.emailFinish({ name: draft.name.trim(), nickname: draft.nick.trim(), age: draft.age.trim(), homeDong1: draft.home || null });
+        await api.emailFinish({ name: draft.name.trim(), nickname: draft.nick.trim() || randomNick(), age: draft.age.trim(), homeDong1: draft.home || null });
         await f.refreshMe();
         f.set({ stack: [{ k: "start" }, { k: "welcome" }] });
         return;
@@ -423,7 +445,7 @@ export function Signup({ f, i }: { f: FlowApi; i: number }) {
           </>
         )}
         {i === 2 && (
-          <button className="t-caption c-mute" style={{ marginTop: 10, textDecoration: "underline" }} onClick={() => f.note("숫자를 다시 보냈어요 (데모)")}>
+          <button className="t-caption c-mute" style={{ marginTop: 10, textDecoration: "underline" }} onClick={resend} disabled={busy}>
             다시 받기
           </button>
         )}

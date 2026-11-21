@@ -2,6 +2,7 @@
 
 import type { FlowApi } from "./Flow";
 import type { Step } from "@/lib/flow";
+import { OPEN_TEXT_SIZE } from "./TextSize";
 
 /** 상단 막대 (11_FRONTEND_SPEC 2.3) */
 export default function TopBar({ f, step }: { f: FlowApi; step: Step }) {
@@ -46,6 +47,11 @@ export default function TopBar({ f, step }: { f: FlowApi; step: Step }) {
         </div>
       )}
       <div className="topbar-right">
+        {step.k === "start" && (
+          <button className="chip" onClick={() => window.dispatchEvent(new CustomEvent(OPEN_TEXT_SIZE))}>
+            가 글씨 크기
+          </button>
+        )}
         {showResult && (
           <button className="chip" style={{ background: "var(--white)", color: "var(--ink)" }} onClick={f.skipToResult}>
             결과 보기
