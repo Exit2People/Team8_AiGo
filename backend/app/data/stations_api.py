@@ -1,6 +1,6 @@
 """라우터: 가까운 역, 구 · 동 목록. 좌표는 계산에만 쓰고 버려요."""
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException
 
 from app.data import geo, loader
 from app.schemas import NearbyRequest
@@ -11,11 +11,6 @@ router = APIRouter()
 @router.post("/stations/nearby")
 def nearby_post(body: NearbyRequest):
     return geo.nearby_stations(body.lat, body.lng)
-
-
-@router.get("/stations/nearby")
-def nearby_get(lat: float = Query(...), lng: float = Query(...)):
-    return geo.nearby_stations(lat, lng)
 
 
 @router.get("/districts")
