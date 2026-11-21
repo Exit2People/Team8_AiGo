@@ -110,7 +110,8 @@ def question_start() -> str:
 
 
 def agent_on() -> bool:
-    return env("AIGO_AGENT") == "1"
+    # exp/agent-full: 이 브랜치에서는 추천 에이전트가 기본으로 켜져요 (끄려면 AIGO_AGENT=0)
+    return (env("AIGO_AGENT", "1") or "1") == "1"
 
 
 def question_total() -> int:

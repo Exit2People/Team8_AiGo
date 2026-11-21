@@ -155,8 +155,10 @@ def test_agent_timeout_budget(monkeypatch):
 
 def test_health_agent_switch(monkeypatch):
     assert client.get("/health").json()["agent"] is True
-    monkeypatch.setenv("AIGO_AGENT", "")
+    monkeypatch.setenv("AIGO_AGENT", "0")
     assert client.get("/health").json()["agent"] is False
+    monkeypatch.delenv("AIGO_AGENT")  # exp/agent-full: 값이 없으면 켜져요
+    assert client.get("/health").json()["agent"] is True
 
 
 def test_agent_off_uses_single_call(monkeypatch):
