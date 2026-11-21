@@ -1,7 +1,7 @@
 "use client";
 
-/* 넓은 화면(PC 웹)에서만 쓰는 '내 정보' 옆 패널과 가운데 창.
-   화면 흐름(stack)은 폰과 똑같이 두고, 그리는 방법만 바꿔요.
+/* 마이메뉴 옆 패널과 가운데 창 (폰 · PC 모두).
+   화면 흐름(stack)은 그대로 두고, 그리는 방법만 바꿔요.
    - [..., 첫 화면, my]            → 첫 화면은 흐리게 · 어둡게, 내 정보는 왼쪽에서 밀려 나오는 패널
    - [..., 첫 화면, my, badges ...] → 패널은 그대로, 남은 오른쪽 자리에 업적 · 게임 같은 창
    - [..., 결과, badges]           → 패널 없이 가운데 창만
@@ -36,9 +36,8 @@ export type Layer = {
   modalFrom: number;
 };
 
-/** 지금 stack을 넓은 화면에서 어떻게 그릴지 */
-export function layerOf(stack: Step[], wide: boolean): Layer | null {
-  if (!wide) return null;
+/** 지금 stack을 패널 · 창으로 어떻게 그릴지 */
+export function layerOf(stack: Step[]): Layer | null {
   let j = stack.length;
   while (j > 1 && inLayer(stack[j - 1].k)) j--;
   if (j >= stack.length || !FAMILY.has(stack[j].k)) return null;
@@ -46,7 +45,7 @@ export function layerOf(stack: Step[], wide: boolean): Layer | null {
   return { baseAt: j, myAt: drawer ? j : -1, modalFrom: drawer ? j + 1 : j };
 }
 
-/** PC처럼 옆이 넓은 화면인지 (마우스가 있거나 폭이 1024px 이상인 가로 화면). 폰 가로 화면은 빼요 */
+/** PC처럼 옆이 넓은 화면인지 (넓으면 창이 패널을 피해 앉고, 패널을 눌러 창을 바꿀 수 있어요) (마우스가 있거나 폭이 1024px 이상인 가로 화면). 폰 가로 화면은 빼요 */
 export function useWide() {
   const [wide, setWide] = useState(false);
   useEffect(() => {
@@ -94,7 +93,18 @@ const EDIT_TITLE = { nickname: "닉네임", age: "나이", home1: "사는 곳" }
 
 type Shown = { step: Step; at: number };
 
-export default function WideLayers({ f, layer, frozen }: { f: FlowApi; layer: Layer | null; frozen: boolean }) {
+/** 동그란 X 닫기 버튼 (패널 · 창 오른쪽 위) */
+function CloseX({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button className="lyX" onClick={onClick} aria-label={label}>
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+        <path d="M3.5 3.5l11 11M14.5 3.5l-11 11" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+      </svg>
+    </button>
+  );
+}
+
+export default function WideLayers({ f, layer, frozen, wide }: { f: FlowApi; layer: Layer | null; frozen: boolean; wide: boolean }) {
   const stack = f.s.stack;
   const hasDrawer = !!layer && layer.myAt >= 0;
   const modalNow: Shown | null = layer && stack.length > layer.modalFrom ? { step: stack[stack.length - 1], at: stack.length } : null;
@@ -102,9 +112,10 @@ export default function WideLayers({ f, layer, frozen }: { f: FlowApi; layer: La
   const dim = useLinger(layer ? true : null, 320, () => true);
   const drawer = useLinger(hasDrawer ? true : null, 340, () => true);
   const modal = useLinger(modalNow, 260, (a, b) => a.at === b.at && a.step === b.step);
-  // 창이 닫히는 동안에도 패널 옆 자리(오른쪽)에 머물러요
+  // 창이 닫히는 동안에도 같은 자리에 머물러요 (넓은 화면에서 패널과 겹치면 패널을 피해 앉아요)
   const [withDrawer, setWithDrawer] = useState(hasDrawer);
   if (modalNow && withDrawer !== hasDrawer) setWithDrawer(hasDrawer);
+  // 폰처럼 좁으면 창이 패널을 덮어서, 창이 떠 있는 동안 패널은 살짝 어둡게 · 누르면 창이 닫혀요
 
   /** 창만 닫고 내 정보 패널로 (패널이 없으면 모두 닫아요) */
   const closeModal = () => {
@@ -157,7 +168,7 @@ export default function WideLayers({ f, layer, frozen }: { f: FlowApi; layer: La
 
       {drawer.value && (
         <aside
-          className={`lyDrawer${drawer.leaving ? " leaving" : ""}`}
+          className={`lyDrawer${drawer.leaving ? " leaving" : ""}${!wide && modalTop ? " under" : ""}`}
           role="dialog"
           aria-modal={!modalTop || undefined}
           aria-labelledby="lyDrawerTitle"
@@ -168,16 +179,14 @@ export default function WideLayers({ f, layer, frozen }: { f: FlowApi; layer: La
           <h1 id="lyDrawerTitle" className="lyTitle t-title-s" tabIndex={-1}>
             마이메뉴
           </h1>
-          <button className="chip lyClose" onClick={closeAll}>
-            닫기
-          </button>
+          <CloseX onClick={closeAll} label="마이메뉴 닫기" />
           <My f={drawerF} active={active} />
         </aside>
       )}
 
       {shown && mbg && (
         <section
-          className={`lyModal${withDrawer ? " side" : ""}${modal.leaving ? " leaving" : ""}`}
+          className={`lyModal${withDrawer && wide ? " side" : ""}${wide ? "" : " narrow"}${modal.leaving ? " leaving" : ""}`}
           role="dialog"
           aria-modal="true"
           aria-label={title ?? "창"}
@@ -195,11 +204,7 @@ export default function WideLayers({ f, layer, frozen }: { f: FlowApi; layer: La
                 </button>
               )}
               {title && <div className="topbar-title">{title}</div>}
-              <div className="topbar-right">
-                <button className="chip" onClick={closeModal}>
-                  닫기
-                </button>
-              </div>
+              <CloseX onClick={closeModal} label="창 닫기" />
             </>
           )}
         </section>
