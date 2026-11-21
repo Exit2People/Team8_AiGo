@@ -10,7 +10,7 @@ from fastapi import APIRouter, Header, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from app import chat_safety, config, db
+from app import chat_safety, config, db, nickname
 from app.data import loader
 
 router = APIRouter()
@@ -165,6 +165,8 @@ def chat_join(pid: str, body: JoinBody):
         nick = m["nick"]
     else:
         base = body.nick.strip() or "손님"
+        if nickname.check_rules(base):
+            base = "손님"  # 쓸 수 없는 이름이면 톡방에서는 '손님'으로 보여요
         taken = {r["nick"] for r in db.run("/*member_list*/ select client, nick from chat_members where day = %s "
                                            "and place_id = %s order by nick asc", (today(), pid), "all") or []}
         nick, n = base, 2
