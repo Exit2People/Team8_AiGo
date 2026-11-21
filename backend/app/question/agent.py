@@ -28,6 +28,9 @@ SYSTEM = """너는 'AI GO'의 질문 에이전트야. 서울에 사는 어르신
 - 좋은 예: "손주랑 공룡 보러 가고 싶어" → "손주랑 공룡은 어떻게 보고 싶으세요?" [화석 전시, 만들기 체험, 과학 영상]
   → 앞 답이 "화석 전시"면 → "화석은 큰 박물관이 좋으세요, 가까운 곳이 좋으세요?" [찾은 곳 이름 2~3개]
 - 나쁜 예: 같은 말 다음에 "실내가 좋으세요, 바깥이 좋으세요?", "걷는 건 괜찮으세요?" (말과 상관없는 칸 묻기)
+- 어르신 바람과 바로 맞는 곳이 오늘 없어도 "대신" · "말고" 같은 말로 바람을 접지 마. 바람을 이어 받아 같이 가는 사람이 좋아할 것을 물어.
+  좋은 예: "공룡 좋아하는 손주는 뭘 하면 신나 할까요?" [만들기 체험, 뛰어놀기, 그림 구경] / 나쁜 예: "공룡 대신 어떤 걸 볼까요?"
+  (맞는 곳이 쉬는 날이면 언제 가면 되는지는 추천 화면이 따로 알려 드려요.)
 - 이미 아는 것(처음 말 · 컨디션 · 시간 · 채운 칸 · 앞 답)은 다시 묻지 마. 걷기 · 실내외 같은 칸은 말에서 알 수 없고 꼭 필요할 때만, 이어지는 말 속에 섞어 물어.
 
 받는 것: 조건(처음 말의 단서 · 컨디션 · 시간 · 채운 칸 · 앞 질문과 답), 질문 번호와 남은 질문 수, 이어 받을 말,
@@ -199,6 +202,14 @@ def narrowed(cond: Conditions, items: list[dict]) -> list[dict]:
     return left or items
 
 
+def missing_wishes(cond: Conditions, items: list[dict]) -> list[str]:
+    """구체적인 바람(공룡 · 자전거 …) 중 오늘 후보에 바로 맞는 곳이 없는 것."""
+    from app.recommend.wish import direct_specific, specific_terms
+
+    return [w for w in cond.extra.wish
+            if specific_terms([w]) and not any(direct_specific(it["place"], [w]) for it in items)]
+
+
 def first_message(cond: Conditions, items: list[dict], no: int | None = None, total: int | None = None,
                   extra: bool = False) -> dict:
     th = Counter(t for it in items for t in themes_of(it["place"]) if t in ALL_THEMES)
@@ -214,6 +225,10 @@ def first_message(cond: Conditions, items: list[dict], no: int | None = None, to
         "단서 · 앞 답으로 미리 찾은 곳 (find_places 결과)": {c: find_places_by(items, c) for c in clues},
         "은행 질문 (look_bank 결과)": look_bank(cond, items),
     }
+    missing = missing_wishes(cond, items)
+    if missing:
+        msg["바람과 바로 맞는 곳 없음"] = (f"{', '.join(missing)}과(와) 바로 맞는 곳이 오늘은 없어요. 바람을 접지 말고 이어 받아, "
+                                  "같이 가는 사람이 좋아할 것 · 비슷한 즐거움을 물어요. '대신'이라는 말은 쓰지 마요.")
     if no is not None and total is not None:
         msg["질문 번호"] = f"{no}번 (전체 {total}개 중, 0번은 처음 말)"
         msg["이번 질문 뒤 남은 질문 수"] = max(0, total - no - 1)
@@ -311,6 +326,9 @@ def check_question(cond: Conditions, items: list[dict], sub: dict) -> dict | Non
     if _norm(q) in {_norm(x.q) for x in cond.ai}:
         return None
     if asks_body(q, choices):
+        return None
+    if "대신" in q:
+        # 어르신 바람을 접는 말이라 쓰지 않아요 ("공룡 대신 어떤 걸 볼까요?")
         return None
     # 은행 질문을 그대로 골랐으면 은행 선택지(오늘 남는 것만)를 써요. 은행 질문은 미리 검사한 거예요
     bank_id = flow.bank_id_of(q)

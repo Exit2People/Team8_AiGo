@@ -106,3 +106,22 @@ def test_recommend_dinosaur_on_saturday_without_key():
         assert "공룡" not in c["reason"]
     if not any(direct_specific(c["place"], ["공룡 구경"]) for c in j["candidates"]):
         assert j["wishLater"]["openDays"] == "월~금"
+
+
+def test_question_with_daesin_is_dropped():
+    from app.question import agent as qa
+
+    c = cond()
+    sub = {"question": "손주랑 공룡 대신 어떤 걸 볼까요?", "choices": ["만들기 체험", "그림 · 사진"]}
+    assert qa.check_question(c, [], sub) is None
+
+
+def test_agent_is_told_when_wish_has_no_place_today():
+    from app.data import filter_places as fp
+    from app.question import agent as qa
+
+    c = cond()
+    items = fp.filter_places(c, config.now(), "맑음", [])
+    assert qa.missing_wishes(c, items) == ["공룡 구경"]
+    msg = qa.first_message(c, items)
+    assert "대신" in msg["바람과 바로 맞는 곳 없음"] and "공룡 구경" in msg["바람과 바로 맞는 곳 없음"]
